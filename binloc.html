@@ -885,11 +885,18 @@
 
                 let { data: sap } = await _supabase.from('stock_opname_sap').select('*');
                 if(sap && sap.length > 0) {
-                    let sapRow = sap.find(s => s.sessions_data);
-                    if(sapRow && sapRow.sessions_data) {
-                        sapSessionsData = sapRow.sessions_data;
-                    } else if (sapRow && sapRow.data_sap) {
-                        sapSessionsData = { "Default_Session": sapRow.data_sap };
+                    let sapRow = sap.find(s => s.data_sap);
+                    if(sapRow && sapRow.data_sap) {
+                        if(typeof sapRow.data_sap === 'object' && !sapRow.data_sap['Default_Session']) {
+                            let firstKey = Object.keys(sapRow.data_sap)[0];
+                            if(firstKey && sapRow.data_sap[firstKey] && typeof sapRow.data_sap[firstKey] === 'object' && sapRow.data_sap[firstKey].karton !== undefined) {
+                                sapSessionsData = sapRow.data_sap;
+                            } else {
+                                sapSessionsData = { "Default_Session": sapRow.data_sap };
+                            }
+                        } else {
+                            sapSessionsData = sapRow.data_sap;
+                        }
                     }
                 }
 
@@ -1251,7 +1258,7 @@
             if(container.style.display === 'block') renderSapSessionsList();
         }
 
-        // FUNGSI PROCESS SAP PASTE PER TANGGAL (SESSION)
+        // FUNGSI PROCESS SAP PASTE PER TANGGAL (DITAMBAHKAN area_guidang: "Gudang Induk" AGAR LOLOS NOT NULL)
         async function processSapPaste() {
             const sessionDate = document.getElementById('sapSessionDate').value;
             if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
@@ -1302,7 +1309,12 @@
             sapSessionsData[sessionDate] = sessionItems;
             document.getElementById('sapPasteArea').value = '';
 
-            const { error } = await _supabase.from('stock_opname_sap').upsert([{ id: 1, sessions_data: sapSessionsData }]);
+            // Menambahkan area_guidang agar tidak error not-null constraint
+            const { error } = await _supabase.from('stock_opname_sap').upsert([{ 
+                id: 1, 
+                data_sap: sapSessionsData,
+                area_guidang: 'Gudang Induk' 
+            }]);
 
             if (error) {
                 alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
@@ -1344,7 +1356,11 @@
         async function deleteSapSession(dateStr) {
             if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
                 delete sapSessionsData[dateStr];
-                const { error } = await _supabase.from('stock_opname_sap').upsert([{ id: 1, sessions_data: sapSessionsData }]);
+                const { error } = await _supabase.from('stock_opname_sap').upsert([{ 
+                    id: 1, 
+                    data_sap: sapSessionsData,
+                    area_guidang: 'Gudang Induk' 
+                }]);
                 if(error) alert('Gagal menghapus sesi dari database!');
                 else {
                     alert('Sesi berhasil dihapus.');
@@ -1356,7 +1372,11 @@
         async function deleteAllSapSessions() {
             if(confirm('Yakin ingin menghapus seluruh sesi SAP?')) {
                 sapSessionsData = {};
-                const { error } = await _supabase.from('stock_opname_sap').upsert([{ id: 1, sessions_data: sapSessionsData }]);
+                const { error } = await _supabase.from('stock_opname_sap').upsert([{ 
+                    id: 1, 
+                    data_sap: sapSessionsData,
+                    area_guidang: 'Gudang Induk' 
+                }]);
                 if(error) alert('Gagal menghapus data!');
                 else {
                     alert('Semua sesi SAP berhasil dibersihkan.');

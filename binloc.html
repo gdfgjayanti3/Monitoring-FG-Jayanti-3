@@ -394,15 +394,16 @@
                         <table class="table table-bordered table-hover align-middle text-center text-xs">
                             <thead class="pastel-header-purple">
                                 <tr>
-                                    <th>SKU Produk</th>
-                                    <th>Stok SAP (Pallet)</th>
-                                    <th>Total Fisik (Pallet)</th>
+                                    <th>SKU</th>
+                                    <th>Nama Barang</th>
+                                    <th>Stok SAP (Pallet & Karton)</th>
+                                    <th>Total Fisik (Pallet & Karton)</th>
                                     <th>Selisih Variance</th>
                                     <th>Status Balance</th>
                                 </tr>
                             </thead>
                             <tbody id="reconciliationBody">
-                                <tr><td colspan="5" class="text-muted small">Belum ada data SAP yang dimasukkan.</td></tr>
+                                <tr><td colspan="6" class="text-muted small">Belum ada data SAP yang dimasukkan.</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -800,7 +801,9 @@
         let binData = [];
         let qcHistoryData = [];
         let relokasiLogData = [];
+        let sapStockRecords = [];
         let sapStockData = {};
+        let sapNamaBarangMap = {};
         let masterStockData = {};
 
         async function loadDataFromCloud() {
@@ -834,19 +837,21 @@
                 if (stokEkspor) {
                     stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
                 }
+
+                sapStockData = {};
+                sapNamaBarangMap = {};
+                sapStockRecords = [];
+
                 if (stokSap) {
                     stokSap.forEach(i => {
-                        let skuKeyFull = `${i.sku} | ${i.nama_barang || ''}`;
-                        binData.push({ 
-                            ...i, 
-                            sku: skuKeyFull,
-                            karton: i.stok_karton,
-                            prodate: i.tanggal_tarikan || '2026-09-07',
-                            category: 'Lokal',
-                            tujuan_gudang: 'Gudang Induk'
-                        });
                         if (i.sku) {
-                            sapStockData[i.sku] = (parseFloat(i.stok_karton) || 0) / 70;
+                            let skuClean = i.sku.trim();
+                            let qtyKarton = parseFloat(i.stok_karton) || 0;
+                            sapStockData[skuClean] = qtyKarton / 70;
+                            if(i.nama_barang) {
+                                sapNamaBarangMap[skuClean] = i.nama_barang.trim();
+                            }
+                            sapStockRecords.push(i);
                         }
                     });
                 }
@@ -1215,7 +1220,7 @@
             if(container.style.display === 'block') renderReconciliationTable();
         }
 
-        // FUNGSI PROCESS SAP PASTE TERBARU (MENDUKUNG TABEL STOK_SAP)
+        // FUNGSI PROCESS SAP PASTE
         async function processSapPaste() {
             const text = document.getElementById('sapPasteArea').value.trim();
             if(!text) { alert('Data SAP masih kosong!'); return; }
@@ -1239,6 +1244,7 @@
 
                     if (skuVal && !isNaN(qtyVal)) {
                         sapStockData[skuVal] = qtyVal / 70; 
+                        sapNamaBarangMap[skuVal] = namaBarang;
                         
                         sapRecordsToInsert.push({
                             plant: plantVal,
@@ -1686,30 +1692,39 @@
             tbody.innerHTML = '';
             let keys = Object.keys(sapStockData);
             if(keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="text-muted small">Belum ada data SAP yang dimasukkan.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted small">Belum ada data SAP yang dimasukkan.</td></tr>';
                 return;
             }
             keys.forEach(skuCode => {
-                let sapQty = parseFloat(sapStockData[skuCode]) || 0;
-                let foundItems = binData.filter(i => i.sku && i.sku.includes(skuCode));
+                let sapQtyPlt = parseFloat(sapStockData[skuCode]) || 0;
+                let sapQtyKarton = Math.round(sapQtyPlt * 70);
+                
+                let foundItems = binData.filter(i => i.gudang === 'Stock Opname' && i.sku && i.sku.includes(skuCode));
                 let totalFisikPlt = 0;
-                let sampleName = 'SKU ' + skuCode;
+                let totalFisikKarton = 0;
 
                 foundItems.forEach(item => {
                     let kartonVal = parseFloat(item.karton) || 0;
                     let stdKrt = masterStockData[skuCode] ? masterStockData[skuCode].cartonPerPallet : 70;
+                    totalFisikKarton += kartonVal;
                     totalFisikPlt += (kartonVal / stdKrt);
-                    if(item.sku) sampleName = item.sku;
                 });
 
-                let variance = totalFisikPlt - sapQty;
-                let balanceBadge = Math.abs(variance) < 0.01 ? '<span class="badge bg-success-subtle text-success border px-2 py-1">Balance</span>' : '<span class="badge bg-danger-subtle text-danger border px-2 py-1">Selisih</span>';
+                let namaBarangVal = sapNamaBarangMap[skuCode] || '-';
+                if (masterStockData[skuCode] && masterStockData[skuCode].name) {
+                    namaBarangVal = masterStockData[skuCode].name;
+                }
+
+                let variancePlt = totalFisikPlt - sapQtyPlt;
+                let varianceKarton = totalFisikKarton - sapQtyKarton;
+                let balanceBadge = Math.abs(variancePlt) < 0.01 ? '<span class="badge bg-success-subtle text-success border px-2 py-1">Balance</span>' : '<span class="badge bg-danger-subtle text-danger border px-2 py-1">Selisih</span>';
 
                 tbody.innerHTML += `<tr>
-                    <td class="text-start fw-semibold">${sampleName}</td>
-                    <td class="fw-bold text-indigo-600">${sapQty.toFixed(2)} Plt</td>
-                    <td class="fw-bold text-emerald-600">${totalFisikPlt.toFixed(2)} Plt</td>
-                    <td class="fw-bold">${variance.toFixed(2)} Plt</td>
+                    <td class="fw-bold text-slate-700">${skuCode}</td>
+                    <td class="text-start">${namaBarangVal}</td>
+                    <td class="fw-bold text-indigo-600">${sapQtyPlt.toFixed(2)} Plt <br><small class="text-slate-400">(${sapQtyKarton} krt)</small></td>
+                    <td class="fw-bold text-emerald-600">${totalFisikPlt.toFixed(2)} Plt <br><small class="text-slate-400">(${totalFisikKarton} krt)</small></td>
+                    <td class="fw-bold">${variancePlt.toFixed(2)} Plt <br><small class="text-slate-400">(${varianceKarton} krt)</small></td>
                     <td>${balanceBadge}</td>
                 </tr>`;
             });

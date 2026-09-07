@@ -379,11 +379,11 @@
             <div id="sapAndReconContainer" class="space-y-4" style="display: none;">
                 <div class="card border-0 shadow-2xs rounded-2xl overflow-hidden" style="background-color: #fffbeb;">
                     <div class="card-header border-0 font-bold d-flex justify-content-between align-items-center py-3 px-4" style="background-color: #fef3c7; color: #92400e;">
-                        <span class="small"><i class="fa-solid fa-file-excel text-emerald-600 me-1.5"></i> Input Data Sistem SAP (Paste SKU & Qty Pallet)</span>
+                        <span class="small"><i class="fa-solid fa-file-excel text-emerald-600 me-1.5"></i> Input Data Sistem SAP (plant, sku, nama barang, ending stock)</span>
                         <button type="button" class="btn btn-xs btn-outline-secondary bg-white" onclick="toggleSapSection()">Tutup Menu SAP</button>
                     </div>
                     <div class="card-body p-4">
-                        <textarea class="form-control font-monospace text-nowrap mb-3 bg-white border-amber-200 text-xs" id="sapPasteArea" rows="3" placeholder="Contoh: 312743    15.5"></textarea>
+                        <textarea class="form-control font-monospace text-nowrap mb-3 bg-white border-amber-200 text-xs" id="sapPasteArea" rows="4" placeholder="Paste data SAP dari Excel: plant \t sku \t nama barang \t ending stock"></textarea>
                         <button type="button" class="btn btn-sm fw-bold px-4 text-xs" style="background-color: #f59e0b; color: white;" onclick="processSapPaste()">Simpan & Bandingkan SAP</button>
                     </div>
                 </div>
@@ -825,7 +825,7 @@
 
                 let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
                 let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
-                let { data: stokSap } = await _supabase.from('stok_awal_sap').select('*');
+                let { data: stokSap } = await _supabase.from('stok_sap').select('*');
                 
                 binData = [];
                 if (stokLokal) {
@@ -835,12 +835,20 @@
                     stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
                 }
                 if (stokSap) {
-                    stokSap.forEach(i => binData.push({ 
-                        ...i, 
-                        prodate: i.tanggal_tarikan || '2026-09-07',
-                        category: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal',
-                        tujuan_gudang: i.gudang || 'Gudang Induk'
-                    }));
+                    stokSap.forEach(i => {
+                        let skuKeyFull = `${i.sku} | ${i.nama_barang || ''}`;
+                        binData.push({ 
+                            ...i, 
+                            sku: skuKeyFull,
+                            karton: i.stok_karton,
+                            prodate: i.tanggal_tarikan || '2026-09-07',
+                            category: 'Lokal',
+                            tujuan_gudang: 'Gudang Induk'
+                        });
+                        if (i.sku) {
+                            sapStockData[i.sku] = (parseFloat(i.stok_karton) || 0) / 70;
+                        }
+                    });
                 }
 
                 let { data: qc } = await _supabase.from('karantina_qc').select('*');
@@ -863,7 +871,7 @@
                 if(sap && sap.length > 0) {
                     let sapRow = sap.find(s => s.data_sap);
                     if(sapRow && sapRow.data_sap) {
-                        sapStockData = sapRow.data_sap;
+                        Object.assign(sapStockData, sapRow.data_sap);
                     }
                 }
 
@@ -1207,25 +1215,59 @@
             if(container.style.display === 'block') renderReconciliationTable();
         }
 
+        // FUNGSI PROCESS SAP PASTE TERBARU (MENDUKUNG TABEL STOK_SAP)
         async function processSapPaste() {
             const text = document.getElementById('sapPasteArea').value.trim();
             if(!text) { alert('Data SAP masih kosong!'); return; }
             let count = 0;
-            text.split('\n').forEach(line => {
-                const cols = line.split('\t');
-                if (cols.length >= 2) {
-                    const sku = cols[0].trim();
-                    const qtySap = parseFloat(cols[1].trim()) || 0;
-                    if (sku) { sapStockData[sku] = qtySap; count++; }
+            let sapRecordsToInsert = [];
+            
+            let lines = text.split('\n');
+            
+            lines.forEach((line, index) => {
+                let lowerLine = line.toLowerCase();
+                if (index === 0 && (lowerLine.includes('plant') || lowerLine.includes('sku') || lowerLine.includes('ending'))) {
+                    return;
+                }
+
+                const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+                if (cols.length >= 4) {
+                    let plantVal = cols[0];
+                    let skuVal = cols[1];
+                    let namaBarang = cols[2];
+                    let qtyVal = parseFloat(cols[3].replace(/\./g, '').replace(/,/g, '.')) || 0;
+
+                    if (skuVal && !isNaN(qtyVal)) {
+                        sapStockData[skuVal] = qtyVal / 70; 
+                        
+                        sapRecordsToInsert.push({
+                            plant: plantVal,
+                            sku: skuVal,
+                            nama_barang: namaBarang,
+                            stok_karton: qtyVal
+                        });
+                        count++;
+                    }
+                } else if (cols.length >= 2) {
+                    let skuVal = cols[0];
+                    let qtyVal = parseFloat(cols[1].replace(/\./g, '').replace(/,/g, '.')) || 0;
+                    if (skuVal && !isNaN(qtyVal)) {
+                        sapStockData[skuVal] = qtyVal / 70;
+                        count++;
+                    }
                 }
             });
+
             document.getElementById('sapPasteArea').value = '';
             
-            const { error } = await _supabase.from('stock_opname_sap').upsert([{ id: 1, data_sap: sapStockData }]);
+            const { error } = await _supabase.from('stok_sap').upsert(sapRecordsToInsert);
+            await _supabase.from('stock_opname_sap').upsert([{ id: 1, data_sap: sapStockData }]);
+
             if (error) {
-                alert('Gagal menyimpan data SAP ke database!');
+                alert('Gagal menyimpan data SAP ke database! Error: ' + error.message);
             } else {
-                alert('Berhasil memproses ' + count + ' data stok SAP dan tersimpan ke Supabase!');
+                alert('Berhasil memproses ' + count + ' baris data SAP dan tersimpan ke tabel stok_sap!');
+                loadDataFromCloud();
                 renderReconciliationTable();
             }
         }

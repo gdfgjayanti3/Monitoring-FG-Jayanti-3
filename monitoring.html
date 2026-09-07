@@ -1033,9 +1033,10 @@
                     });
                 }
 
-                // 2. Ambil Stok Bin-Loc
+                // 2. Ambil Stok Bin-Loc & SAP
                 let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
                 let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
+                let { data: stokSap } = await _supabase.from('stok_awal_sap').select('*');
                 let { data: binRes } = await _supabase.from('binloc_stok_jayanti3').select('*');
 
                 binData = [];
@@ -1044,6 +1045,14 @@
                 }
                 if (stokEkspor) {
                     stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
+                }
+                if (stokSap) {
+                    stokSap.forEach(i => binData.push({ 
+                        ...i, 
+                        prodate: i.tanggal_tarikan || '2026-09-07',
+                        category: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal',
+                        gudang: i.gudang || 'Gudang Induk'
+                    }));
                 }
                 if (binRes && binRes.length > 0) {
                     binRes.forEach(i => binData.push(i));
@@ -2219,7 +2228,7 @@
                 });
             }
             let modalEl = document.getElementById('qcModalSummary');
-            if(modalEl) modalEl.classList.remove('hidden');
+            if(modalEl) modalEl.classList.add('hidden');
         }
         function closeQcModalSummary() {
             let modalEl = document.getElementById('qcModalSummary');

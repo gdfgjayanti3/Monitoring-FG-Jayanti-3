@@ -356,14 +356,14 @@
                 </div>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div onclick="switchSection('opname-log')" class="bg-white hover:border-purple-300 border border-slate-200 rounded-2xl p-4 cursor-pointer transition shadow-2xs flex items-center gap-4 group">
                     <div class="bg-purple-50 text-purple-600 p-3 rounded-xl border border-purple-100 group-hover:scale-105 transition flex items-center justify-center shrink-0" style="width: 44px; height: 44px;">
                         <i class="fa-solid fa-clock-rotate-left text-base"></i>
                     </div>
                     <div>
                         <h4 class="card-menu-title text-purple-800 uppercase mb-0">Lihat Log Riwayat Opname</h4>
-                        <p class="card-menu-desc">Cek arsip hasil hitung fisik terdahulu</p>
+                        <p class="card-menu-desc">Cek arsip hasil hitung fisik</p>
                     </div>
                 </div>
 
@@ -372,8 +372,18 @@
                         <i class="fa-solid fa-file-excel text-base"></i>
                     </div>
                     <div>
-                        <h4 class="card-menu-title text-amber-800 uppercase mb-0">Menu Rekonsiliasi & Input SAP</h4>
-                        <p class="card-menu-desc">Bandingkan data SAP dengan fisik aktual</p>
+                        <h4 class="card-menu-title text-amber-800 uppercase mb-0">Menu Input SAP</h4>
+                        <p class="card-menu-desc">Bandingkan data SAP</p>
+                    </div>
+                </div>
+
+                <div onclick="openOpnameReportModal()" class="bg-white hover:border-emerald-300 border border-slate-200 rounded-2xl p-4 cursor-pointer transition shadow-2xs flex items-center gap-4 group">
+                    <div class="bg-emerald-50 text-emerald-600 p-3 rounded-xl border border-emerald-100 group-hover:scale-105 transition flex items-center justify-center shrink-0" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-table-cells text-base"></i>
+                    </div>
+                    <div>
+                        <h4 class="card-menu-title text-emerald-800 uppercase mb-0">Laporan Rekap Manpower</h4>
+                        <p class="card-menu-desc">Format rekap Excel</p>
                     </div>
                 </div>
             </div>
@@ -413,7 +423,12 @@
             </div>
 
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                <h5 class="fw-bold text-slate-700 text-xs uppercase mb-3"><i class="fa-solid fa-pen-to-square mr-1"></i> Form Input Stock Opname Harian</h5>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0"><i class="fa-solid fa-pen-to-square mr-1"></i> Form Input Stock Opname Harian</h5>
+                    <button type="button" class="btn btn-sm btn-outline-purple fw-bold bg-white text-xs" onclick="openPlottingModal()">
+                        <i class="fa-solid fa-users-gear mr-1 text-purple-600"></i> Setting Plotting Manpower
+                    </button>
+                </div>
                 <form onsubmit="saveBulkOpname(event)">
                     <div class="row g-3 p-4 rounded-2xl mb-4 border border-slate-100" style="background-color: #f8fafc;">
                         <div class="col-md-3">
@@ -428,14 +443,16 @@
                             <input type="date" class="form-control bg-white border-slate-200" id="opGlobalDate" required>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small fw-bold text-slate-600">Pilih Kode Plant</label>
-                            <select class="form-select bg-white border-slate-200" id="opPlantCode" required>
-                                <option value="1115">Plant 1115</option>
-                                <option value="1116">Plant 1116</option>
-                            </select>
+                            <label class="form-label small fw-bold text-slate-600">Pilih Manpower Plotting</label>
+                            <div class="input-group input-group-sm">
+                                <select class="form-select bg-white border-slate-200" id="opStockKeeperSelect" onchange="autoLoadManpowerSkus()">
+                                    <option value="">-- Pilih Manpower --</option>
+                                </select>
+                                <button type="button" class="btn text-white fw-bold" style="background-color: #7c3aed;" onclick="autoLoadManpowerSkus()">Muat SKU</button>
+                            </div>
                         </div>
                         <div class="col-md-3">
-                            <label class="form-label small fw-bold text-slate-600">Nama Stock Keeper</label>
+                            <label class="form-label small fw-bold text-slate-600">Nama Petugas / Manpower</label>
                             <input type="text" class="form-control bg-white border-slate-200" id="opStockKeeper" required placeholder="Nama lengkap petugas">
                         </div>
                     </div>
@@ -518,6 +535,108 @@
         </div>
 
     </main>
+
+    <!-- MODAL SETTING PLOTTING MANPOWER -->
+    <div id="modalPlotting" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full overflow-hidden border border-slate-200 animate-fadeIn flex flex-col max-h-[85vh]">
+            <div class="pastel-header-purple px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-sm"><i class="fa-solid fa-users-gear mr-2"></i> Pengaturan Plotting Manpower Opname</h3>
+                <button onclick="closeModal('modalPlotting')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+                <form onsubmit="saveNewPlotting(event)" class="p-4 rounded-xl border border-purple-100 bg-purple-50/40 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                    <div>
+                        <label class="form-label fw-bold text-purple-900 mb-1">Nama Manpower *</label>
+                        <input type="text" id="plotManpowerName" class="form-control form-control-sm bg-white" required placeholder="Cth: PERI, RIO">
+                    </div>
+                    <div class="relative sm:col-span-2">
+                        <label class="form-label fw-bold text-purple-900 mb-1">Pilih SKU Produk *</label>
+                        <input type="text" id="plotSkuInput" class="form-control form-control-sm bg-white" required placeholder="Ketik SKU atau nama barang..." oninput="filterCustomSku('plotSkuInput', 'plotSkuDropdown')" autocomplete="off">
+                        <div id="plotSkuDropdown" class="absolute left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-40 overflow-y-auto z-50 hidden text-start"></div>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-sm btn-purple w-100 fw-bold text-white" style="background-color: #7c3aed;"><i class="fa-solid fa-plus mr-1"></i> Tambah Plotting</button>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center text-xs mb-0">
+                        <thead class="pastel-header-purple">
+                            <tr>
+                                <th>Nama Manpower</th>
+                                <th>SKU Produk</th>
+                                <th>Nama Barang</th>
+                                <th>Aksi Hapus</th>
+                            </tr>
+                        </thead>
+                        <tbody id="plottingTableBody">
+                            <tr><td colspan="4" class="text-muted">Memuat data penugasan...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary px-4" onclick="closeModal('modalPlotting')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LAPORAN REKAPITULASI OPNAME MANPOWER -->
+    <div id="modalOpnameReport" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-7xl w-full overflow-hidden border border-slate-200 animate-fadeIn flex flex-col max-h-[90vh]">
+            <div class="pastel-header-blue px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-sm"><i class="fa-solid fa-table-cells mr-2"></i> HASIL STOCK OPNAME BISCUIT (Per Manpower)</h3>
+                <button onclick="closeModal('modalOpnameReport')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl border border-sky-100 bg-sky-50/40 items-end">
+                    <div>
+                        <label class="form-label fw-bold text-sky-900 mb-1">Pilih Manpower</label>
+                        <select id="reportManpowerSelect" class="form-select form-select-sm bg-white" onchange="renderOpnameReportGrid()">
+                            <option value="PERI">PERI</option>
+                            <option value="RIO">RIO</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label fw-bold text-sky-900 mb-1">Tanggal Sesi SAP Acuan</label>
+                        <select id="reportSapDateSelect" class="form-select form-select-sm bg-white" onchange="renderOpnameReportGrid()">
+                        </select>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-success w-100 fw-bold" onclick="downloadOpnameReportExcel()"><i class="fa-solid fa-download mr-1"></i> Download Excel Sesuai Format</button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center text-xs mb-0">
+                        <thead class="table-dark text-white">
+                            <tr>
+                                <th>SKU</th>
+                                <th>Nama Barang</th>
+                                <th>Ending Balance SAP/MOA</th>
+                                <th>Fisik Opname (ctn)</th>
+                                <th>Fisik Opname (pallet)</th>
+                                <th>Dorongan Hold</th>
+                                <th>Belum Approved</th>
+                                <th>TOTAL SAP</th>
+                                <th>Selisih</th>
+                                <th>Keterangan</th>
+                                <th>Blok</th>
+                            </tr>
+                        </thead>
+                        <tbody id="opnameReportGridBody">
+                            <tr><td colspan="11" class="text-muted py-4">Memuat data rekapitulasi...</td></tr>
+                        </tbody>
+                        <tfoot id="opnameReportGridFoot" class="table-light fw-bold">
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary px-4" onclick="closeModal('modalOpnameReport')">Tutup</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL POPUP REKONSILIASI DETAIL PER TANGGAL -->
     <div id="modalReconDetail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
@@ -817,6 +936,7 @@
                 if (namaEl) namaEl.innerText = userObj.nama_lengkap || userObj.username;
                 if (roleEl) roleEl.innerText = userObj.role;
             }
+            loadPlottingDataFromCloud();
         });
 
         function prosesLogout() {
@@ -847,6 +967,7 @@
         let sapSessionsData = {}; 
         let sapNamaBarangMap = {};
         let masterStockData = {};
+        let globalPlottingData = [];
         let activeModalDate = '';
 
         async function loadDataFromCloud() {
@@ -873,12 +994,8 @@
                 let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
                 
                 binData = [];
-                if (stokLokal) {
-                    stokLokal.forEach(i => binData.push({ ...i, category: 'Lokal' }));
-                }
-                if (stokEkspor) {
-                    stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
-                }
+                if (stokLokal) stokLokal.forEach(i => binData.push({ ...i, category: 'Lokal' }));
+                if (stokEkspor) stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
 
                 sapSessionsData = {};
                 sapNamaBarangMap = {};
@@ -919,6 +1036,7 @@
                 let { data: relok } = await _supabase.from('relokasi__barang').select('*');
                 if(relok) {
                     relokasiLogData = relok.map(r => ({
+                        id: r.id,
                         waktu: r.tanggal_relokasi,
                         petugas: r.nama_petugas,
                         sku: r.sku,
@@ -927,6 +1045,7 @@
                     }));
                 }
 
+                loadPlottingDataFromCloud();
                 renderBinMap();
                 renderActiveHoldTable();
                 renderReportTable();
@@ -937,6 +1056,15 @@
         }
 
         loadDataFromCloud();
+
+        async function loadPlottingDataFromCloud() {
+            let { data, error } = await _supabase.from('master_plotting_opname').select('*');
+            if (!error && data) {
+                globalPlottingData = data;
+                renderPlottingTable();
+                updateManpowerDropdownOptions();
+            }
+        }
 
         function getBlockConfig(wh, blockName, rowNumber = 1) {
             let cleanBlock = blockName.replace('Blok ', '').trim();
@@ -1215,6 +1343,266 @@
             }
         }
 
+        function openPlottingModal() {
+            loadPlottingDataFromCloud();
+            document.getElementById('modalPlotting').classList.remove('hidden');
+        }
+
+        function renderPlottingTable() {
+            let tbody = document.getElementById('plottingTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            if(globalPlottingData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-muted py-3">Belum ada data plotting manpower. Silakan tambahkan di atas.</td></tr>';
+                return;
+            }
+
+            globalPlottingData.forEach(item => {
+                let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
+                let namaBarang = masterStockData[skuKey] ? masterStockData[skuKey].name : '-';
+
+                tbody.innerHTML += `<tr>
+                    <td class="fw-bold text-purple-900">${item.nama_manpower}</td>
+                    <td class="fw-semibold">${item.sku}</td>
+                    <td class="text-start">${namaBarang}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deletePlottingItem('${item.id}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        async function saveNewPlotting(e) {
+            e.preventDefault();
+            let manpower = document.getElementById('plotManpowerName').value.trim().toUpperCase();
+            let skuFull = document.getElementById('plotSkuInput').value.trim();
+
+            if(!manpower || !skuFull) {
+                alert('Nama manpower dan SKU wajib diisi!');
+                return;
+            }
+
+            let { error } = await _supabase.from('master_plotting_opname').insert([{ nama_manpower: manpower, sku: skuFull }]);
+            if(error) {
+                alert('Gagal menyimpan plotting ke database: ' + error.message);
+            } else {
+                alert('Berhasil menambahkan penugasan SKU untuk ' + manpower);
+                document.getElementById('plotSkuInput').value = '';
+                loadPlottingDataFromCloud();
+            }
+        }
+
+        async function deletePlottingItem(id) {
+            if(confirm('Hapus penugasan SKU ini dari manpower?')) {
+                let { error } = await _supabase.from('master_plotting_opname').delete().eq('id', id);
+                if(error) alert('Gagal menghapus data!');
+                else loadPlottingDataFromCloud();
+            }
+        }
+
+        function updateManpowerDropdownOptions() {
+            let selectEl = document.getElementById('opStockKeeperSelect');
+            if(!selectEl) return;
+            let uniqueManpowers = [...new Set(globalPlottingData.map(item => item.nama_manpower))];
+            
+            selectEl.innerHTML = '<option value="">-- Pilih Manpower --</option>';
+            uniqueManpowers.forEach(name => {
+                selectEl.innerHTML += `<option value="${name}">${name}</option>`;
+            });
+        }
+
+        async function autoLoadManpowerSkus() {
+            let selectedManpower = document.getElementById('opStockKeeperSelect').value;
+            if (!selectedManpower) {
+                alert('Pilih nama Manpower terlebih dahulu!');
+                return;
+            }
+
+            let assignedItems = globalPlottingData.filter(i => i.nama_manpower === selectedManpower);
+            if (assignedItems.length === 0) {
+                alert(`Tidak ada SKU yang di-plot untuk ${selectedManpower}.`);
+                return;
+            }
+
+            let tbody = document.getElementById('multiOpnameBody');
+            tbody.innerHTML = '';
+            opnameRowIdx = 0;
+
+            let wh = document.getElementById('opDestWarehouse').value;
+            let blocks = wh.includes('Induk') ? indukBlocks : agingBlocks;
+
+            assignedItems.forEach(item => {
+                opnameRowIdx++;
+                let tr = document.createElement('tr');
+                tr.id = 'opRow_' + opnameRowIdx;
+
+                let blockOpts = '<option value="">-- Pilih Blok --</option>';
+                blocks.forEach(b => { blockOpts += `<option value="Blok ${b}">Blok ${b}</option>`; });
+
+                tr.innerHTML = `
+                    <td><select class="form-select form-select-sm border-slate-200" id="opRackBlock_${opnameRowIdx}" required>${blockOpts}</select></td>
+                    <td><input type="text" class="form-control form-control-sm border-slate-200" id="opRow_${opnameRowIdx}" required placeholder="Row 01"></td>
+                    <td class="relative">
+                        <input type="text" class="form-control form-control-sm border-slate-200 bg-slate-50" id="opSku_${opnameRowIdx}" required value="${item.sku}" readonly>
+                    </td>
+                    <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" placeholder="0" oninput="calcMultiRow(${opnameRowIdx})"></td>
+                    <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('opStockKeeper').value = selectedManpower;
+        }
+
+        function openOpnameReportModal() {
+            let dateSelect = document.getElementById('reportSapDateSelect');
+            dateSelect.innerHTML = '';
+            let dates = Object.keys(sapSessionsData);
+            if(dates.length === 0) {
+                dateSelect.innerHTML = '<option value="">Tidak ada sesi SAP tersimpan</option>';
+            } else {
+                dates.sort().reverse().forEach(d => {
+                    dateSelect.innerHTML += `<option value="${d}">${d}</option>`;
+                });
+            }
+
+            let mpSelect = document.getElementById('reportManpowerSelect');
+            let uniqueManpowers = [...new Set(globalPlottingData.map(i => i.nama_manpower))];
+            if(uniqueManpowers.length > 0) {
+                mpSelect.innerHTML = '';
+                uniqueManpowers.forEach(m => {
+                    mpSelect.innerHTML += `<option value="${m}">${m}</option>`;
+                });
+            }
+
+            renderOpnameReportGrid();
+            document.getElementById('modalOpnameReport').classList.remove('hidden');
+        }
+
+        function renderOpnameReportGrid() {
+            let selectedMp = document.getElementById('reportManpowerSelect').value;
+            let selectedSapDate = document.getElementById('reportSapDateSelect').value;
+            
+            let tbody = document.getElementById('opnameReportGridBody');
+            let tfoot = document.getElementById('opnameReportGridFoot');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let assignedPlotting = globalPlottingData.filter(i => i.nama_manpower === selectedMp);
+            if(assignedPlotting.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="text-muted py-4">Tidak ada SKU yang di-plot untuk manpower ${selectedMp}.</td></tr>`;
+                tfoot.innerHTML = '';
+                return;
+            }
+
+            let sapSessionItems = (selectedSapDate && sapSessionsData[selectedSapDate]) ? sapSessionsData[selectedSapDate] : {};
+
+            let sumEndingSap = 0;
+            let sumFisikCtn = 0;
+            let sumFisikPallet = 0;
+            let sumTotalSap = 0;
+
+            assignedPlotting.forEach(plot => {
+                let skuCode = plot.sku.split('|')[0].trim();
+                let namaBarang = masterStockData[skuCode] ? masterStockData[skuCode].name : (sapSessionItems[skuCode]?.nama || '-');
+                let endingSap = sapSessionItems[skuCode] ? parseFloat(sapSessionItems[skuCode].karton) || 0 : 0;
+
+                let matchedStockItems = binData.filter(i => i.sku && i.sku.includes(skuCode));
+                let fisikCtn = 0;
+                let blokSet = new Set();
+                matchedStockItems.forEach(item => {
+                    fisikCtn += parseFloat(item.karton) || 0;
+                    if(item.lokasi) blokSet.add(item.lokasi.split('-')[0].trim().replace('Blok ', ''));
+                });
+
+                let stdKrt = getCartonPerPallet(skuCode);
+                let fisikPallet = parseFloat((fisikCtn / stdKrt).toFixed(2));
+                let totalSap = endingSap;
+                let selisih = fisikCtn - totalSap;
+                let blokString = blokSet.size > 0 ? Array.from(blokSet).join(',') : '-';
+                let keterangan = selisih !== 0 ? 'Selisih' : '';
+
+                sumEndingSap += endingSap;
+                sumFisikCtn += fisikCtn;
+                sumFisikPallet += fisikPallet;
+                sumTotalSap += totalSap;
+
+                tbody.innerHTML += `<tr>
+                    <td class="fw-bold text-slate-700">${skuCode}</td>
+                    <td class="text-start">${namaBarang}</td>
+                    <td>${endingSap.toLocaleString()}</td>
+                    <td class="fw-bold text-primary">${fisikCtn.toLocaleString()}</td>
+                    <td>${fisikPallet.toLocaleString()}</td>
+                    <td></td>
+                    <td></td>
+                    <td>${totalSap.toLocaleString()}</td>
+                    <td class="${selisih !== 0 ? 'text-danger fw-bold' : ''}">${selisih.toLocaleString()}</td>
+                    <td>${keterangan}</td>
+                    <td class="fw-semibold text-indigo-700">${blokString}</td>
+                </tr>`;
+            });
+
+            tfoot.innerHTML = `<tr>
+                <td colspan="2" class="text-end">TOTAL</td>
+                <td>${sumEndingSap.toLocaleString()}</td>
+                <td class="text-primary">${sumFisikCtn.toLocaleString()}</td>
+                <td>${sumFisikPallet.toFixed(2)}</td>
+                <td colspan="2"></td>
+                <td>${sumTotalSap.toLocaleString()}</td>
+                <td colspan="3"></td>
+            </tr>`;
+        }
+
+        function downloadOpnameReportExcel() {
+            let selectedMp = document.getElementById('reportManpowerSelect').value;
+            let selectedSapDate = document.getElementById('reportSapDateSelect').value;
+            let assignedPlotting = globalPlottingData.filter(i => i.nama_manpower === selectedMp);
+            
+            if(assignedPlotting.length === 0) { alert('Tidak ada data untuk didownload.'); return; }
+
+            let sapSessionItems = (selectedSapDate && sapSessionsData[selectedSapDate]) ? sapSessionsData[selectedSapDate] : {};
+            let excelRows = [];
+
+            assignedPlotting.forEach(plot => {
+                let skuCode = plot.sku.split('|')[0].trim();
+                let namaBarang = masterStockData[skuCode] ? masterStockData[skuCode].name : (sapSessionItems[skuCode]?.nama || '-');
+                let endingSap = sapSessionItems[skuCode] ? parseFloat(sapSessionItems[skuCode].karton) || 0 : 0;
+
+                let matchedStockItems = binData.filter(i => i.sku && i.sku.includes(skuCode));
+                let fisikCtn = 0;
+                let blokSet = new Set();
+                matchedStockItems.forEach(item => {
+                    fisikCtn += parseFloat(item.karton) || 0;
+                    if(item.lokasi) blokSet.add(item.lokasi.split('-')[0].trim().replace('Blok ', ''));
+                });
+
+                let stdKrt = getCartonPerPallet(skuCode);
+                let fisikPallet = parseFloat((fisikCtn / stdKrt).toFixed(2));
+                let totalSap = endingSap;
+                let selisih = fisikCtn - totalSap;
+
+                excelRows.push({
+                    "SKU": skuCode,
+                    "Nama Barang": namaBarang,
+                    "Ending Balance SAP/MOA": endingSap,
+                    "Fisik Opname (ctn)": fisikCtn,
+                    "Fisik Opname (pallet)": fisikPallet,
+                    "Dorongan Hold": "",
+                    "Belum Approved": "",
+                    "TOTAL SAP": totalSap,
+                    "Selisih": selisih,
+                    "Keterangan": selisih !== 0 ? "Selisih" : "",
+                    "Blok": blokSet.size > 0 ? Array.from(blokSet).join(',') : '-'
+                });
+            });
+
+            let worksheet = XLSX.utils.json_to_sheet(excelRows);
+            let workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, `Opname_${selectedMp}`);
+            XLSX.writeFile(workbook, `Laporan_Opname_${selectedMp}_${selectedSapDate || 'Format'}.xlsx`);
+        }
+
         let opnameRowIdx = 0;
         function clearOpnameRows() { document.getElementById('multiOpnameBody').innerHTML = ''; addOpnameRow(); }
 
@@ -1258,7 +1646,6 @@
             if(container.style.display === 'block') renderSapSessionsList();
         }
 
-        // FUNGSI PROCESS SAP PASTE BERSIH (Hanya mengirimkan id & data_sap)
         async function processSapPaste() {
             const sessionDate = document.getElementById('sapSessionDate').value;
             if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
@@ -1268,7 +1655,6 @@
             
             let sapMapAccumulator = {}; 
             let sessionNamaBarang = {};
-            let count = 0;
             
             let lines = text.split('\n');
             lines.forEach((line, index) => {
@@ -1286,14 +1672,12 @@
                     if (skuVal && !isNaN(qtyVal)) {
                         sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
                         sessionNamaBarang[skuVal] = namaBarang;
-                        count++;
                     }
                 } else if (cols.length >= 2) {
                     let skuVal = cols[0];
                     let qtyVal = parseFloat(cols[1].replace(/\./g, '').replace(/,/g, '.')) || 0;
                     if (skuVal && !isNaN(qtyVal)) {
                         sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
-                        count++;
                     }
                 }
             });
@@ -1342,7 +1726,7 @@
                             <span class="badge bg-amber-100 text-amber-800 ml-2">${skuCount} SKU terdaftar</span>
                         </div>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-primary fw-bold text-xs" onclick="openReconModal('${dateStr}')"><i class="fa-solid fa-magnifying-glass mr-1"></i> Lihat Detail Rekon (Pop-up)</button>
+                            <button class="btn btn-sm btn-primary fw-bold text-xs" onclick="openReconModal('${dateStr}')"><i class="fa-solid fa-magnifying-glass mr-1"></i> Detail Rekon</button>
                             <button class="btn btn-sm btn-outline-success fw-bold text-xs" onclick="downloadSessionExcel('${dateStr}')"><i class="fa-solid fa-download mr-1"></i> Download Excel</button>
                             <button class="btn btn-sm btn-outline-danger fw-bold text-xs" onclick="deleteSapSession('${dateStr}')"><i class="fa-solid fa-trash"></i> Hapus</button>
                         </div>
@@ -1354,30 +1738,16 @@
         async function deleteSapSession(dateStr) {
             if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
                 delete sapSessionsData[dateStr];
-                const { error } = await _supabase.from('stock_opname_sap').upsert([{ 
-                    id: 1, 
-                    data_sap: sapSessionsData 
-                }]);
-                if(error) alert('Gagal menghapus sesi dari database!');
-                else {
-                    alert('Sesi berhasil dihapus.');
-                    renderSapSessionsList();
-                }
+                await _supabase.from('stock_opname_sap').upsert([{ id: 1, data_sap: sapSessionsData }]);
+                renderSapSessionsList();
             }
         }
 
         async function deleteAllSapSessions() {
             if(confirm('Yakin ingin menghapus seluruh sesi SAP?')) {
                 sapSessionsData = {};
-                const { error } = await _supabase.from('stock_opname_sap').upsert([{ 
-                    id: 1, 
-                    data_sap: sapSessionsData 
-                }]);
-                if(error) alert('Gagal menghapus data!');
-                else {
-                    alert('Semua sesi SAP berhasil dibersihkan.');
-                    renderSapSessionsList();
-                }
+                await _supabase.from('stock_opname_sap').upsert([{ id: 1, data_sap: sapSessionsData }]);
+                renderSapSessionsList();
             }
         }
 
@@ -1396,23 +1766,13 @@
 
             let sessionItems = sapSessionsData[activeModalDate] || {};
             let keys = Object.keys(sessionItems);
-
-            if(keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Tidak ada data SKU pada sesi ini.</td></tr>';
-                return;
-            }
+            if(keys.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Tidak ada data SKU.</td></tr>'; return; }
 
             let filteredKeys = keys.filter(skuCode => {
                 let itemData = sessionItems[skuCode];
                 let namaBarang = itemData.nama || masterStockData[skuCode]?.name || '';
-                let searchStr = `${skuCode} ${namaBarang}`.toLowerCase();
-                return searchStr.includes(filterKeyword.toLowerCase());
+                return `${skuCode} ${namaBarang}`.toLowerCase().includes(filterKeyword.toLowerCase());
             });
-
-            if(filteredKeys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-muted">SKU atau Nama Barang tidak ditemukan.</td></tr>';
-                return;
-            }
 
             filteredKeys.forEach(skuCode => {
                 let sapQtyKarton = parseFloat(sessionItems[skuCode].karton) || 0;
@@ -1422,92 +1782,58 @@
                 let foundItems = binData.filter(i => i.gudang === 'Stock Opname' && i.sku && i.sku.includes(skuCode));
                 let totalFisikPlt = 0;
                 let totalFisikKarton = 0;
-
                 foundItems.forEach(item => {
                     let kartonVal = parseFloat(item.karton) || 0;
-                    let itemStdKrt = getCartonPerPallet(skuCode);
                     totalFisikKarton += kartonVal;
-                    totalFisikPlt += (kartonVal / itemStdKrt);
+                    totalFisikPlt += (kartonVal / stdKrt);
                 });
 
-                let namaBarangVal = sessionItems[skuCode].nama || '-';
-                if (masterStockData[skuCode] && masterStockData[skuCode].name) {
-                    namaBarangVal = masterStockData[skuCode].name;
-                }
-
+                let namaBarangVal = sessionItems[skuCode].nama || masterStockData[skuCode]?.name || '-';
                 let variancePlt = totalFisikPlt - sapPltVal;
                 let varianceKarton = totalFisikKarton - sapQtyKarton;
                 let balanceBadge = Math.abs(variancePlt) < 0.01 ? '<span class="badge bg-success-subtle text-success border px-2 py-1">Balance</span>' : '<span class="badge bg-danger-subtle text-danger border px-2 py-1">Selisih</span>';
 
-                let sapPltFormatted = Math.floor(sapPltVal);
-                let sapReceh = sapQtyKarton % stdKrt;
-                let sapDisplayStr = sapReceh > 0 ? `${sapPltFormatted} Plt + ${sapReceh} krt` : `${sapPltVal.toFixed(2)} Plt`;
-
-                let fisikPltFormatted = Math.floor(totalFisikPlt);
-                let fisikReceh = totalFisikKarton % stdKrt;
-                let fisikDisplayStr = fisikReceh > 0 ? `${fisikPltFormatted} Plt + ${fisikReceh} krt` : `${totalFisikPlt.toFixed(2)} Plt`;
-
                 tbody.innerHTML += `<tr>
                     <td class="fw-bold text-slate-700">${skuCode}</td>
                     <td class="text-start">${namaBarangVal}</td>
-                    <td class="fw-bold text-indigo-600">${sapDisplayStr} <br><small class="text-slate-400">(${sapQtyKarton} krt | std ${stdKrt})</small></td>
-                    <td class="fw-bold text-emerald-600">${fisikDisplayStr} <br><small class="text-slate-400">(${totalFisikKarton} krt)</small></td>
-                    <td class="fw-bold">${variancePlt.toFixed(2)} Plt <br><small class="text-slate-400">(${varianceKarton} krt)</small></td>
+                    <td class="fw-bold text-indigo-600">${sapPltVal.toFixed(2)} Plt (${sapQtyKarton} krt)</td>
+                    <td class="fw-bold text-emerald-600">${totalFisikPlt.toFixed(2)} Plt (${totalFisikKarton} krt)</td>
+                    <td class="fw-bold">${variancePlt.toFixed(2)} Plt (${varianceKarton} krt)</td>
                     <td>${balanceBadge}</td>
                 </tr>`;
             });
         }
 
-        function filterReconModalTable() {
-            let keyword = document.getElementById('reconSearchInput').value;
-            renderModalReconTableRows(keyword);
-        }
-
-        function downloadCurrentReconExcel() {
-            downloadSessionExcel(activeModalDate);
-        }
+        function filterReconModalTable() { renderModalReconTableRows(document.getElementById('reconSearchInput').value); }
+        function downloadCurrentReconExcel() { downloadSessionExcel(activeModalDate); }
 
         function downloadSessionExcel(dateStr) {
             let sessionItems = sapSessionsData[dateStr] || {};
             let keys = Object.keys(sessionItems);
-            if(keys.length === 0) { alert('Tidak ada data untuk didownload pada sesi ini.'); return; }
+            if(keys.length === 0) return;
 
             let excelRows = [];
             keys.forEach(skuCode => {
                 let sapQtyKarton = parseFloat(sessionItems[skuCode].karton) || 0;
                 let stdKrt = getCartonPerPallet(skuCode);
                 let sapPltVal = sapQtyKarton / stdKrt;
-                
                 let foundItems = binData.filter(i => i.gudang === 'Stock Opname' && i.sku && i.sku.includes(skuCode));
-                let totalFisikPlt = 0;
                 let totalFisikKarton = 0;
-                foundItems.forEach(item => {
-                    let kartonVal = parseFloat(item.karton) || 0;
-                    let itemStdKrt = getCartonPerPallet(skuCode);
-                    totalFisikKarton += kartonVal;
-                    totalFisikPlt += (kartonVal / itemStdKrt);
-                });
-
-                let namaBarangVal = sessionItems[skuCode].nama || masterStockData[skuCode]?.name || '-';
-                let variancePlt = totalFisikPlt - sapPltVal;
-                let statusBalance = Math.abs(variancePlt) < 0.01 ? 'Balance' : 'Selisih';
+                foundItems.forEach(item => totalFisikKarton += parseFloat(item.karton) || 0);
 
                 excelRows.push({
                     "SKU": skuCode,
-                    "Nama Barang": namaBarangVal,
+                    "Nama Barang": sessionItems[skuCode].nama || '-',
                     "Stok SAP (Karton)": sapQtyKarton,
-                    "Stok SAP (Pallet)": parseFloat(sapPltVal.toFixed(2)),
                     "Fisik Aktual (Karton)": totalFisikKarton,
-                    "Fisik Aktual (Pallet)": parseFloat(totalFisikPlt.toFixed(2)),
-                    "Selisih Variance (Pallet)": parseFloat(variancePlt.toFixed(2)),
-                    "Status Balance": statusBalance
+                    "Selisih": totalFisikKarton - sapQtyKarton
                 });
             });
 
             let worksheet = XLSX.utils.json_to_sheet(excelRows);
             let workbook = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(workbook, worksheet, "Rekon SAP " + dateStr);
-            XLSX.writeFile(workbook, `Laporan_Rekonsiliasi_SAP_${dateStr}.xlsx`);
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Rekon " + dateStr);
+            XLSX.writeFile(workbook, `Rekonsiliasi_${dateStr}.xlsx`);
         }
 
         function switchSection(sectionId) {
@@ -1541,23 +1867,15 @@
                 document.getElementById('pBuyerText').removeAttribute('required');
                 document.getElementById('pProdate').removeAttribute('required');
                 document.getElementById('pExpDate').removeAttribute('required');
-                document.getElementById('pBuyerText').value = '';
-                document.getElementById('pQt').value = '';
-                document.getElementById('pProdate').value = '';
-                document.getElementById('pExpDate').value = '';
             }
             document.getElementById('modalPenerimaan').classList.remove('hidden');
         }
 
         function closeModal(modalId) { document.getElementById(modalId).classList.add('hidden'); }
-
         function getCartonPerPallet(skuString) {
             if(!skuString) return 70;
             let skuCode = skuString.split('|')[0].trim();
-            if(masterStockData[skuCode] && masterStockData[skuCode].cartonPerPallet) {
-                return parseFloat(masterStockData[skuCode].cartonPerPallet) || 70;
-            }
-            return 70;
+            return masterStockData[skuCode]?.cartonPerPallet || 70;
         }
 
         function hitungKonversi() {
@@ -1569,13 +1887,7 @@
 
             let pltValDec = (krt / standardKrt).toFixed(2);
             document.getElementById('konversiPlt').innerText = `Konversi: ${pltValDec} Pallet (Standar ${standardKrt} krt/plt)`;
-
-            if(krt > 0) {
-                let rangeText = pltCount === 1 ? 'PLT-01' : `PLT-01 s/d PLT-${pltCount < 10 ? '0'+pltCount : pltCount}`;
-                document.getElementById('pPalletRange').value = rangeText;
-            } else {
-                document.getElementById('pPalletRange').value = '';
-            }
+            document.getElementById('pPalletRange').value = krt > 0 ? (pltCount === 1 ? 'PLT-01' : `PLT-01 s/d PLT-${pltCount < 10 ? '0'+pltCount : pltCount}`) : '';
         }
 
         async function saveQcAction(e) {
@@ -1584,54 +1896,38 @@
             let parts = filterDateVal.split('-');
             let formattedProdate = `${parts[2]}/${parts[1]}/${parts[0]}`;
 
-            let palletRange = document.getElementById('qcPalletNumber').options[document.getElementById('qcPalletNumber').selectedIndex].text;
-            let holdManual = document.getElementById('qcHoldPalletManual').value;
-            let skuInputFull = document.getElementById('qcSkuInput').value;
-            let plantLine = document.getElementById('qcPlantLine').value;
-            let shift = document.getElementById('qcShift').value;
-            let krt = parseFloat(document.getElementById('qcQtyKarton').value) || 0;
-            let reason = document.getElementById('qcReason').value || '-';
-
             let qcRecord = {
                 tanggal_prodate: formattedProdate,
-                no_pallet: palletRange,
-                sku: skuInputFull,
-                plant_line: plantLine,
-                shift_kerja: shift,
-                jumlah_karton: krt,
-                pallet_random: holdManual,
-                alasan_hold: reason,
+                no_pallet: document.getElementById('qcPalletNumber').options[document.getElementById('qcPalletNumber').selectedIndex].text,
+                sku: document.getElementById('qcSkuInput').value,
+                plant_line: document.getElementById('qcPlantLine').value,
+                shift_kerja: document.getElementById('qcShift').value,
+                jumlah_karton: parseFloat(document.getElementById('qcQtyKarton').value) || 0,
+                pallet_random: document.getElementById('qcHoldPalletManual').value,
+                alasan_hold: document.getElementById('qcReason').value || '-',
                 status_aktif: 'HOLD',
                 tindak_lanjut: '-'
             };
 
-            const { error } = await _supabase.from('karantina_qc').insert([qcRecord]);
-            if (error) {
-                alert('Gagal menyimpan data QC ke database! Error: ' + error.message);
-                return;
-            } else {
-                alert('Palet berhasil dikarantina (HOLD) dan tersimpan ke Supabase!');
+            let { error } = await _supabase.from('karantina_qc').insert([qcRecord]);
+            if (error) alert('Gagal menyimpan QC: ' + error.message);
+            else {
+                alert('Palet berhasil dikarantina!');
                 e.target.reset();
-                document.getElementById('qcFilterDate').value = todayIsoStr;
                 loadDataFromCloud();
             }
         }
 
         async function updateQcStatus(id, newStatus) {
             let { error } = await _supabase.from('karantina_qc').update({ status_aktif: newStatus }).eq('id', id);
-            if (error) {
-                alert('Gagal memperbarui status ke database!');
-            } else {
-                loadDataFromCloud();
-                alert('Status berhasil diubah menjadi: ' + newStatus);
-            }
+            if (error) alert('Gagal update status!');
+            else loadDataFromCloud();
         }
 
         async function deleteQcItem(id) {
-            if(confirm('Apakah Anda yakin ingin menghapus data karantina ini?')) {
-                let { error } = await _supabase.from('karantina_qc').delete().eq('id', id);
-                if (error) alert('Gagal menghapus data dari database!');
-                else loadDataFromCloud();
+            if(confirm('Hapus data karantina ini?')) {
+                await _supabase.from('karantina_qc').delete().eq('id', id);
+                loadDataFromCloud();
             }
         }
 
@@ -1642,7 +1938,7 @@
             let activeHolds = qcHistoryData.filter(item => item.status === 'HOLD');
 
             if(activeHolds.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Tidak ada barang dalam status karantina.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Tidak ada barang dalam karantina.</td></tr>';
                 return;
             }
 
@@ -1655,12 +1951,10 @@
                     <td class="text-slate-500 text-[11px]">${item.palletrange}</td>
                     <td class="fw-bold text-rose-600">${item.holdmanual}</td>
                     <td class="text-start">${item.reason}</td>
-                    <td><span class="badge bg-rose-100 text-rose-700 fw-bold px-2 py-1">HOLD</span><br><small class="text-indigo-600 fw-bold">${item.pallets}</small></td>
+                    <td><span class="badge bg-rose-100 text-rose-700 fw-bold px-2 py-1">HOLD</span></td>
                     <td>
-                        <div class="d-flex justify-content-center gap-1">
-                            <button class="btn btn-sm btn-success py-0 px-2 text-[11px] fw-bold" onclick="updateQcStatus('${item.id}', 'RELEASED')">Release</button>
-                            <button class="btn btn-sm btn-outline-danger py-0 px-2 text-[11px] fw-bold" onclick="deleteQcItem('${item.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
-                        </div>
+                        <button class="btn btn-sm btn-success py-0 px-2 text-[11px] fw-bold" onclick="updateQcStatus('${item.id}', 'RELEASED')">Release</button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2 text-[11px] fw-bold" onclick="deleteQcItem('${item.id}')"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>`;
             });
@@ -1672,30 +1966,21 @@
             let gudang = document.getElementById('pGudang').value;
             let plant = document.getElementById('pPlant').value;
             let line = document.getElementById('pLine').value;
-            let formattedDateStr = document.getElementById('pTanggal').value; 
-
+            let formattedDateStr = document.getElementById('pTanggal').value;
             let shift = document.getElementById('pShift').value;
             let skuInputFull = document.getElementById('pSku').value;
             let kodefikasiVal = document.getElementById('pKodefikasi').value || '-';
             let palletRange = document.getElementById('pPalletRange').value;
 
             let targetTable = category === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
-            let qtVal = category === 'Ekspor' ? (document.getElementById('pQt').value || '-') : '-';
-            let prodateVal = category === 'Ekspor' ? document.getElementById('pProdate').value : formattedDateStr;
-            let expDateVal = category === 'Ekspor' ? document.getElementById('pExpDate').value : '-';
-            let buyerVal = category === 'Ekspor' ? document.getElementById('pBuyerText').value : 'Lokal / Domestik';
-
             let rowTrs = document.getElementById('penerimaanRowsBody').children;
             if(rowTrs.length === 0) { alert('Harap tambahkan minimal 1 baris lokasi rak!'); return; }
-
-            let hasError = false;
 
             for(let tr of rowTrs) {
                 let idx = tr.id.split('_')[1];
                 let blockVal = document.getElementById('pBlock_' + idx).value;
                 let rowVal = document.getElementById('pRowSelect_' + idx).value;
                 let krtVal = parseFloat(document.getElementById('pCarton_' + idx).value) || 0;
-                let lokasiTarget = `${blockVal} - ${rowVal}`;
 
                 let newItem = {
                     sku: skuInputFull,
@@ -1707,67 +1992,47 @@
                     kodefikasi: kodefikasiVal,
                     pallet: palletRange,
                     karton: krtVal,
-                    lokasi: lokasiTarget
+                    lokasi: `${blockVal} - ${rowVal}`,
+                    prodate: category === 'Ekspor' ? document.getElementById('pProdate').value : formattedDateStr,
+                    exp_date: category === 'Ekspor' ? document.getElementById('pExpDate').value : '-',
+                    nomor_qt: category === 'Ekspor' ? document.getElementById('pQt').value : '-',
+                    buyer_negara: category === 'Ekspor' ? document.getElementById('pBuyerText').value : 'Lokal'
                 };
 
-                if (category === 'Ekspor') {
-                    newItem.nomor_qt = qtVal;
-                    newItem.prodate = prodateVal;
-                    newItem.exp_date = expDateVal;
-                    newItem.buyer_negara = buyerVal;
-                } else {
-                    newItem.prodate = prodateVal;
-                }
-
                 let { error } = await _supabase.from(targetTable).insert([newItem]);
-                if (error) {
-                    alert('Gagal menyimpan ke database! Error: ' + error.message);
-                    hasError = true;
-                    break;
-                }
+                if (error) { alert('Gagal menyimpan penerimaan!'); return; }
             }
 
-            if (!hasError) {
-                closeModal('modalPenerimaan');
-                e.target.reset();
-                document.getElementById('pTanggal').value = todayIsoStr;
-                alert('Penerimaan barang (' + category + ') berhasil disimpan ke Supabase!');
+            alert('Penerimaan barang berhasil disimpan!');
+            closeModal('modalPenerimaan');
+            e.target.reset();
+            loadDataFromCloud();
+        }
+
+        async function deleteReportItem(id, isEkspor) {
+            if(confirm('Hapus log ini dari database?')) {
+                let tableName = isEkspor ? 'stok_ekspor' : 'stok_lokal';
+                await _supabase.from(tableName).delete().eq('id', id);
                 loadDataFromCloud();
             }
         }
 
-        async function deleteReportItem(id, isEkspor) {
-            if(confirm('Apakah Anda yakin ingin menghapus log ini dari database?')) {
-                let tableName = isEkspor ? 'stok_ekspor' : 'stok_lokal';
-                let { error } = await _supabase.from(tableName).delete().eq('id', id);
-                if (error) alert('Gagal menghapus data!');
-                else loadDataFromCloud();
-            }
-        }
-
-        function renderReportTable() {
-            populateReportTableRows(binData);
-        }
-
+        function renderReportTable() { populateReportTableRows(binData); }
         function filterReportTable() {
             let searchVal = document.getElementById('reportSearch').value.toLowerCase().trim();
             let catVal = document.getElementById('reportFilterCat').value;
-            let dateVal = document.getElementById('reportFilterDate').value;
-
             let filtered = binData.filter(item => {
                 if(item.gudang === 'Stock Opname') return false;
-                let textMatch = !searchVal || (item.sku && item.sku.toLowerCase().includes(searchVal)) || (item.pallet && item.pallet.toLowerCase().includes(searchVal)) || (item.lokasi && item.lokasi.toLowerCase().includes(searchVal));
+                let textMatch = !searchVal || (item.sku && item.sku.toLowerCase().includes(searchVal)) || (item.pallet && item.pallet.toLowerCase().includes(searchVal));
                 let catMatch = !catVal || item.category === catVal;
                 return textMatch && catMatch;
             });
-
             populateReportTableRows(filtered);
         }
 
         function resetReportFilter() {
             document.getElementById('reportSearch').value = '';
             document.getElementById('reportFilterCat').value = '';
-            document.getElementById('reportFilterDate').value = '';
             renderReportTable();
         }
 
@@ -1775,34 +2040,30 @@
             let tbody = document.getElementById('reportTableBody');
             if(!tbody) return;
             tbody.innerHTML = '';
-
             let penerimaanItems = dataList.filter(item => item.gudang !== 'Stock Opname');
+
             if(penerimaanItems.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Tidak ada riwayat penerimaan barang di cloud.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Tidak ada riwayat penerimaan.</td></tr>';
                 return;
             }
 
-            penerimaanItems.forEach((item) => {
-                let catBadge = item.category === 'Ekspor' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700';
+            penerimaanItems.forEach(item => {
                 let kartonVal = parseFloat(item.karton) || 0;
                 let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
                 let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
                 let pltVal = (kartonVal / stdKrt).toFixed(2);
-                let qtDisplay = item.nomor_qt ? `<span class="badge bg-indigo-50 text-indigo-700 fw-bold">${item.nomor_qt}</span>` : '-';
 
                 tbody.innerHTML += `<tr>
-                    <td><span class="badge ${catBadge} px-2 py-1 fw-bold">${item.category || 'Lokal'}</span></td>
-                    <td>${item.tanggal_masuk || item.tanggal_tarikan || '-'}</td>
+                    <td><span class="badge ${item.category === 'Ekspor' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}">${item.category || 'Lokal'}</span></td>
+                    <td>${item.tanggal_masuk || '-'}</td>
                     <td>Plant ${item.plant || '-'} - ${item.line_produksi || '-'}</td>
-                    <td>${qtDisplay}</td>
+                    <td>${item.nomor_qt || '-'}</td>
                     <td class="text-start fw-semibold">${item.sku}</td>
-                    <td><span class="badge bg-amber-50 text-amber-700">${item.kodefikasi || '-'}</span></td>
+                    <td>${item.kodefikasi || '-'}</td>
                     <td><span class="badge bg-indigo-50 text-indigo-600">${item.lokasi}</span></td>
                     <td class="fw-bold">${item.pallet}</td>
-                    <td class="fw-bold text-emerald-600">${pltVal} Pallet (${kartonVal} krt)</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', ${item.category === 'Ekspor'})"><i class="fa-solid fa-trash"></i> Hapus</button>
-                    </td>
+                    <td class="fw-bold text-emerald-600">${pltVal} Plt (${kartonVal} krt)</td>
+                    <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', ${item.category === 'Ekspor'})"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             });
         }
@@ -1814,11 +2075,11 @@
             let opnameItems = binData.filter(item => item.gudang === 'Stock Opname');
 
             if(opnameItems.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Belum ada riwayat stock opname di cloud.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Belum ada riwayat stock opname.</td></tr>';
                 return;
             }
 
-            opnameItems.forEach((item) => {
+            opnameItems.forEach(item => {
                 let kartonVal = parseFloat(item.karton) || 0;
                 let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
                 let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
@@ -1826,15 +2087,13 @@
 
                 tbody.innerHTML += `<tr>
                     <td>${item.tanggal_masuk || '-'}</td>
-                    <td><span class="badge bg-purple-100 text-purple-700">${item.tujuan_gudang || '-'}</span></td>
+                    <td>${item.tujuan_gudang || '-'}</td>
                     <td>Plant ${item.shift_kerja || '-'}</td>
                     <td>-</td>
                     <td class="text-start fw-semibold">${item.sku}</td>
-                    <td><span class="badge bg-slate-100 text-slate-700">${item.lokasi}</span></td>
-                    <td class="fw-bold text-emerald-600">${kartonVal} krt (${pltVal} Pallet)</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', false)"><i class="fa-solid fa-trash"></i> Hapus</button>
-                    </td>
+                    <td>${item.lokasi}</td>
+                    <td class="fw-bold text-emerald-600">${kartonVal} krt (${pltVal} Plt)</td>
+                    <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', false)"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             });
         }
@@ -1846,42 +2105,29 @@
             let agingItems = binData.filter(item => item.tujuan_gudang && item.tujuan_gudang.includes('Aging'));
 
             if(agingItems.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Belum ada data produk di Gudang Aging.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Tidak ada data di Gudang Aging.</td></tr>';
                 return;
             }
 
             const nowTime = new Date().getTime();
             agingItems.forEach(item => {
-                let checkStr = (item.sku || "").toUpperCase();
-                let isBengBeng = checkStr.includes('BENG');
-                let statusBadge = '';
-                let lamaAgingText = '-';
-
-                if (isBengBeng) {
+                let isBengBeng = (item.sku || "").toUpperCase().includes('BENG');
+                let diffDays = 0;
+                if(isBengBeng) {
                     let itemTime = item.tanggal_masuk ? new Date(item.tanggal_masuk).getTime() : nowTime;
-                    let diffDays = Math.floor((nowTime - itemTime) / (1000 * 60 * 60 * 24));
-                    if(diffDays < 0) diffDays = 0;
-                    
-                    let isReady = diffDays >= 9;
-                    lamaAgingText = `${diffDays} Hari`;
-                    statusBadge = isReady ? '<span class="badge bg-success px-2 py-1">Ready</span>' : `<span class="badge bg-warning text-dark px-2 py-1">Aging (${9 - diffDays} hari lagi)</span>`;
-                } else {
-                    lamaAgingText = '<span class="text-slate-400">Non-Aging (Overflow)</span>';
-                    statusBadge = '<span class="badge bg-emerald-100 text-emerald-700 px-2 py-1 fw-bold">Ready / Bebas Aging</span>';
+                    diffDays = Math.max(0, Math.floor((nowTime - itemTime) / (1000 * 60 * 60 * 24)));
                 }
-
                 let kartonVal = parseFloat(item.karton) || 0;
                 let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
                 let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
-                let pltVal = (kartonVal / stdKrt).toFixed(2);
 
                 tbody.innerHTML += `<tr>
                     <td class="text-start">${item.sku}</td>
-                    <td>${item.tanggal_masuk || item.tanggal_tarikan || '-'}</td>
-                    <td class="fw-semibold text-indigo-600">${lamaAgingText}</td>
-                    <td><span class="badge bg-slate-100 text-slate-700">${item.lokasi}</span></td>
-                    <td class="fw-bold">${pltVal} Plt (${kartonVal} krt)</td>
-                    <td>${statusBadge}</td>
+                    <td>${item.tanggal_masuk || '-'}</td>
+                    <td class="fw-semibold text-indigo-600">${isBengBeng ? diffDays + ' Hari' : 'Non-Aging'}</td>
+                    <td>${item.lokasi}</td>
+                    <td>${(kartonVal / stdKrt).toFixed(2)} Plt (${kartonVal} krt)</td>
+                    <td>${isBengBeng ? (diffDays >= 9 ? '<span class="badge bg-success">Ready</span>' : '<span class="badge bg-warning text-dark">Aging</span>') : '<span class="badge bg-emerald-100 text-emerald-700">Bebas Aging</span>'}</td>
                 </tr>`;
             });
         }
@@ -1893,27 +2139,20 @@
 
             for(let i = 0; i < rows.length; i++) {
                 let idx = rows[i].id.split('_')[1];
-                let block = document.getElementById('opRackBlock_' + idx).value;
-                let row = document.getElementById('opRow_' + idx).value;
-                let skuInputFull = document.getElementById('opSku_' + idx).value;
-                let carton = parseFloat(document.getElementById('opCarton_' + idx).value) || 0;
-
                 let newItem = {
                     gudang: 'Stock Opname',
                     tujuan_gudang: document.getElementById('opDestWarehouse').value,
                     tanggal_masuk: document.getElementById('opGlobalDate').value,
-                    shift_kerja: document.getElementById('opPlantCode').value,
-                    sku: skuInputFull,
-                    lokasi: block + ' - ' + row,
+                    shift_kerja: document.getElementById('opStockKeeper').value,
+                    sku: document.getElementById('opSku_' + idx).value,
+                    lokasi: document.getElementById('opRackBlock_' + idx).value + ' - ' + document.getElementById('opRow_' + idx).value,
                     pallet: 'OPNAME-AUDIT',
-                    karton: carton
+                    karton: parseFloat(document.getElementById('opCarton_' + idx).value) || 0
                 };
-
-                let { error } = await _supabase.from('stok_lokal').insert([newItem]);
-                if (error) { alert('Gagal simpan opname!'); return; }
+                await _supabase.from('stok_lokal').insert([newItem]);
             }
 
-            alert('Hasil Stock Opname berhasil disimpan ke database!');
+            alert('Hasil Stock Opname berhasil disimpan!');
             clearOpnameRows();
             loadDataFromCloud();
         }
@@ -1923,25 +2162,23 @@
             let tbody = document.getElementById('searchResultTableBody');
             tbody.innerHTML = '';
             if(!keyword) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Masukkan kata kunci untuk mencari posisi barang di rak.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Masukkan kata kunci pencarian.</td></tr>';
                 return;
             }
             let filtered = binData.filter(i => (i.sku && i.sku.toLowerCase().includes(keyword)) || (i.lokasi && i.lokasi.toLowerCase().includes(keyword)) || (i.pallet && i.pallet.toLowerCase().includes(keyword)));
             if(filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Tidak ditemukan barang yang sesuai.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Tidak ditemukan.</td></tr>';
                 return;
             }
             filtered.forEach(item => {
                 let kartonVal = parseFloat(item.karton) || 0;
                 let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
                 let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
-                let pltVal = (kartonVal / stdKrt).toFixed(2);
-
                 tbody.innerHTML += `<tr>
                     <td class="text-start fw-semibold">${item.sku}</td>
                     <td><span class="badge bg-indigo-50 text-indigo-600">${item.lokasi}</span></td>
                     <td class="fw-bold">${item.pallet}</td>
-                    <td class="text-slate-600 text-[11px]">${pltVal} Plt (${kartonVal} krt)</td>
+                    <td class="text-slate-600 text-[11px]">${(kartonVal / stdKrt).toFixed(2)} Plt (${kartonVal} krt)</td>
                 </tr>`;
             });
         }
@@ -1949,48 +2186,34 @@
         let currentWarehouse = 'INDUK';
         function switchWarehouse(wh) {
             currentWarehouse = wh;
-            if(wh === 'INDUK') {
-                document.getElementById('btnWhInduk').className = "btn btn-sm btn-primary";
-                document.getElementById('btnWhAging').className = "btn btn-sm btn-outline-secondary";
-            } else {
-                document.getElementById('btnWhAging').className = "btn btn-sm btn-primary";
-                document.getElementById('btnWhInduk').className = "btn btn-sm btn-outline-secondary";
-            }
+            document.getElementById('btnWhInduk').className = wh === 'INDUK' ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
+            document.getElementById('btnWhAging').className = wh === 'AGING' ? "btn btn-sm btn-primary" : "btn btn-sm btn-outline-secondary";
             renderBinMap();
         }
 
-        let activeSelectedBlock = '';
         function openBlockDetailModal(blokName) {
-            activeSelectedBlock = blokName;
             document.getElementById('modalDetailBlokTitle').innerHTML = `<i class="fa-solid fa-boxes-stacked mr-1.5"></i> Rincian Isi ${blokName} Per Lorong`;
-            
             let tbody = document.getElementById('detailBlokTableBody');
             tbody.innerHTML = '';
             let targetGudang = currentWarehouse === 'INDUK' ? 'Gudang Induk' : 'Gudang Aging';
 
-            let itemsInBlock = binData.filter(item => {
-                let itemGudang = item.tujuan_gudang || item.gudang || '';
-                return itemGudang.includes(targetGudang) && item.lokasi && item.lokasi.includes(blokName);
-            });
+            let itemsInBlock = binData.filter(item => (item.tujuan_gudang || item.gudang || '').includes(targetGudang) && item.lokasi && item.lokasi.includes(blokName));
 
             if(itemsInBlock.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-4">Tidak ada barang tersimpan di ${blokName}.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="text-muted py-4">Tidak ada barang di ${blokName}.</td></tr>`;
             } else {
-                itemsInBlock.forEach((item) => {
+                itemsInBlock.forEach(item => {
                     let globalIndex = binData.findIndex(i => i === item);
                     let kartonVal = parseFloat(item.karton) || 0;
                     let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
                     let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
-                    let pltVal = (kartonVal / stdKrt).toFixed(2);
 
                     tbody.innerHTML += `<tr>
                         <td class="fw-bold text-indigo-700">${item.lokasi}</td>
                         <td class="text-start fw-semibold">${item.sku}</td>
                         <td class="fw-bold">${item.pallet}</td>
-                        <td class="fw-bold text-emerald-600">${pltVal} Plt (${kartonVal} krt)</td>
-                        <td>
-                            <button class="btn btn-sm btn-primary py-0 px-2.5 fw-bold text-[11px]" onclick="openRelokasiFormModal(${globalIndex})"><i class="fa-solid fa-arrow-right-arrow-left mr-1"></i> Pindahkan</button>
-                        </td>
+                        <td class="fw-bold text-emerald-600">${(kartonVal / stdKrt).toFixed(2)} Plt (${kartonVal} krt)</td>
+                        <td><button class="btn btn-sm btn-primary py-0 px-2.5 fw-bold text-[11px]" onclick="openRelokasiFormModal(${globalIndex})">Pindahkan</button></td>
                     </tr>`;
                 });
             }
@@ -2000,16 +2223,12 @@
         function openRelokasiFormModal(index) {
             let item = binData[index];
             if(!item) return;
-
             document.getElementById('relocItemIndex').value = index;
             document.getElementById('relocSkuDisplay').value = item.sku;
             document.getElementById('relocAsal').value = item.lokasi;
             document.getElementById('relocPetugas').value = '';
-            
-            let destWh = item.tujuan_gudang || item.gudang || 'Gudang Induk';
-            document.getElementById('relocDestWh').value = destWh;
+            document.getElementById('relocDestWh').value = item.tujuan_gudang || item.gudang || 'Gudang Induk';
             updateRelocBlockOptions();
-
             closeModal('modalDetailBlok');
             document.getElementById('modalRelokasiForm').classList.remove('hidden');
         }
@@ -2018,8 +2237,7 @@
             let wh = document.getElementById('relocDestWh').value;
             let blockSelect = document.getElementById('relocDestBlock');
             blockSelect.innerHTML = '<option value="">-- Pilih Blok --</option>';
-            let blocks = wh.includes('Induk') ? indukBlocks : agingBlocks;
-            blocks.forEach(b => blockSelect.innerHTML += `<option value="Blok ${b}">Blok ${b}</option>`);
+            (wh.includes('Induk') ? indukBlocks : agingBlocks).forEach(b => blockSelect.innerHTML += `<option value="Blok ${b}">Blok ${b}</option>`);
             document.getElementById('relocDestRow').innerHTML = '<option value="">-- Pilih Row --</option>';
         }
 
@@ -2032,105 +2250,63 @@
             let dummyConfig = getBlockConfig(wh, blockVal, 1);
             for(let i = 1; i <= dummyConfig.totalRows; i++) {
                 let rNum = i < 10 ? '0' + i : i;
-                let rowNameStr = `Row ${rNum}`;
-                let actualConfig = getBlockConfig(wh, blockVal, i);
-                let currentFilledPlt = getRowTotalPallets(wh, blockVal, rowNameStr);
-                let sisaKapasitas = Math.max(0, actualConfig.maxPltPerRow - currentFilledPlt);
-                let isFull = currentFilledPlt >= actualConfig.maxPltPerRow;
-
-                let opt = document.createElement('option');
-                opt.value = rowNameStr;
-                if (isFull) {
-                    opt.disabled = true;
-                    opt.innerText = `${rowNameStr} (Penuh - Terisi ${currentFilledPlt.toFixed(1)}/${actualConfig.maxPltPerRow} Plt)`;
-                    opt.style.color = '#991b1b';
-                    opt.style.backgroundColor = '#fee2e2';
-                } else {
-                    opt.innerText = `${rowNameStr} (Sisa Kosong: ${sisaKapasitas.toFixed(1)} Plt dari ${actualConfig.maxPltPerRow} Plt)`;
-                }
-                rowSelect.appendChild(opt);
+                rowSelect.innerHTML += `<option value="Row ${rNum}">Row ${rNum}</option>`;
             }
         }
 
         async function processRelokasi(e) {
             e.preventDefault();
             let index = document.getElementById('relocItemIndex').value;
-            let petugas = document.getElementById('relocPetugas').value.trim();
-            let destWh = document.getElementById('relocDestWh').value;
-            let destBlock = document.getElementById('relocDestBlock').value;
-            let destRow = document.getElementById('relocDestRow').value;
-
-            if(!petugas || !destBlock || !destRow) {
-                alert('Harap isi nama petugas dan pilih lokasi tujuan lengkap!');
-                return;
-            }
-
             let item = binData[index];
             if(!item) return;
-
-            let lokasiAsalLama = item.lokasi;
-            let lokasiTujuanBaru = `${destBlock} - ${destRow}`;
 
             let logItem = {
                 tanggal_relokasi: new Date().toLocaleDateString('id-ID'),
                 sku: item.sku,
-                lokasi_asal: lokasiAsalLama,
-                nama_petugas: petugas,
-                tujuan_gudang: destWh,
-                blok_tujuan: destBlock,
-                lorong_tujuan: destRow
+                lokasi_asal: item.lokasi,
+                nama_petugas: document.getElementById('relocPetugas').value.trim(),
+                tujuan_gudang: document.getElementById('relocDestWh').value,
+                blok_tujuan: document.getElementById('relocDestBlock').value,
+                lorong_tujuan: document.getElementById('relocDestRow').value
             };
 
-            let { error } = await _supabase.from('relokasi__barang').insert([logItem]);
-            if (error) {
-                alert('Gagal menyimpan riwayat relokasi ke database!');
-                return;
-            }
-
+            await _supabase.from('relokasi__barang').insert([logItem]);
             let targetTable = item.category === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
-            if (item.id) {
-                await _supabase.from(targetTable).update({ lokasi: lokasiTujuanBaru, tujuan_gudang: destWh }).eq('id', item.id);
+            if(item.id) {
+                await _supabase.from(targetTable).update({ lokasi: `${logItem.blok_tujuan} - ${logItem.lorong_tujuan}`, tujuan_gudang: logItem.tujuan_gudang }).eq('id', item.id);
             }
 
-            alert(`Berhasil memindahkan barang ke ${lokasiTujuanBaru}!`);
+            alert('Berhasil memindahkan barang!');
             closeModal('modalRelokasiForm');
             loadDataFromCloud();
         }
 
         function toggleRelokasiLogModal() {
-            renderRelokasiLogTable();
+            let tbody = document.getElementById('relokasiLogTableBody');
+            tbody.innerHTML = '';
+            if(relokasiLogData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted py-4">Belum ada riwayat relokasi.</td></tr>';
+            } else {
+                relokasiLogData.forEach(log => {
+                    tbody.innerHTML += `<tr>
+                        <td>${log.waktu}</td>
+                        <td class="fw-bold text-indigo-700">${log.petugas}</td>
+                        <td class="text-start fw-semibold">${log.sku}</td>
+                        <td><span class="badge bg-slate-100 text-slate-700">${log.asal}</span></td>
+                        <td><span class="badge bg-emerald-100 text-emerald-700">${log.tujuan}</span></td>
+                        <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteRelokasiLog('${log.id}')"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>`;
+                });
+            }
             document.getElementById('modalRelokasiLog').classList.remove('hidden');
         }
 
         async function deleteRelokasiLog(id) {
-            if(confirm('Hapus log riwayat relokasi ini?')) {
+            if(confirm('Hapus log relokasi ini?')) {
                 await _supabase.from('relokasi__barang').delete().eq('id', id);
                 loadDataFromCloud();
+                closeModal('modalRelokasiLog');
             }
-        }
-
-        function renderRelokasiLogTable() {
-            let tbody = document.getElementById('relokasiLogTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-
-            if(relokasiLogData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-muted py-4">Belum ada riwayat relokasi barang.</td></tr>';
-                return;
-            }
-
-            relokasiLogData.forEach((log) => {
-                tbody.innerHTML += `<tr>
-                    <td>${log.waktu}</td>
-                    <td class="fw-bold text-indigo-700">${log.petugas}</td>
-                    <td class="text-start fw-semibold">${log.sku}</td>
-                    <td><span class="badge bg-slate-100 text-slate-700 fw-bold">${log.asal}</span></td>
-                    <td><span class="badge bg-emerald-100 text-emerald-700">${log.tujuan}</span></td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteRelokasiLog('${log.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
-                    </td>
-                </tr>`;
-            });
         }
 
         function renderBinMap() {
@@ -2145,28 +2321,12 @@
                 let totalPltInBlock = getBlockTotalPallets(targetGudang, blockNameCode);
                 let config = getBlockConfig(targetGudang, blockNameCode, 1);
                 let maxBlockCapacity = config.totalRows * config.maxPltPerRow;
-
-                let colorClass = 'bin-empty';
-                let statusText = `Kosong (0 / ${maxBlockCapacity} Plt)`;
                 let ratio = totalPltInBlock / maxBlockCapacity;
-
-                if(totalPltInBlock > 0 && ratio < 0.5) {
-                    colorClass = 'bin-low';
-                    statusText = `${totalPltInBlock.toFixed(1)} / ${maxBlockCapacity} Plt (<50%)`;
-                } else if(ratio >= 0.5 && ratio < 0.75) {
-                    colorClass = 'bin-med';
-                    statusText = `${totalPltInBlock.toFixed(1)} / ${maxBlockCapacity} Plt (50-75%)`;
-                } else if(ratio >= 0.75 && ratio < 1.0) {
-                    colorClass = 'bin-high';
-                    statusText = `${totalPltInBlock.toFixed(1)} / ${maxBlockCapacity} Plt (75-99%)`;
-                } else if(totalPltInBlock >= maxBlockCapacity) {
-                    colorClass = 'bin-full';
-                    statusText = `${totalPltInBlock.toFixed(1)} / ${maxBlockCapacity} Plt (Penuh)`;
-                }
+                let colorClass = totalPltInBlock > 0 ? (ratio >= 0.75 ? 'bin-high' : 'bin-low') : 'bin-empty';
 
                 container.innerHTML += `<div class="p-3 rounded-xl border text-center shadow-2xs bin-item ${colorClass}" onclick="openBlockDetailModal('Blok ${b}')">
                     <div class="font-bold text-sm">Blok ${b} FG</div>
-                    <div class="text-[10px] mt-1 font-semibold">${statusText}</div>
+                    <div class="text-[10px] mt-1 font-semibold">${totalPltInBlock.toFixed(1)} / ${maxBlockCapacity} Plt</div>
                 </div>`;
             });
         }

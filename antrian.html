@@ -465,7 +465,7 @@ async function loadDataFromCloud() {
 
         let { data: stokLokal, error: errLokal } = await _supabase.from('stok_lokal').select('*');
         let { data: stokEkspor, error: errEkspor } = await _supabase.from('stok_ekspor').select('*');
-        let { data: stokSap, error: errSap } = await _supabase.from('stok_awal_sap').select('*');
+        let { data: stokSap, error: errSap } = await _supabase.from('stok_sap').select('*');
         
         binStockData = [];
         if (!errLokal && stokLokal) {
@@ -647,7 +647,7 @@ async function loadAvailableBatchesForSku(skuCode) {
     
     let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
     let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
-    let { data: stokSap } = await _supabase.from('stok_awal_sap').select('*');
+    let { data: stokSap } = await _supabase.from('stok_sap').select('*');
     binStockData = [];
     if (stokLokal) stokLokal.forEach(i => binStockData.push({ ...i, kategori_stok: 'Lokal' }));
     if (stokEkspor) stokEkspor.forEach(i => binStockData.push({ ...i, kategori_stok: 'Ekspor' }));
@@ -817,7 +817,7 @@ async function openPickingListModal(index) {
 
     let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
     let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
-    let { data: stokSap } = await _supabase.from('stok_awal_sap').select('*');
+    let { data: stokSap } = await _supabase.from('stok_sap').select('*');
     binStockData = [];
     if (stokLokal) stokLokal.forEach(i => binStockData.push({ ...i, kategori_stok: 'Lokal' }));
     if (stokEkspor) stokEkspor.forEach(i => binStockData.push({ ...i, kategori_stok: 'Ekspor' }));
@@ -934,7 +934,7 @@ async function addItemToTruckPickingList() {
     let { data: currentDbStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', selectedBatchData.lokasi);
 
     if (!currentDbStock || currentDbStock.length === 0) {
-        targetTable = 'stok_awal_sap';
+        targetTable = 'stok_sap';
         let { data: sapStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', selectedBatchData.lokasi);
         currentDbStock = sapStock;
     }
@@ -952,7 +952,7 @@ async function addItemToTruckPickingList() {
             if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
             
             let updatePayload = { karton: newKarton };
-            if (targetTable !== 'stok_awal_sap') {
+            if (targetTable !== 'stok_sap') {
                 updatePayload.konversi = konvStr;
             }
             await _supabase.from(targetTable).update(updatePayload).eq('id', dbItem.id);

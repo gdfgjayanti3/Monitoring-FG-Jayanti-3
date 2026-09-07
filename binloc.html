@@ -460,7 +460,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h6 class="fw-bold mb-0 text-slate-700 text-xs">Daftar Item yang Dihitung Fisik</h6>
                         <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addOpnameRow()">Tambah Baris</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addOpnameRow()">Tambah Baris SKU</button>
                             <button type="button" class="btn btn-sm btn-outline-danger" onclick="clearOpnameRows()">Reset Ulang</button>
                         </div>
                     </div>
@@ -474,6 +474,7 @@
                                     <th>SKU Produk</th>
                                     <th>Fisik (Karton)</th>
                                     <th>Konversi Pallet</th>
+                                    <th>Aksi</th>
                                 </tr>
                             </thead>
                             <tbody id="multiOpnameBody"></tbody>
@@ -1436,6 +1437,7 @@
                 opnameRowIdx++;
                 let tr = document.createElement('tr');
                 tr.id = 'opRow_' + opnameRowIdx;
+                tr.setAttribute('data-sku', item.sku);
 
                 let blockOpts = '<option value="">-- Pilih Blok --</option>';
                 blocks.forEach(b => { blockOpts += `<option value="Blok ${b}">Blok ${b}</option>`; });
@@ -1448,11 +1450,47 @@
                     </td>
                     <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" placeholder="0" oninput="calcMultiRow(${opnameRowIdx})"></td>
                     <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[10px]" onclick="addExtraRackForSku('${item.sku}')" title="Tambah Blok/Rak untuk SKU ini">+ Rak</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px] mt-1" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i></button>
+                    </td>
                 `;
                 tbody.appendChild(tr);
             });
 
             document.getElementById('opStockKeeper').value = selectedManpower;
+        }
+
+        function addExtraRackForSku(skuValue) {
+            let tbody = document.getElementById('multiOpnameBody');
+            opnameRowIdx++;
+            let wh = document.getElementById('opDestWarehouse').value;
+            let blocks = wh.includes('Induk') ? indukBlocks : agingBlocks;
+            let blockOpts = '<option value="">-- Pilih Blok --</option>';
+            blocks.forEach(b => { blockOpts += `<option value="Blok ${b}">Blok ${b}</option>`; });
+
+            let tr = document.createElement('tr');
+            tr.id = 'opRow_' + opnameRowIdx;
+            tr.setAttribute('data-sku', skuValue);
+
+            tr.innerHTML = `
+                <td><select class="form-select form-select-sm border-slate-200" id="opRackBlock_${opnameRowIdx}" required>${blockOpts}</select></td>
+                <td><input type="text" class="form-control form-control-sm border-slate-200" id="opRow_${opnameRowIdx}" required placeholder="Row 01"></td>
+                <td class="relative">
+                    <input type="text" class="form-control form-control-sm border-slate-200 bg-slate-50 border-dashed border-sky-300" id="opSku_${opnameRowIdx}" required value="${skuValue}" readonly title="SKU Ekstra Rak">
+                </td>
+                <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" placeholder="0" oninput="calcMultiRow(${opnameRowIdx})"></td>
+                <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function removeOpnameRow(idx) {
+            let tr = document.getElementById('opRow_' + idx);
+            if(tr) tr.remove();
         }
 
         function openOpnameReportModal() {
@@ -1626,6 +1664,9 @@
                 </td>
                 <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" oninput="calcMultiRow(${opnameRowIdx})" placeholder="Karton"></td>
                 <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i></button>
+                </td>
             `;
             tbody.appendChild(tr);
         }
@@ -2139,15 +2180,20 @@
 
             for(let i = 0; i < rows.length; i++) {
                 let idx = rows[i].id.split('_')[1];
+                let blockVal = document.getElementById('opRackBlock_' + idx).value;
+                let rowVal = document.getElementById('opRow_' + idx).value;
+                let skuVal = document.getElementById('opSku_' + idx).value;
+                let cartonVal = parseFloat(document.getElementById('opCarton_' + idx).value) || 0;
+
                 let newItem = {
                     gudang: 'Stock Opname',
                     tujuan_gudang: document.getElementById('opDestWarehouse').value,
                     tanggal_masuk: document.getElementById('opGlobalDate').value,
                     shift_kerja: document.getElementById('opStockKeeper').value,
-                    sku: document.getElementById('opSku_' + idx).value,
-                    lokasi: document.getElementById('opRackBlock_' + idx).value + ' - ' + document.getElementById('opRow_' + idx).value,
+                    sku: skuVal,
+                    lokasi: blockVal + ' - ' + rowVal,
                     pallet: 'OPNAME-AUDIT',
-                    karton: parseFloat(document.getElementById('opCarton_' + idx).value) || 0
+                    karton: cartonVal
                 };
                 await _supabase.from('stok_lokal').insert([newItem]);
             }

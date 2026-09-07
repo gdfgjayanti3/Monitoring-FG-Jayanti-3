@@ -1437,7 +1437,6 @@
                 opnameRowIdx++;
                 let tr = document.createElement('tr');
                 tr.id = 'opRow_' + opnameRowIdx;
-                tr.setAttribute('data-sku', item.sku);
 
                 let blockOpts = '<option value="">-- Pilih Blok --</option>';
                 blocks.forEach(b => { blockOpts += `<option value="Blok ${b}">Blok ${b}</option>`; });
@@ -1451,41 +1450,13 @@
                     <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" placeholder="0" oninput="calcMultiRow(${opnameRowIdx})"></td>
                     <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[10px]" onclick="addExtraRackForSku('${item.sku}')" title="Tambah Blok/Rak untuk SKU ini">+ Rak</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px] mt-1" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
 
             document.getElementById('opStockKeeper').value = selectedManpower;
-        }
-
-        function addExtraRackForSku(skuValue) {
-            let tbody = document.getElementById('multiOpnameBody');
-            opnameRowIdx++;
-            let wh = document.getElementById('opDestWarehouse').value;
-            let blocks = wh.includes('Induk') ? indukBlocks : agingBlocks;
-            let blockOpts = '<option value="">-- Pilih Blok --</option>';
-            blocks.forEach(b => { blockOpts += `<option value="Blok ${b}">Blok ${b}</option>`; });
-
-            let tr = document.createElement('tr');
-            tr.id = 'opRow_' + opnameRowIdx;
-            tr.setAttribute('data-sku', skuValue);
-
-            tr.innerHTML = `
-                <td><select class="form-select form-select-sm border-slate-200" id="opRackBlock_${opnameRowIdx}" required>${blockOpts}</select></td>
-                <td><input type="text" class="form-control form-control-sm border-slate-200" id="opRow_${opnameRowIdx}" required placeholder="Row 01"></td>
-                <td class="relative">
-                    <input type="text" class="form-control form-control-sm border-slate-200 bg-slate-50 border-dashed border-sky-300" id="opSku_${opnameRowIdx}" required value="${skuValue}" readonly title="SKU Ekstra Rak">
-                </td>
-                <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" placeholder="0" oninput="calcMultiRow(${opnameRowIdx})"></td>
-                <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i></button>
-                </td>
-            `;
-            tbody.appendChild(tr);
         }
 
         function removeOpnameRow(idx) {
@@ -2129,8 +2100,8 @@
                 tbody.innerHTML += `<tr>
                     <td>${item.tanggal_masuk || '-'}</td>
                     <td>${item.tujuan_gudang || '-'}</td>
-                    <td>Plant ${item.shift_kerja || '-'}</td>
                     <td>-</td>
+                    <td class="fw-bold text-purple-800">${item.shift_kerja || '-'}</td>
                     <td class="text-start fw-semibold">${item.sku}</td>
                     <td>${item.lokasi}</td>
                     <td class="fw-bold text-emerald-600">${kartonVal} krt (${pltVal} Plt)</td>
@@ -2178,6 +2149,8 @@
             let rows = document.getElementById('multiOpnameBody').children;
             if(rows.length === 0) { alert('Tabel opname kosong!'); return; }
 
+            let manpowerName = document.getElementById('opStockKeeper').value.trim();
+
             for(let i = 0; i < rows.length; i++) {
                 let idx = rows[i].id.split('_')[1];
                 let blockVal = document.getElementById('opRackBlock_' + idx).value;
@@ -2185,13 +2158,15 @@
                 let skuVal = document.getElementById('opSku_' + idx).value;
                 let cartonVal = parseFloat(document.getElementById('opCarton_' + idx).value) || 0;
 
+                let locString = blockVal + (rowVal ? ' - ' + rowVal : '');
+
                 let newItem = {
                     gudang: 'Stock Opname',
                     tujuan_gudang: document.getElementById('opDestWarehouse').value,
                     tanggal_masuk: document.getElementById('opGlobalDate').value,
-                    shift_kerja: document.getElementById('opStockKeeper').value,
+                    shift_kerja: manpowerName,
                     sku: skuVal,
-                    lokasi: blockVal + ' - ' + rowVal,
+                    lokasi: locString,
                     pallet: 'OPNAME-AUDIT',
                     karton: cartonVal
                 };

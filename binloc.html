@@ -847,7 +847,7 @@
                         if (i.sku) {
                             let skuClean = i.sku.trim();
                             let qtyKarton = parseFloat(i.stok_karton) || 0;
-                            sapStockData[skuClean] = qtyKarton / 70;
+                            sapStockData[skuClean] = qtyKarton; // store total karton directly
                             if(i.nama_barang) {
                                 sapNamaBarangMap[skuClean] = i.nama_barang.trim();
                             }
@@ -1220,12 +1220,12 @@
             if(container.style.display === 'block') renderReconciliationTable();
         }
 
-        // FUNGSI PROCESS SAP PASTE
+        // FUNGSI PROCESS SAP PASTE (DENGAN AKUMULASI SKU KEMBAR)
         async function processSapPaste() {
             const text = document.getElementById('sapPasteArea').value.trim();
             if(!text) { alert('Data SAP masih kosong!'); return; }
             let count = 0;
-            let sapRecordsToInsert = [];
+            let sapMapAccumulator = {}; // Accumulate duplicate SKUs
             
             let lines = text.split('\n');
             
@@ -1243,26 +1243,32 @@
                     let qtyVal = parseFloat(cols[3].replace(/\./g, '').replace(/,/g, '.')) || 0;
 
                     if (skuVal && !isNaN(qtyVal)) {
-                        sapStockData[skuVal] = qtyVal / 70; 
+                        sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
                         sapNamaBarangMap[skuVal] = namaBarang;
-                        
-                        sapRecordsToInsert.push({
-                            plant: plantVal,
-                            sku: skuVal,
-                            nama_barang: namaBarang,
-                            stok_karton: qtyVal
-                        });
                         count++;
                     }
                 } else if (cols.length >= 2) {
                     let skuVal = cols[0];
                     let qtyVal = parseFloat(cols[1].replace(/\./g, '').replace(/,/g, '.')) || 0;
                     if (skuVal && !isNaN(qtyVal)) {
-                        sapStockData[skuVal] = qtyVal / 70;
+                        sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
                         count++;
                     }
                 }
             });
+
+            let sapRecordsToInsert = [];
+            sapStockData = {};
+            for (let sku in sapMapAccumulator) {
+                let totalKrt = sapMapAccumulator[sku];
+                sapStockData[sku] = totalKrt; // store total karton directly
+                sapRecordsToInsert.push({
+                    plant: '1115',
+                    sku: sku,
+                    nama_barang: sapNamaBarangMap[sku] || '-',
+                    stok_karton: totalKrt
+                });
+            }
 
             document.getElementById('sapPasteArea').value = '';
             
@@ -1272,7 +1278,7 @@
             if (error) {
                 alert('Gagal menyimpan data SAP ke database! Error: ' + error.message);
             } else {
-                alert('Berhasil memproses ' + count + ' baris data SAP dan tersimpan ke tabel stok_sap!');
+                alert('Berhasil memproses data SAP (duplikat SKU otomatis digabung) dan tersimpan ke tabel stok_sap!');
                 loadDataFromCloud();
                 renderReconciliationTable();
             }
@@ -1686,6 +1692,7 @@
             loadDataFromCloud();
         }
 
+        // FUNGSI RENDER REKONSILIASI (DENGAN KONVERSI BERDASARKAN MASTER SKU)
         function renderReconciliationTable() {
             let tbody = document.getElementById('reconciliationBody');
             if(!tbody) return;
@@ -1696,8 +1703,9 @@
                 return;
             }
             keys.forEach(skuCode => {
-                let sapQtyPlt = parseFloat(sapStockData[skuCode]) || 0;
-                let sapQtyKarton = Math.round(sapQtyPlt * 70);
+                let sapQtyKarton = parseFloat(sapStockData[skuCode]) || 0;
+                let stdKrt = getCartonPerPallet(skuCode);
+                let sapPltVal = sapQtyKarton / stdKrt;
                 
                 let foundItems = binData.filter(i => i.gudang === 'Stock Opname' && i.sku && i.sku.includes(skuCode));
                 let totalFisikPlt = 0;
@@ -1705,9 +1713,9 @@
 
                 foundItems.forEach(item => {
                     let kartonVal = parseFloat(item.karton) || 0;
-                    let stdKrt = masterStockData[skuCode] ? masterStockData[skuCode].cartonPerPallet : 70;
+                    let itemStdKrt = getCartonPerPallet(skuCode);
                     totalFisikKarton += kartonVal;
-                    totalFisikPlt += (kartonVal / stdKrt);
+                    totalFisikPlt += (kartonVal / itemStdKrt);
                 });
 
                 let namaBarangVal = sapNamaBarangMap[skuCode] || '-';
@@ -1715,15 +1723,23 @@
                     namaBarangVal = masterStockData[skuCode].name;
                 }
 
-                let variancePlt = totalFisikPlt - sapQtyPlt;
+                let variancePlt = totalFisikPlt - sapPltVal;
                 let varianceKarton = totalFisikKarton - sapQtyKarton;
                 let balanceBadge = Math.abs(variancePlt) < 0.01 ? '<span class="badge bg-success-subtle text-success border px-2 py-1">Balance</span>' : '<span class="badge bg-danger-subtle text-danger border px-2 py-1">Selisih</span>';
+
+                let sapPltFormatted = Math.floor(sapPltVal);
+                let sapReceh = sapQtyKarton % stdKrt;
+                let sapDisplayStr = sapReceh > 0 ? `${sapPltFormatted} Plt + ${sapReceh} krt` : `${sapPltVal.toFixed(2)} Plt`;
+
+                let fisikPltFormatted = Math.floor(totalFisikPlt);
+                let fisikReceh = totalFisikKarton % stdKrt;
+                let fisikDisplayStr = fisikReceh > 0 ? `${fisikPltFormatted} Plt + ${fisikReceh} krt` : `${totalFisikPlt.toFixed(2)} Plt`;
 
                 tbody.innerHTML += `<tr>
                     <td class="fw-bold text-slate-700">${skuCode}</td>
                     <td class="text-start">${namaBarangVal}</td>
-                    <td class="fw-bold text-indigo-600">${sapQtyPlt.toFixed(2)} Plt <br><small class="text-slate-400">(${sapQtyKarton} krt)</small></td>
-                    <td class="fw-bold text-emerald-600">${totalFisikPlt.toFixed(2)} Plt <br><small class="text-slate-400">(${totalFisikKarton} krt)</small></td>
+                    <td class="fw-bold text-indigo-600">${sapDisplayStr} <br><small class="text-slate-400">(${sapQtyKarton} krt | std ${stdKrt})</small></td>
+                    <td class="fw-bold text-emerald-600">${fisikDisplayStr} <br><small class="text-slate-400">(${totalFisikKarton} krt)</small></td>
                     <td class="fw-bold">${variancePlt.toFixed(2)} Plt <br><small class="text-slate-400">(${varianceKarton} krt)</small></td>
                     <td>${balanceBadge}</td>
                 </tr>`;

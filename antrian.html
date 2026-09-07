@@ -465,6 +465,7 @@ async function loadDataFromCloud() {
 
         let { data: stokLokal, error: errLokal } = await _supabase.from('stok_lokal').select('*');
         let { data: stokEkspor, error: errEkspor } = await _supabase.from('stok_ekspor').select('*');
+        let { data: stokSap, error: errSap } = await _supabase.from('stok_awal_sap').select('*');
         
         binStockData = [];
         if (!errLokal && stokLokal) {
@@ -472,6 +473,13 @@ async function loadDataFromCloud() {
         }
         if (!errEkspor && stokEkspor) {
             stokEkspor.forEach(item => binStockData.push({ ...item, kategori_stok: 'Ekspor' }));
+        }
+        if (!errSap && stokSap) {
+            stokSap.forEach(item => binStockData.push({ 
+                ...item, 
+                prodate: item.tanggal_tarikan || '2026-09-07',
+                kategori_stok: item.lokasi && item.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
+            }));
         }
 
         let { data: trucks, error: errTrucks } = await _supabase.from('antrian_truk').select('*');
@@ -639,9 +647,15 @@ async function loadAvailableBatchesForSku(skuCode) {
     
     let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
     let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
+    let { data: stokSap } = await _supabase.from('stok_awal_sap').select('*');
     binStockData = [];
     if (stokLokal) stokLokal.forEach(i => binStockData.push({ ...i, kategori_stok: 'Lokal' }));
     if (stokEkspor) stokEkspor.forEach(i => binStockData.push({ ...i, kategori_stok: 'Ekspor' }));
+    if (stokSap) stokSap.forEach(i => binStockData.push({ 
+        ...i, 
+        prodate: i.tanggal_tarikan || '2026-09-07',
+        kategori_stok: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
+    }));
 
     let matches = binStockData.filter(b => b.sku && b.sku.toLowerCase().includes(skuCode.toLowerCase()));
     
@@ -803,9 +817,15 @@ async function openPickingListModal(index) {
 
     let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
     let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
+    let { data: stokSap } = await _supabase.from('stok_awal_sap').select('*');
     binStockData = [];
     if (stokLokal) stokLokal.forEach(i => binStockData.push({ ...i, kategori_stok: 'Lokal' }));
     if (stokEkspor) stokEkspor.forEach(i => binStockData.push({ ...i, kategori_stok: 'Ekspor' }));
+    if (stokSap) stokSap.forEach(i => binStockData.push({ 
+        ...i, 
+        prodate: i.tanggal_tarikan || '2026-09-07',
+        kategori_stok: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
+    }));
 
     renderPlTable();
     openModal('modalPickingList');
@@ -913,6 +933,12 @@ async function addItemToTruckPickingList() {
     let targetTable = selectedBatchData.kategori_stok === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
     let { data: currentDbStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', selectedBatchData.lokasi);
 
+    if (!currentDbStock || currentDbStock.length === 0) {
+        targetTable = 'stok_awal_sap';
+        let { data: sapStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', selectedBatchData.lokasi);
+        currentDbStock = sapStock;
+    }
+
     if (currentDbStock && currentDbStock.length > 0) {
         let dbItem = currentDbStock[0];
         let newKarton = parseInt(dbItem.karton) - totalKrt;
@@ -925,10 +951,11 @@ async function addItemToTruckPickingList() {
             let konvStr = `${pltVal} Plt (${newKarton} krt)`;
             if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
             
-            await _supabase.from(targetTable).update({
-                karton: newKarton,
-                konversi: konvStr
-            }).eq('id', dbItem.id);
+            let updatePayload = { karton: newKarton };
+            if (targetTable !== 'stok_awal_sap') {
+                updatePayload.konversi = konvStr;
+            }
+            await _supabase.from(targetTable).update(updatePayload).eq('id', dbItem.id);
         }
     }
     
@@ -1004,7 +1031,6 @@ function printPickingList() {
     let t = truckQueue[activePlTruckIdx];
     let list = t.pickingList || [];
     
-    // Tanggal dan Jam Cetak Otomatis
     const now = new Date();
     const tglCetakStr = String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear();
     const jamCetakStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');

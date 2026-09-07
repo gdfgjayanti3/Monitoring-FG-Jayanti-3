@@ -35,6 +35,8 @@
     </style>
     <!-- Supabase JS SDK CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body class="min-h-screen flex flex-col">
 
@@ -376,36 +378,36 @@
                 </div>
             </div>
 
+            <!-- SAP & RECONCILIATION SESSIONS CONTAINER -->
             <div id="sapAndReconContainer" class="space-y-4" style="display: none;">
                 <div class="card border-0 shadow-2xs rounded-2xl overflow-hidden" style="background-color: #fffbeb;">
                     <div class="card-header border-0 font-bold d-flex justify-content-between align-items-center py-3 px-4" style="background-color: #fef3c7; color: #92400e;">
-                        <span class="small"><i class="fa-solid fa-file-excel text-emerald-600 me-1.5"></i> Input Data Sistem SAP (plant, sku, nama barang, ending stock)</span>
+                        <span class="small"><i class="fa-solid fa-file-excel text-emerald-600 me-1.5"></i> Input Data Sistem SAP Per Tanggal (plant, sku, nama barang, ending stock)</span>
                         <button type="button" class="btn btn-xs btn-outline-secondary bg-white" onclick="toggleSapSection()">Tutup Menu SAP</button>
                     </div>
-                    <div class="card-body p-4">
-                        <textarea class="form-control font-monospace text-nowrap mb-3 bg-white border-amber-200 text-xs" id="sapPasteArea" rows="4" placeholder="Paste data SAP dari Excel: plant \t sku \t nama barang \t ending stock"></textarea>
-                        <button type="button" class="btn btn-sm fw-bold px-4 text-xs" style="background-color: #f59e0b; color: white;" onclick="processSapPaste()">Simpan & Bandingkan SAP</button>
+                    <div class="card-body p-4 space-y-3">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-amber-900">Pilih Tanggal Sesi SAP *</label>
+                                <input type="date" id="sapSessionDate" class="form-control form-control-sm border-amber-300 bg-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="form-label small fw-bold text-amber-900">Paste Data SAP dari Excel *</label>
+                            <textarea class="form-control font-monospace text-nowrap mb-2 bg-white border-amber-200 text-xs" id="sapPasteArea" rows="4" placeholder="plant &#9; sku &#9; nama barang &#9; ending stock"></textarea>
+                        </div>
+                        <button type="button" class="btn btn-sm fw-bold px-4 text-xs" style="background-color: #f59e0b; color: white;" onclick="processSapPaste()">Simpan Sesi SAP Baru</button>
                     </div>
                 </div>
 
-                <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-200">
-                    <div class="card-header pastel-header-purple fw-bold py-2.5 px-4 rounded-xl mb-3 border-0 small">Tabel Rekonsiliasi Perbandingan SAP vs Fisik Aktual</div>
-                    <div class="card-body table-responsive">
-                        <table class="table table-bordered table-hover align-middle text-center text-xs">
-                            <thead class="pastel-header-purple">
-                                <tr>
-                                    <th>SKU</th>
-                                    <th>Nama Barang</th>
-                                    <th>Stok SAP (Pallet & Karton)</th>
-                                    <th>Total Fisik (Pallet & Karton)</th>
-                                    <th>Selisih Variance</th>
-                                    <th>Status Balance</th>
-                                </tr>
-                            </thead>
-                            <tbody id="reconciliationBody">
-                                <tr><td colspan="6" class="text-muted small">Belum ada data SAP yang dimasukkan.</td></tr>
-                            </tbody>
-                        </table>
+                <!-- LIST OF SAP SESSIONS -->
+                <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-200 space-y-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0"><i class="fa-solid fa-calendar-days text-amber-600 mr-1.5"></i> Riwayat Sesi Data Input SAP (Per Tanggal)</h5>
+                        <button class="btn btn-xs btn-outline-danger" onclick="deleteAllSapSessions()">Hapus Semua Sesi SAP</button>
+                    </div>
+                    <div id="sapSessionsList" class="space-y-2">
+                        <p class="text-muted small">Belum ada sesi input SAP yang tersimpan.</p>
                     </div>
                 </div>
             </div>
@@ -517,6 +519,47 @@
 
     </main>
 
+    <!-- MODAL POPUP REKONSILIASI DETAIL PER TANGGAL -->
+    <div id="modalReconDetail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full overflow-hidden border border-slate-200 animate-fadeIn flex flex-col max-h-[90vh]">
+            <div class="pastel-header-purple px-6 py-4 flex justify-between items-center">
+                <h3 id="modalReconTitle" class="font-bold text-sm"><i class="fa-solid fa-file-excel mr-2"></i> Detail Rekonsiliasi SAP vs Fisik</h3>
+                <button onclick="closeModal('modalReconDetail')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto flex-1">
+                <div class="flex flex-col sm:flex-row justify-between gap-3 items-center">
+                    <div class="w-full sm:w-1/2">
+                        <input type="text" id="reconSearchInput" class="form-control form-control-sm" placeholder="Cari SKU atau Nama Barang di tabel ini..." oninput="filterReconModalTable()">
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-success fw-bold" onclick="downloadCurrentReconExcel()"><i class="fa-solid fa-download mr-1"></i> Download Laporan Excel</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle text-center text-xs">
+                        <thead class="pastel-header-purple">
+                            <tr>
+                                <th>SKU</th>
+                                <th>Nama Barang</th>
+                                <th>Stok SAP (Pallet & Karton)</th>
+                                <th>Total Fisik (Pallet & Karton)</th>
+                                <th>Selisih Variance</th>
+                                <th>Status Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalReconBody">
+                            <tr><td colspan="6" class="text-muted">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary px-4" onclick="closeModal('modalReconDetail')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LAINNYA -->
     <div id="modalDetailBlok" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full overflow-hidden border border-slate-200 animate-fadeIn">
             <div class="bg-indigo-50 px-6 py-4 border-b border-indigo-100 flex justify-between items-center">
@@ -801,10 +844,10 @@
         let binData = [];
         let qcHistoryData = [];
         let relokasiLogData = [];
-        let sapStockRecords = [];
-        let sapStockData = {};
+        let sapSessionsData = {}; 
         let sapNamaBarangMap = {};
         let masterStockData = {};
+        let activeModalDate = '';
 
         async function loadDataFromCloud() {
             try {
@@ -828,7 +871,6 @@
 
                 let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
                 let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
-                let { data: stokSap } = await _supabase.from('stok_sap').select('*');
                 
                 binData = [];
                 if (stokLokal) {
@@ -838,22 +880,17 @@
                     stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
                 }
 
-                sapStockData = {};
+                sapSessionsData = {};
                 sapNamaBarangMap = {};
-                sapStockRecords = [];
 
-                if (stokSap) {
-                    stokSap.forEach(i => {
-                        if (i.sku) {
-                            let skuClean = i.sku.trim();
-                            let qtyKarton = parseFloat(i.stok_karton) || 0;
-                            sapStockData[skuClean] = qtyKarton; // store total karton directly
-                            if(i.nama_barang) {
-                                sapNamaBarangMap[skuClean] = i.nama_barang.trim();
-                            }
-                            sapStockRecords.push(i);
-                        }
-                    });
+                let { data: sap } = await _supabase.from('stock_opname_sap').select('*');
+                if(sap && sap.length > 0) {
+                    let sapRow = sap.find(s => s.sessions_data);
+                    if(sapRow && sapRow.sessions_data) {
+                        sapSessionsData = sapRow.sessions_data;
+                    } else if (sapRow && sapRow.data_sap) {
+                        sapSessionsData = { "Default_Session": sapRow.data_sap };
+                    }
                 }
 
                 let { data: qc } = await _supabase.from('karantina_qc').select('*');
@@ -872,14 +909,6 @@
                     }));
                 }
 
-                let { data: sap } = await _supabase.from('stock_opname_sap').select('*');
-                if(sap && sap.length > 0) {
-                    let sapRow = sap.find(s => s.data_sap);
-                    if(sapRow && sapRow.data_sap) {
-                        Object.assign(sapStockData, sapRow.data_sap);
-                    }
-                }
-
                 let { data: relok } = await _supabase.from('relokasi__barang').select('*');
                 if(relok) {
                     relokasiLogData = relok.map(r => ({
@@ -894,6 +923,7 @@
                 renderBinMap();
                 renderActiveHoldTable();
                 renderReportTable();
+                renderSapSessionsList();
             } catch (e) {
                 console.error('Gagal mengambil data dari cloud:', e);
             }
@@ -1075,6 +1105,7 @@
         document.getElementById('pTanggal').value = todayIsoStr;
         document.getElementById('opGlobalDate').value = todayIsoStr;
         document.getElementById('qcFilterDate').value = todayIsoStr;
+        document.getElementById('sapSessionDate').value = todayIsoStr;
         setTimeout(autoFillQcByDate, 200);
 
         const indukBlocks = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'];
@@ -1217,18 +1248,22 @@
         function toggleSapSection() {
             const container = document.getElementById('sapAndReconContainer');
             container.style.display = container.style.display === 'none' ? 'block' : 'none';
-            if(container.style.display === 'block') renderReconciliationTable();
+            if(container.style.display === 'block') renderSapSessionsList();
         }
 
-        // FUNGSI PROCESS SAP PASTE (DENGAN AKUMULASI SKU KEMBAR)
+        // FUNGSI PROCESS SAP PASTE PER TANGGAL (SESSION)
         async function processSapPaste() {
+            const sessionDate = document.getElementById('sapSessionDate').value;
+            if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
+
             const text = document.getElementById('sapPasteArea').value.trim();
             if(!text) { alert('Data SAP masih kosong!'); return; }
+            
+            let sapMapAccumulator = {}; 
+            let sessionNamaBarang = {};
             let count = 0;
-            let sapMapAccumulator = {}; // Accumulate duplicate SKUs
             
             let lines = text.split('\n');
-            
             lines.forEach((line, index) => {
                 let lowerLine = line.toLowerCase();
                 if (index === 0 && (lowerLine.includes('plant') || lowerLine.includes('sku') || lowerLine.includes('ending'))) {
@@ -1237,14 +1272,13 @@
 
                 const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
                 if (cols.length >= 4) {
-                    let plantVal = cols[0];
                     let skuVal = cols[1];
                     let namaBarang = cols[2];
                     let qtyVal = parseFloat(cols[3].replace(/\./g, '').replace(/,/g, '.')) || 0;
 
                     if (skuVal && !isNaN(qtyVal)) {
                         sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
-                        sapNamaBarangMap[skuVal] = namaBarang;
+                        sessionNamaBarang[skuVal] = namaBarang;
                         count++;
                     }
                 } else if (cols.length >= 2) {
@@ -1257,31 +1291,207 @@
                 }
             });
 
-            let sapRecordsToInsert = [];
-            sapStockData = {};
+            let sessionItems = {};
             for (let sku in sapMapAccumulator) {
-                let totalKrt = sapMapAccumulator[sku];
-                sapStockData[sku] = totalKrt; // store total karton directly
-                sapRecordsToInsert.push({
-                    plant: '1115',
-                    sku: sku,
-                    nama_barang: sapNamaBarangMap[sku] || '-',
-                    stok_karton: totalKrt
-                });
+                sessionItems[sku] = {
+                    nama: sessionNamaBarang[sku] || masterStockData[sku]?.name || '-',
+                    karton: sapMapAccumulator[sku]
+                };
             }
 
+            sapSessionsData[sessionDate] = sessionItems;
             document.getElementById('sapPasteArea').value = '';
-            
-            const { error } = await _supabase.from('stok_sap').upsert(sapRecordsToInsert);
-            await _supabase.from('stock_opname_sap').upsert([{ id: 1, data_sap: sapStockData }]);
+
+            const { error } = await _supabase.from('stock_opname_sap').upsert([{ id: 1, sessions_data: sapSessionsData }]);
 
             if (error) {
-                alert('Gagal menyimpan data SAP ke database! Error: ' + error.message);
+                alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
             } else {
-                alert('Berhasil memproses data SAP (duplikat SKU otomatis digabung) dan tersimpan ke tabel stok_sap!');
-                loadDataFromCloud();
-                renderReconciliationTable();
+                alert(`Berhasil menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
+                renderSapSessionsList();
             }
+        }
+
+        function renderSapSessionsList() {
+            let container = document.getElementById('sapSessionsList');
+            if(!container) return;
+            container.innerHTML = '';
+
+            let dates = Object.keys(sapSessionsData);
+            if(dates.length === 0) {
+                container.innerHTML = '<p class="text-muted small">Belum ada sesi input SAP yang tersimpan.</p>';
+                return;
+            }
+
+            dates.sort().reverse().forEach(dateStr => {
+                let skuCount = Object.keys(sapSessionsData[dateStr]).length;
+                container.innerHTML += `
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-xl border border-slate-200 bg-slate-50">
+                        <div>
+                            <span class="fw-bold text-amber-900"><i class="fa-regular fa-calendar text-amber-600 mr-1.5"></i> Tanggal Sesi: ${dateStr}</span>
+                            <span class="badge bg-amber-100 text-amber-800 ml-2">${skuCount} SKU terdaftar</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-sm btn-primary fw-bold text-xs" onclick="openReconModal('${dateStr}')"><i class="fa-solid fa-magnifying-glass mr-1"></i> Lihat Detail Rekon (Pop-up)</button>
+                            <button class="btn btn-sm btn-outline-success fw-bold text-xs" onclick="downloadSessionExcel('${dateStr}')"><i class="fa-solid fa-download mr-1"></i> Download Excel</button>
+                            <button class="btn btn-sm btn-outline-danger fw-bold text-xs" onclick="deleteSapSession('${dateStr}')"><i class="fa-solid fa-trash"></i> Hapus</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function deleteSapSession(dateStr) {
+            if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
+                delete sapSessionsData[dateStr];
+                const { error } = await _supabase.from('stock_opname_sap').upsert([{ id: 1, sessions_data: sapSessionsData }]);
+                if(error) alert('Gagal menghapus sesi dari database!');
+                else {
+                    alert('Sesi berhasil dihapus.');
+                    renderSapSessionsList();
+                }
+            }
+        }
+
+        async function deleteAllSapSessions() {
+            if(confirm('Yakin ingin menghapus seluruh sesi SAP?')) {
+                sapSessionsData = {};
+                const { error } = await _supabase.from('stock_opname_sap').upsert([{ id: 1, sessions_data: sapSessionsData }]);
+                if(error) alert('Gagal menghapus data!');
+                else {
+                    alert('Semua sesi SAP berhasil dibersihkan.');
+                    renderSapSessionsList();
+                }
+            }
+        }
+
+        function openReconModal(dateStr) {
+            activeModalDate = dateStr;
+            document.getElementById('modalReconTitle').innerHTML = `<i class="fa-solid fa-file-excel mr-2"></i> Detail Rekonsiliasi SAP vs Fisik — Tanggal: ${dateStr}`;
+            document.getElementById('reconSearchInput').value = '';
+            renderModalReconTableRows();
+            document.getElementById('modalReconDetail').classList.remove('hidden');
+        }
+
+        function renderModalReconTableRows(filterKeyword = '') {
+            let tbody = document.getElementById('modalReconBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let sessionItems = sapSessionsData[activeModalDate] || {};
+            let keys = Object.keys(sessionItems);
+
+            if(keys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Tidak ada data SKU pada sesi ini.</td></tr>';
+                return;
+            }
+
+            let filteredKeys = keys.filter(skuCode => {
+                let itemData = sessionItems[skuCode];
+                let namaBarang = itemData.nama || masterStockData[skuCode]?.name || '';
+                let searchStr = `${skuCode} ${namaBarang}`.toLowerCase();
+                return searchStr.includes(filterKeyword.toLowerCase());
+            });
+
+            if(filteredKeys.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-muted">SKU atau Nama Barang tidak ditemukan.</td></tr>';
+                return;
+            }
+
+            filteredKeys.forEach(skuCode => {
+                let sapQtyKarton = parseFloat(sessionItems[skuCode].karton) || 0;
+                let stdKrt = getCartonPerPallet(skuCode);
+                let sapPltVal = sapQtyKarton / stdKrt;
+                
+                let foundItems = binData.filter(i => i.gudang === 'Stock Opname' && i.sku && i.sku.includes(skuCode));
+                let totalFisikPlt = 0;
+                let totalFisikKarton = 0;
+
+                foundItems.forEach(item => {
+                    let kartonVal = parseFloat(item.karton) || 0;
+                    let itemStdKrt = getCartonPerPallet(skuCode);
+                    totalFisikKarton += kartonVal;
+                    totalFisikPlt += (kartonVal / itemStdKrt);
+                });
+
+                let namaBarangVal = sessionItems[skuCode].nama || '-';
+                if (masterStockData[skuCode] && masterStockData[skuCode].name) {
+                    namaBarangVal = masterStockData[skuCode].name;
+                }
+
+                let variancePlt = totalFisikPlt - sapPltVal;
+                let varianceKarton = totalFisikKarton - sapQtyKarton;
+                let balanceBadge = Math.abs(variancePlt) < 0.01 ? '<span class="badge bg-success-subtle text-success border px-2 py-1">Balance</span>' : '<span class="badge bg-danger-subtle text-danger border px-2 py-1">Selisih</span>';
+
+                let sapPltFormatted = Math.floor(sapPltVal);
+                let sapReceh = sapQtyKarton % stdKrt;
+                let sapDisplayStr = sapReceh > 0 ? `${sapPltFormatted} Plt + ${sapReceh} krt` : `${sapPltVal.toFixed(2)} Plt`;
+
+                let fisikPltFormatted = Math.floor(totalFisikPlt);
+                let fisikReceh = totalFisikKarton % stdKrt;
+                let fisikDisplayStr = fisikReceh > 0 ? `${fisikPltFormatted} Plt + ${fisikReceh} krt` : `${totalFisikPlt.toFixed(2)} Plt`;
+
+                tbody.innerHTML += `<tr>
+                    <td class="fw-bold text-slate-700">${skuCode}</td>
+                    <td class="text-start">${namaBarangVal}</td>
+                    <td class="fw-bold text-indigo-600">${sapDisplayStr} <br><small class="text-slate-400">(${sapQtyKarton} krt | std ${stdKrt})</small></td>
+                    <td class="fw-bold text-emerald-600">${fisikDisplayStr} <br><small class="text-slate-400">(${totalFisikKarton} krt)</small></td>
+                    <td class="fw-bold">${variancePlt.toFixed(2)} Plt <br><small class="text-slate-400">(${varianceKarton} krt)</small></td>
+                    <td>${balanceBadge}</td>
+                </tr>`;
+            });
+        }
+
+        function filterReconModalTable() {
+            let keyword = document.getElementById('reconSearchInput').value;
+            renderModalReconTableRows(keyword);
+        }
+
+        function downloadCurrentReconExcel() {
+            downloadSessionExcel(activeModalDate);
+        }
+
+        function downloadSessionExcel(dateStr) {
+            let sessionItems = sapSessionsData[dateStr] || {};
+            let keys = Object.keys(sessionItems);
+            if(keys.length === 0) { alert('Tidak ada data untuk didownload pada sesi ini.'); return; }
+
+            let excelRows = [];
+            keys.forEach(skuCode => {
+                let sapQtyKarton = parseFloat(sessionItems[skuCode].karton) || 0;
+                let stdKrt = getCartonPerPallet(skuCode);
+                let sapPltVal = sapQtyKarton / stdKrt;
+                
+                let foundItems = binData.filter(i => i.gudang === 'Stock Opname' && i.sku && i.sku.includes(skuCode));
+                let totalFisikPlt = 0;
+                let totalFisikKarton = 0;
+                foundItems.forEach(item => {
+                    let kartonVal = parseFloat(item.karton) || 0;
+                    let itemStdKrt = getCartonPerPallet(skuCode);
+                    totalFisikKarton += kartonVal;
+                    totalFisikPlt += (kartonVal / itemStdKrt);
+                });
+
+                let namaBarangVal = sessionItems[skuCode].nama || masterStockData[skuCode]?.name || '-';
+                let variancePlt = totalFisikPlt - sapPltVal;
+                let statusBalance = Math.abs(variancePlt) < 0.01 ? 'Balance' : 'Selisih';
+
+                excelRows.push({
+                    "SKU": skuCode,
+                    "Nama Barang": namaBarangVal,
+                    "Stok SAP (Karton)": sapQtyKarton,
+                    "Stok SAP (Pallet)": parseFloat(sapPltVal.toFixed(2)),
+                    "Fisik Aktual (Karton)": totalFisikKarton,
+                    "Fisik Aktual (Pallet)": parseFloat(totalFisikPlt.toFixed(2)),
+                    "Selisih Variance (Pallet)": parseFloat(variancePlt.toFixed(2)),
+                    "Status Balance": statusBalance
+                });
+            });
+
+            let worksheet = XLSX.utils.json_to_sheet(excelRows);
+            let workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Rekon SAP " + dateStr);
+            XLSX.writeFile(workbook, `Laporan_Rekonsiliasi_SAP_${dateStr}.xlsx`);
         }
 
         function switchSection(sectionId) {
@@ -1690,60 +1900,6 @@
             alert('Hasil Stock Opname berhasil disimpan ke database!');
             clearOpnameRows();
             loadDataFromCloud();
-        }
-
-        // FUNGSI RENDER REKONSILIASI (DENGAN KONVERSI BERDASARKAN MASTER SKU)
-        function renderReconciliationTable() {
-            let tbody = document.getElementById('reconciliationBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            let keys = Object.keys(sapStockData);
-            if(keys.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-muted small">Belum ada data SAP yang dimasukkan.</td></tr>';
-                return;
-            }
-            keys.forEach(skuCode => {
-                let sapQtyKarton = parseFloat(sapStockData[skuCode]) || 0;
-                let stdKrt = getCartonPerPallet(skuCode);
-                let sapPltVal = sapQtyKarton / stdKrt;
-                
-                let foundItems = binData.filter(i => i.gudang === 'Stock Opname' && i.sku && i.sku.includes(skuCode));
-                let totalFisikPlt = 0;
-                let totalFisikKarton = 0;
-
-                foundItems.forEach(item => {
-                    let kartonVal = parseFloat(item.karton) || 0;
-                    let itemStdKrt = getCartonPerPallet(skuCode);
-                    totalFisikKarton += kartonVal;
-                    totalFisikPlt += (kartonVal / itemStdKrt);
-                });
-
-                let namaBarangVal = sapNamaBarangMap[skuCode] || '-';
-                if (masterStockData[skuCode] && masterStockData[skuCode].name) {
-                    namaBarangVal = masterStockData[skuCode].name;
-                }
-
-                let variancePlt = totalFisikPlt - sapPltVal;
-                let varianceKarton = totalFisikKarton - sapQtyKarton;
-                let balanceBadge = Math.abs(variancePlt) < 0.01 ? '<span class="badge bg-success-subtle text-success border px-2 py-1">Balance</span>' : '<span class="badge bg-danger-subtle text-danger border px-2 py-1">Selisih</span>';
-
-                let sapPltFormatted = Math.floor(sapPltVal);
-                let sapReceh = sapQtyKarton % stdKrt;
-                let sapDisplayStr = sapReceh > 0 ? `${sapPltFormatted} Plt + ${sapReceh} krt` : `${sapPltVal.toFixed(2)} Plt`;
-
-                let fisikPltFormatted = Math.floor(totalFisikPlt);
-                let fisikReceh = totalFisikKarton % stdKrt;
-                let fisikDisplayStr = fisikReceh > 0 ? `${fisikPltFormatted} Plt + ${fisikReceh} krt` : `${totalFisikPlt.toFixed(2)} Plt`;
-
-                tbody.innerHTML += `<tr>
-                    <td class="fw-bold text-slate-700">${skuCode}</td>
-                    <td class="text-start">${namaBarangVal}</td>
-                    <td class="fw-bold text-indigo-600">${sapDisplayStr} <br><small class="text-slate-400">(${sapQtyKarton} krt | std ${stdKrt})</small></td>
-                    <td class="fw-bold text-emerald-600">${fisikDisplayStr} <br><small class="text-slate-400">(${totalFisikKarton} krt)</small></td>
-                    <td class="fw-bold">${variancePlt.toFixed(2)} Plt <br><small class="text-slate-400">(${varianceKarton} krt)</small></td>
-                    <td>${balanceBadge}</td>
-                </tr>`;
-            });
         }
 
         function executeSearch() {

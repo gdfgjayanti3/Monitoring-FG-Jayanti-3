@@ -825,6 +825,7 @@
 
                 let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
                 let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
+                let { data: stokSap } = await _supabase.from('stok_awal_sap').select('*');
                 
                 binData = [];
                 if (stokLokal) {
@@ -832,6 +833,14 @@
                 }
                 if (stokEkspor) {
                     stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
+                }
+                if (stokSap) {
+                    stokSap.forEach(i => binData.push({ 
+                        ...i, 
+                        prodate: i.tanggal_tarikan || '2026-09-07',
+                        category: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal',
+                        tujuan_gudang: i.gudang || 'Gudang Induk'
+                    }));
                 }
 
                 let { data: qc } = await _supabase.from('karantina_qc').select('*');
@@ -1383,8 +1392,6 @@
             let gudang = document.getElementById('pGudang').value;
             let plant = document.getElementById('pPlant').value;
             let line = document.getElementById('pLine').value;
-            
-            // Mengambil langsung format YYYY-MM-DD dari input tanggal HTML agar akurat dibaca aging
             let formattedDateStr = document.getElementById('pTanggal').value; 
 
             let shift = document.getElementById('pShift').value;
@@ -1505,7 +1512,7 @@
 
                 tbody.innerHTML += `<tr>
                     <td><span class="badge ${catBadge} px-2 py-1 fw-bold">${item.category || 'Lokal'}</span></td>
-                    <td>${item.tanggal_masuk || '-'}</td>
+                    <td>${item.tanggal_masuk || item.tanggal_tarikan || '-'}</td>
                     <td>Plant ${item.plant || '-'} - ${item.line_produksi || '-'}</td>
                     <td>${qtDisplay}</td>
                     <td class="text-start fw-semibold">${item.sku}</td>
@@ -1575,7 +1582,6 @@
                     let diffDays = Math.floor((nowTime - itemTime) / (1000 * 60 * 60 * 24));
                     if(diffDays < 0) diffDays = 0;
                     
-                    // Diatur minimal 9 hari (hari ke-9 baru boleh keluar / Ready)
                     let isReady = diffDays >= 9;
                     lamaAgingText = `${diffDays} Hari`;
                     statusBadge = isReady ? '<span class="badge bg-success px-2 py-1">Ready</span>' : `<span class="badge bg-warning text-dark px-2 py-1">Aging (${9 - diffDays} hari lagi)</span>`;
@@ -1591,7 +1597,7 @@
 
                 tbody.innerHTML += `<tr>
                     <td class="text-start">${item.sku}</td>
-                    <td>${item.tanggal_masuk || '-'}</td>
+                    <td>${item.tanggal_masuk || item.tanggal_tarikan || '-'}</td>
                     <td class="fw-semibold text-indigo-600">${lamaAgingText}</td>
                     <td><span class="badge bg-slate-100 text-slate-700">${item.lokasi}</span></td>
                     <td class="fw-bold">${pltVal} Plt (${kartonVal} krt)</td>

@@ -261,36 +261,80 @@
             </div>
 
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                <h5 class="fw-bold text-rose-700 text-xs uppercase mb-3">Input Data Karantina (Hold Fleksibel Berdasarkan Filter Tanggal)</h5>
+                <div class="flex justify-between items-center mb-2">
+                    <h5 class="fw-bold text-rose-700 text-xs uppercase mb-0">Input Data Karantina QC</h5>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <button type="button" id="btnModeLive" class="btn btn-danger text-xs fw-bold" onclick="switchQcMode('live')">Input Berdasarkan Tanggal Masuk</button>
+                        <button type="button" id="btnModeManual" class="btn btn-outline-secondary text-xs fw-bold" onclick="switchQcMode('manual')">Input Manual</button>
+                    </div>
+                </div>
+
                 <form onsubmit="saveQcAction(event)">
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-rose-600">1. Filter Tanggal Produksi (Prodate) *</label>
-                            <input type="date" class="form-control form-control-sm border-rose-300 bg-white" id="qcFilterDate" required onchange="autoFillQcByDate()">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small fw-bold text-rose-600">2. Pilih No. Pallet (Dari Data Masuk) *</label>
-                            <select class="form-select form-select-sm border-rose-300 bg-white" id="qcPalletNumber" required onchange="onSelectPalletDropdown()">
-                                <option value="">-- Pilih Tanggal Dulu --</option>
-                            </select>
+                    <input type="hidden" id="qcInputMode" value="live">
+
+                    <!-- FORM MODE LIVE / BERDASARKAN TANGGAL MASUK -->
+                    <div id="qcFormLiveContainer" class="space-y-3">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-rose-600">1. Filter Tanggal Produksi (Prodate) *</label>
+                                <input type="date" class="form-control form-control-sm border-rose-300 bg-white" id="qcFilterDate" onchange="autoFillQcByDate()">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-rose-600">2. Pilih No. Pallet (Dari Data Masuk) *</label>
+                                <select class="form-select form-select-sm border-rose-300 bg-white" id="qcPalletNumber" onchange="onSelectPalletDropdown()">
+                                    <option value="">-- Pilih Tanggal Dulu --</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="row g-2 mb-3">
+
+                    <!-- FORM MODE MANUAL (Global Rekapan) -->
+                    <div id="qcFormManualContainer" class="space-y-3" style="display: none;">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-slate-600">Tanggal Prodate / Masuk Manual *</label>
+                                <input type="date" class="form-control form-control-sm bg-white" id="qcManualDate">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-slate-600">No. Pallet / Keterangan Pallet *</label>
+                                <input type="text" class="form-control form-control-sm bg-white" id="qcManualPallet" placeholder="Cth: PLT-01, Sesuai Rekapan Lama">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-2 mb-3 mt-2">
                         <div class="col-6 relative">
                             <label class="form-label small fw-bold text-slate-600">Cari & Pilih SKU Produk *</label>
                             <input type="text" class="form-control form-control-sm" id="qcSkuInput" required placeholder="Ketik SKU atau nama produk..." oninput="filterCustomSku('qcSkuInput', 'qcSkuDropdown')" autocomplete="off">
                             <div id="qcSkuDropdown" class="absolute left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-40 overflow-y-auto z-50 hidden"></div>
                         </div>
                         <div class="col-6">
-                            <label class="form-label small fw-bold text-slate-600">Plant / Line *</label>
-                            <input type="text" class="form-control form-control-sm" id="qcPlantLine" required placeholder="Cth: Plant 1115 (GT01)">
+                            <label class="form-label small fw-bold text-slate-600">Pilih Plant *</label>
+                            <div class="d-flex gap-3 mt-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="qcPlantRadio" id="plant1115" value="1115" checked onchange="updateQcPlantLineText()">
+                                    <label class="form-check-label fw-bold text-xs" for="plant1115">Plant 1115</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="qcPlantRadio" id="plant1116" value="1116" onchange="updateQcPlantLineText()">
+                                    <label class="form-check-label fw-bold text-xs" for="plant1116">Plant 1116</label>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
                     <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label small fw-bold text-slate-600">Line Produksi (Ketik Manual) *</label>
+                            <input type="text" class="form-control form-control-sm" id="qcLineManual" required placeholder="Cth: GT01, GT12..." oninput="updateQcPlantLineText()">
+                        </div>
+                        <div class="col-4" style="display: none;">
+                            <input type="text" id="qcPlantLine" required>
+                        </div>
                         <div class="col-4">
                             <label class="form-label small fw-bold text-slate-600">Shift Kerja *</label>
                             <select id="qcShift" class="form-select form-select-sm">
-                                <option>Shift 1</option><option>Shift 2</option><option>Shift 3</option>
+                                <option>Shift 1</option><option>Shift 2</option><option>Shift 3</option><option>Manual / Rekapan</option>
                             </select>
                         </div>
                         <div class="col-4">
@@ -298,16 +342,20 @@
                             <input type="number" class="form-control form-control-sm border-rose-300" id="qcQtyKarton" required min="1" placeholder="70" oninput="hitungKonversiQc()">
                             <span class="text-[10px] text-indigo-600 fw-bold mt-1 block" id="konversiPltQc">Konversi: 0 Pallet (Standar master)</span>
                         </div>
-                        <div class="col-4">
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
                             <label class="form-label small fw-bold text-rose-600">No. Pallet (Hold Random) *</label>
                             <input type="text" class="form-control form-control-sm border-rose-300 bg-white" id="qcHoldPalletManual" required placeholder="Cth: PLT-05, Pallet A...">
                         </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-bold text-slate-600">Alasan Hold / Karantina *</label>
+                            <input type="text" class="form-control form-control-sm" id="qcReason" required placeholder="Misal: Kontaminasi / kemasan rusak...">
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label small fw-bold text-slate-600">Alasan Hold / Karantina *</label>
-                        <input type="text" class="form-control form-control-sm" id="qcReason" required placeholder="Misal: Kontaminasi / kemasan rusak...">
-                    </div>
-                    <button type="submit" class="btn btn-sm fw-bold w-100 text-white py-2" style="background-color: #f43f5e;">Simpan & Karantina Palet Terpilih (HOLD)</button>
+
+                    <button type="submit" class="btn btn-sm fw-bold w-100 text-white py-2" style="background-color: #f43f5e;">Simpan Data</button>
                 </form>
             </div>
 
@@ -324,12 +372,13 @@
                                 <th>No. Pallet (Range)</th>
                                 <th>No. Pallet (Hold Random)</th>
                                 <th>Alasan Hold</th>
+                                <th>Catatan / Keterangan Release</th>
                                 <th>Status Aktif</th>
-                                <th>Tindak Lanjut & Aksi (Edit & Hapus)</th>
+                                <th>Tindak Lanjut & Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="activeHoldTableBody">
-                            <tr><td colspan="9" class="text-muted">Memuat data dari cloud...</td></tr>
+                            <tr><td colspan="10" class="text-muted">Memuat data dari cloud...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -345,7 +394,6 @@
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
-                <!-- Samping Kiri: 3 Menu Berurutan Dari Atas Ke Bawah -->
                 <div class="space-y-4 md:col-span-1">
                     <div onclick="switchSection('opname-log')" class="bg-white hover:border-purple-300 border border-slate-200 rounded-2xl p-4 cursor-pointer transition shadow-2xs flex items-center gap-4 group">
                         <div class="bg-purple-50 text-purple-600 p-3 rounded-xl border border-purple-100 group-hover:scale-105 transition flex items-center justify-center shrink-0" style="width: 44px; height: 44px;">
@@ -378,7 +426,6 @@
                     </div>
                 </div>
 
-                <!-- Bagian Kanan: Hanya Form Stock Opname Harian -->
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4 md:col-span-3">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0"><i class="fa-solid fa-pen-to-square mr-1"></i> Form Input Stock Opname Harian</h5>
@@ -495,6 +542,27 @@
 
     </main>
 
+    <!-- MODAL POPUP RELEASE CUSTOM / SEBAGIAN -->
+    <div id="modalReleaseCustom" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs">
+            <div class="pastel-header-rose px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold">Form Release Karantina (Custom / Sebagian)</h3>
+                <button onclick="closeModal('modalReleaseCustom')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="submitCustomRelease(event)" class="p-6 space-y-3">
+                <input type="hidden" id="releaseQcId">
+                <div>
+                    <label class="form-label fw-bold">Catatan / Keterangan Pelepasan (Release) *</label>
+                    <input type="text" id="releaseCustomNote" class="form-control form-control-sm" required placeholder="Cth: Direlease sebagian 30 krt, sisa 40 krt hold...">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="btn btn-sm btn-success w-100 fw-bold">Simpan Release Custom</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3" onclick="closeModal('modalReleaseCustom')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- MODAL POPUP DETAIL LOG OPNAME PER TANGGAL & PER NAMA -->
     <div id="modalOpnameDetail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full overflow-hidden border border-slate-200 animate-fadeIn flex flex-col max-h-[90vh]">
@@ -503,9 +571,7 @@
                 <button onclick="closeModal('modalOpnameDetail')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-                <div id="opnameManpowerCardsContainer" class="space-y-4">
-                    <!-- Card per manpower akan dirender otomatis disini -->
-                </div>
+                <div id="opnameManpowerCardsContainer" class="space-y-4"></div>
             </div>
             <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
                 <button type="button" class="btn btn-sm btn-outline-secondary px-4 text-xs" onclick="closeModal('modalOpnameDetail')">Tutup</button>
@@ -1056,7 +1122,8 @@
                 </form>
             </div>
         </div>
-    </div>
+
+    </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
@@ -1168,7 +1235,8 @@
                         holdmanual: q.pallet_random,
                         pallets: `${q.jumlah_karton} krt`,
                         karton: q.jumlah_karton,
-                        reason: q.alasan_hold
+                        reason: q.alasan_hold,
+                        releaseNote: q.tindak_lanjut || '-'
                     }));
                 }
 
@@ -1196,6 +1264,39 @@
         }
 
         loadDataFromCloud();
+
+        function switchQcMode(mode) {
+            let btnLive = document.getElementById('btnModeLive');
+            let btnManual = document.getElementById('btnModeManual');
+            let liveContainer = document.getElementById('qcFormLiveContainer');
+            let manualContainer = document.getElementById('qcFormManualContainer');
+            let modeInput = document.getElementById('qcInputMode');
+
+            modeInput.value = mode;
+
+            if (mode === 'live') {
+                btnLive.className = 'btn btn-danger text-xs fw-bold';
+                btnManual.className = 'btn btn-outline-secondary text-xs fw-bold';
+                liveContainer.style.display = 'block';
+                manualContainer.style.display = 'none';
+                document.getElementById('qcFilterDate').setAttribute('required', 'true');
+                document.getElementById('qcPalletNumber').setAttribute('required', 'true');
+            } else {
+                btnLive.className = 'btn btn-outline-secondary text-xs fw-bold';
+                btnManual.className = 'btn btn-danger text-xs fw-bold';
+                liveContainer.style.display = 'none';
+                manualContainer.style.display = 'block';
+                document.getElementById('qcFilterDate').removeAttribute('required');
+                document.getElementById('qcPalletNumber').removeAttribute('required');
+                document.getElementById('qcManualDate').value = new Date().toISOString().split('T')[0];
+            }
+        }
+
+        function updateQcPlantLineText() {
+            let selectedPlant = document.querySelector('input[name="qcPlantRadio"]:checked').value;
+            let lineVal = document.getElementById('qcLineManual').value.trim();
+            document.getElementById('qcPlantLine').value = `Plant ${selectedPlant} (${lineVal || '-'})`;
+        }
 
         async function loadPlottingDataFromCloud() {
             let { data, error } = await _supabase.from('master_plotting_opname').select('*');
@@ -1342,9 +1443,10 @@
             } else {
                 palletSelect.innerHTML = '<option value="">Tidak ada penerimaan di tanggal ini</option>';
                 document.getElementById('qcSkuInput').value = '';
-                document.getElementById('qcPlantLine').value = '';
+                document.getElementById('qcLineManual').value = '';
                 document.getElementById('qcShift').value = 'Shift 1';
                 document.getElementById('qcQtyKarton').value = '';
+                updateQcPlantLineText();
                 hitungKonversiQc();
             }
         }
@@ -1355,9 +1457,12 @@
             let item = window.currentMatchedQcItems[selectedIdx];
             if(item) {
                 document.getElementById('qcSkuInput').value = item.sku || '';
-                document.getElementById('qcPlantLine').value = `Plant ${item.plant || '1115'} (${item.line_produksi || 'GT01'})`;
+                if(item.plant === '1116') document.getElementById('plant1116').checked = true;
+                else document.getElementById('plant1115').checked = true;
+                document.getElementById('qcLineManual').value = item.line_produksi || 'GT01';
                 document.getElementById('qcShift').value = item.shift_kerja || 'Shift 1';
                 document.getElementById('qcQtyKarton').value = item.karton || 70;
+                updateQcPlantLineText();
                 hitungKonversiQc();
             }
         }
@@ -1959,7 +2064,6 @@
             if(matched.length === 0) {
                 container.innerHTML = '<p class="text-muted text-center py-4">Tidak ada data opname di tanggal ini.</p>';
             } else {
-                // Kelompokkan per Nama Petugas / Manpower (shift_kerja)
                 let groupedByManpower = {};
                 matched.forEach(item => {
                     let mp = item.shift_kerja || 'Tanpa Petugas';
@@ -2232,13 +2336,25 @@
 
         async function saveQcAction(e) {
             e.preventDefault();
-            let filterDateVal = document.getElementById('qcFilterDate').value;
-            let parts = filterDateVal.split('-');
-            let formattedProdate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            let mode = document.getElementById('qcInputMode').value;
+            let formattedProdate = '';
+            let palletInfo = '';
+
+            if (mode === 'live') {
+                let filterDateVal = document.getElementById('qcFilterDate').value;
+                let parts = filterDateVal.split('-');
+                formattedProdate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                palletInfo = document.getElementById('qcPalletNumber').options[document.getElementById('qcPalletNumber').selectedIndex].text;
+            } else {
+                let manualDateVal = document.getElementById('qcManualDate').value;
+                let parts = manualDateVal.split('-');
+                formattedProdate = `${parts[2]}/${parts[1]}/${parts[0]} (Manual)`;
+                palletInfo = document.getElementById('qcManualPallet').value;
+            }
 
             let qcRecord = {
                 tanggal_prodate: formattedProdate,
-                no_pallet: document.getElementById('qcPalletNumber').options[document.getElementById('qcPalletNumber').selectedIndex].text,
+                no_pallet: palletInfo,
                 sku: document.getElementById('qcSkuInput').value,
                 plant_line: document.getElementById('qcPlantLine').value,
                 shift_kerja: document.getElementById('qcShift').value,
@@ -2250,10 +2366,12 @@
             };
 
             let { error } = await _supabase.from('karantina_qc').insert([qcRecord]);
-            if (error) alert('Gagal menyimpan QC: ' + error.message);
-            else {
-                alert('Palet berhasil dikarantina!');
+            if (error) {
+                alert('Gagal menyimpan QC: ' + error.message);
+            } else {
+                alert('Data Karantina QC berhasil disimpan!');
                 e.target.reset();
+                updateQcPlantLineText();
                 loadDataFromCloud();
             }
         }
@@ -2262,6 +2380,27 @@
             let { error } = await _supabase.from('karantina_qc').update({ status_aktif: newStatus }).eq('id', id);
             if (error) alert('Gagal update status!');
             else loadDataFromCloud();
+        }
+
+        function openReleaseCustomModal(id) {
+            document.getElementById('releaseQcId').value = id;
+            document.getElementById('releaseCustomNote').value = '';
+            document.getElementById('modalReleaseCustom').classList.remove('hidden');
+        }
+
+        async function submitCustomRelease(e) {
+            e.preventDefault();
+            let id = document.getElementById('releaseQcId').value;
+            let note = document.getElementById('releaseCustomNote').value.trim();
+
+            let { error } = await _supabase.from('karantina_qc').update({ status_aktif: 'RELEASED', tindak_lanjut: note }).eq('id', id);
+            if(error) {
+                alert('Gagal menyimpan release: ' + error.message);
+            } else {
+                alert('Berhasil merilis sebagian/custom karantina QC!');
+                closeModal('modalReleaseCustom');
+                loadDataFromCloud();
+            }
         }
 
         function openEditQcModal(id, sku, reason, karton) {
@@ -2301,7 +2440,7 @@
             let activeHolds = qcHistoryData.filter(item => item.status === 'HOLD');
 
             if(activeHolds.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-muted">Tidak ada barang dalam karantina.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="10" class="text-muted">Tidak ada barang dalam karantina.</td></tr>';
                 return;
             }
 
@@ -2316,11 +2455,13 @@
                     <td class="text-slate-500 text-[11px]">${item.palletrange}</td>
                     <td class="fw-bold text-rose-600">${item.holdmanual}</td>
                     <td class="text-start">${item.reason}</td>
+                    <td class="text-start text-indigo-700">${item.releaseNote}</td>
                     <td><span class="badge bg-rose-100 text-rose-700 fw-bold px-2 py-1">HOLD</span></td>
                     <td class="space-x-1">
-                        <button class="btn btn-sm btn-success py-0 px-2 text-[11px] fw-bold" onclick="updateQcStatus('${item.id}', 'RELEASED')">Release</button>
-                        <button class="btn btn-sm btn-outline-primary py-0 px-2 text-[11px] fw-bold" onclick="openEditQcModal('${item.id}', '${escSku}', '${escReason}', ${item.karton || 70})"><i class="fa-solid fa-pen"></i> Edit</button>
-                        <button class="btn btn-sm btn-outline-danger py-0 px-2 text-[11px] fw-bold" onclick="deleteQcItem('${item.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
+                        <button class="btn btn-sm btn-success py-0 px-2 text-[11px] fw-bold" onclick="updateQcStatus('${item.id}', 'RELEASED')">Full Release</button>
+                        <button class="btn btn-sm btn-outline-success py-0 px-2 text-[11px] fw-bold" onclick="openReleaseCustomModal('${item.id}')">Custom/Sebagian</button>
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 text-[11px] fw-bold" onclick="openEditQcModal('${item.id}', '${escSku}', '${escReason}', ${item.karton || 70})"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2 text-[11px] fw-bold" onclick="deleteQcItem('${item.id}')"><i class="fa-solid fa-trash"></i></button>
                     </td>
                 </tr>`;
             });

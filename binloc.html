@@ -525,13 +525,6 @@
                     <p class="text-xs text-slate-400">Klik blok rak untuk melihat isi barang per lorong & memindahkan lokasi (Relokasi).</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- Tombol Tambah Racking & Tambah Baris SKU yang diminta kembali -->
-                    <button onclick="addBinRackingRow()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3.5 py-2 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-2xs">
-                        <i class="fa-solid fa-plus"></i> Tambah Racking
-                    </button>
-                    <button onclick="addBinSkuRow()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3.5 py-2 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-2xs">
-                        <i class="fa-solid fa-plus"></i> Tambah Baris SKU
-                    </button>
                     <button onclick="switchWarehouse('INDUK')" id="btnWhInduk" class="btn btn-sm btn-primary">Gudang Induk (A-X)</button>
                     <button onclick="switchWarehouse('AGING')" id="btnWhAging" class="btn btn-sm btn-outline-secondary">Gudang Aging (A-O)</button>
                     <button onclick="switchSection('home')" class="btn btn-sm btn-outline-secondary ms-2"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
@@ -1163,13 +1156,9 @@
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // Fungsi Tambah Racking & Tambah Baris SKU untuk Bin Loc
-        function addBinRackingRow() {
-            alert('Fitur tambah racking/baris baru diaktifkan.');
-        }
-
-        function addBinSkuRow() {
-            alert('Fitur tambah baris SKU diaktifkan.');
+        // Fungsi Tambah Blok / Tambah Baris Opname
+        function tambahBlokOpname() {
+            addOpnameRow();
         }
 
         function updateClock() {
@@ -2817,7 +2806,7 @@
             await _supabase.from('relokasi__barang').insert([logItem]);
             let targetTable = item.category === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
             if(item.id) {
-                await _supabase.from(targetTable).update({ lokasi: `${logItem.blok_tujuan} - ${logItem.lorong_tujuan}`, tujuan_gudang: logItem.tujuan_gudang }).eq('id', item.id);
+                await _supabase.from(targetTable).update({ lokasi: `${logItem.blok_tujuan} - ${logItem.lor_tujuan}`, tujuan_gudang: logItem.tujuan_gudang }).eq('id', item.id);
             }
 
             alert('Berhasil memindahkan barang!');

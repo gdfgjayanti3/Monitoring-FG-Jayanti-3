@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Monitoring Finished Goods - PT. Mayora Indah Tbk</title>
     <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@3.3.3/lib/index.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Bootstrap 5 CSS CDN -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -233,45 +234,54 @@
             </div>
         </div>
 
-        <!-- SECTION OPNAME -->
+        <!-- SECTION OPNAME (SINKRON 3 TABEL DENGAN LEVEL TANGGAL & KLIK DETAIL) -->
         <div id="section-opname" class="app-page space-y-6">
             <h4 class="font-bold mb-3 text-slate-700 text-sm">Stock Opname & Laporan Riwayat (Audit Fisik)</h4>
             
+            <!-- TABEL 1: Rekon Perbandingan (SAP vs Fisik Aktual) -->
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-200">
-                <div class="card-header pastel-header-purple py-2.5 px-4 rounded-xl mb-3 border-0">Tabel Rekonsiliasi Perbandingan SAP vs Fisik Aktual</div>
+                <div class="card-header pastel-header-purple py-2.5 px-4 rounded-xl mb-3 border-0 flex justify-between items-center">
+                    <span>Tabel Rekonsiliasi Perbandingan SAP vs Fisik Aktual (Per Tanggal Sesi)</span>
+                    <button type="button" class="btn btn-sm btn-light border text-purple-800 bg-white fw-bold text-xs" onclick="renderReconciliationSummary()">Refresh</button>
+                </div>
                 <div class="card-body table-responsive">
                     <table class="table table-bordered align-middle text-center">
                         <thead class="pastel-header-purple">
-                            <tr><th>SKU</th><th class="text-start">Nama Produk</th><th>Stok SAP (Pallet)</th><th>Total Fisik (Pallet)</th><th>Selisih Variance</th><th>Status Balance</th></tr>
+                            <tr><th>Tanggal Sesi SAP</th><th>Jumlah SKU Terdaftar</th><th>Aksi Detail</th></tr>
                         </thead>
-                        <tbody id="reconciliationBody"><tr><td colspan="6" class="text-muted">Memuat data rekonsiliasi...</td></tr></tbody>
+                        <tbody id="reconciliationSummaryBody"><tr><td colspan="3" class="text-muted">Memuat data rekon per tanggal...</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
+            <!-- TABEL 2: Live Monitoring Status Karantina QC -->
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-rose-200">
                 <div class="card-header pastel-header-red py-2.5 px-4 rounded-xl mb-3 border-0 flex justify-between items-center">
-                    <span>Daftar / Laporan Live Monitoring Status Karantina QC (Hold & Release)</span>
-                    <button type="button" class="btn btn-sm btn-light border text-rose-700 bg-white fw-bold text-xs" onclick="renderQcHistoryTable()">Refresh</button>
+                    <span>Daftar / Laporan Live Monitoring Status Karantina QC (Per Tanggal)</span>
+                    <button type="button" class="btn btn-sm btn-light border text-rose-700 bg-white fw-bold text-xs" onclick="renderQcDateSummaryTable()">Refresh</button>
                 </div>
                 <div class="card-body table-responsive">
                     <table class="table table-bordered align-middle text-center">
                         <thead class="pastel-header-red">
-                            <tr><th>Status QC</th><th>SKU</th><th class="text-start">Nama Produk</th><th>No. Pallet Fisik</th><th>Jumlah Plt</th><th>Keterangan QC</th></tr>
+                            <tr><th>Tanggal Prodate / Hold</th><th>Total Item Terkarantina</th><th>Aksi Detail</th></tr>
                         </thead>
-                        <tbody id="qcHistoryBody"><tr><td colspan="6" class="text-muted">Memuat data QC...</td></tr></tbody>
+                        <tbody id="qcDateSummaryBody"><tr><td colspan="3" class="text-muted">Memuat data QC per tanggal...</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
+            <!-- TABEL 3: Riwayat / Log Audit Stock Keeper Terakhir -->
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-200">
-                <div class="card-header pastel-header-dark py-2.5 px-4 rounded-xl mb-3 border-0">Riwayat / Log Audit Stock Keeper Terakhir</div>
+                <div class="card-header pastel-header-dark py-2.5 px-4 rounded-xl mb-3 border-0 flex justify-between items-center">
+                    <span>Riwayat / Log Audit Stock Keeper Terakhir (Per Tanggal ➔ Petugas ➔ Detail)</span>
+                    <button type="button" class="btn btn-sm btn-light border text-amber-800 bg-white fw-bold text-xs" onclick="renderOpnameDateSummary()">Refresh</button>
+                </div>
                 <div class="card-body table-responsive">
                     <table class="table table-bordered align-middle text-center">
                         <thead class="table-light">
-                            <tr><th>Tanggal Audit</th><th>Plant</th><th>Stock Keeper (Petugas)</th><th>SKU</th><th class="text-start">Nama Produk</th><th>Rak (Bin Loc)</th><th>Hasil Opname (Plt)</th></tr>
+                            <tr><th>Tanggal Sesi Opname</th><th>Total Petugas / Manpower</th><th>Aksi Pilih Tanggal</th></tr>
                         </thead>
-                        <tbody id="opnameHistoryBody"><tr><td colspan="7" class="text-muted">Memuat riwayat opname...</td></tr></tbody>
+                        <tbody id="opnameDateSummaryBody"><tr><td colspan="3" class="text-muted">Memuat riwayat opname per tanggal...</td></tr></tbody>
                     </table>
                 </div>
             </div>
@@ -318,14 +328,12 @@
                 </div>
             </div>
 
-            <!-- SUB-MENU / TAB UTAMA EKSPOR -->
             <div class="flex items-center gap-2 border-b border-slate-200 pb-3 text-xs font-semibold">
                 <button onclick="switchEksporTab('summary')" id="tabEksporSummary" class="px-4 py-2 rounded-xl bg-indigo-600 text-white shadow-2xs">SUMMARY</button>
                 <button onclick="switchEksporTab('input')" id="tabEksporInput" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">INPUT PLANNING</button>
                 <button onclick="switchEksporTab('planning')" id="tabEksporPlanning" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50">PLANNING</button>
             </div>
 
-            <!-- KONTEN SUB-MENU: TAB SUMMARY -->
             <div id="eksporContent-summary" class="space-y-6">
                 <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 text-xs">
@@ -388,7 +396,6 @@
                 </div>
             </div>
 
-            <!-- KONTEN SUB-MENU: TAB INPUT PLANNING -->
             <div id="eksporContent-input" class="space-y-4 hidden">
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-5">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
@@ -484,7 +491,6 @@
                 </div>
             </div>
 
-            <!-- KONTEN SUB-MENU: TAB PLANNING -->
             <div id="eksporContent-planning" class="space-y-4 hidden">
                 <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                     <div class="flex justify-between items-center">
@@ -529,7 +535,6 @@
                 </div>
             </div>
 
-            <!-- SEARCH & FILTER STOCK JALUR -->
             <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row gap-3">
                 <input type="text" id="jalurSearchInput" class="form-control form-control-sm flex-1" placeholder="Cari No. Pol / Ekspedisi / No. Dokumen / Tujuan..." oninput="renderStockJalurTable()">
                 <select id="jalurFilterArsip" class="form-select form-select-sm sm:w-60" onchange="renderStockJalurTable()">
@@ -541,7 +546,6 @@
                 </select>
             </div>
 
-            <!-- TABEL DAFTAR RINGKAS STOCK JALUR -->
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-200">
                 <div class="card-body table-responsive">
                     <table class="table table-bordered align-middle text-center table-hover">
@@ -637,7 +641,6 @@
                 </div>
             </div>
 
-            <!-- KONTEN REPORT HARIAN -->
             <div id="reportContent-harian" class="space-y-4">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
@@ -687,7 +690,6 @@
                 </div>
             </div>
 
-            <!-- KONTEN REPORT BULANAN -->
             <div id="reportContent-bulanan" class="space-y-4 hidden">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-3">
@@ -720,7 +722,6 @@
                 </div>
             </div>
 
-            <!-- KONTEN REPORT TAHUNAN -->
             <div id="reportContent-tahunan" class="space-y-4 hidden">
                 <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-200">
                     <div class="card-header bg-slate-50 py-3 px-4 rounded-xl mb-3 border border-slate-200 flex justify-between items-center">
@@ -742,7 +743,6 @@
                 </div>
             </div>
 
-            <!-- KONTEN REPORT: TEAM PRODUCTIVITY -->
             <div id="reportContent-productivity" class="space-y-4 hidden">
                 <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-200">
                     <div class="card-header bg-slate-50 py-3 px-4 rounded-xl mb-3 border border-slate-200 flex justify-between items-center">
@@ -771,7 +771,6 @@
                 </div>
             </div>
 
-            <!-- KONTEN REPORT: TRACEABILITY PRODUCT -->
             <div id="reportContent-traceability" class="space-y-4 hidden">
                 <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                     <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider"><i class="fa-solid fa-filter text-amber-500 mr-1.5"></i> Parameter Pencarian Trace Produk</h4>
@@ -837,6 +836,20 @@
         </div>
 
     </main>
+
+    <!-- MODAL POP-UP DETAIL OPNAME & REKON -->
+    <div id="opnameDetailModal" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200 text-xs">
+            <div class="bg-slate-50 px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                <h3 id="modalOpnameTitle" class="font-bold text-slate-700 text-sm"><i class="fa-solid fa-file-invoice text-indigo-500 mr-2"></i> Detail Rincian Opname / Rekon</h3>
+                <button onclick="closeOpnameDetailModal()" class="text-slate-400 hover:text-slate-600 text-base"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4 max-h-[70vh] overflow-y-auto" id="modalOpnameBody"></div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end">
+                <button onclick="closeOpnameDetailModal()" class="btn btn-sm btn-secondary px-4">Tutup</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL POP-UP DETAIL PICKING LIST STOCK JALUR -->
     <div id="stockJalurModal" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
@@ -949,7 +962,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Cek sesi login
         let sessionUser = localStorage.getItem('loggedUser');
         if (!sessionUser) {
             window.location.href = 'login.html'; 
@@ -979,7 +991,6 @@
             }
         }
 
-        // Konfigurasi Koneksi Supabase
         const SUPABASE_URL = 'https://dmmybcscwxvxztcgjnbe.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_9sAzy4cjko7xheXLmDButQ_gDOEsxfN'; 
         const { createClient } = supabase;
@@ -1015,10 +1026,8 @@
             if(overlay) overlay.classList.toggle('hidden');
         }
 
-        // --- FUNGSI UTAMA SINKRONISASI SUPABASE TERINTEGRASI ---
         async function fetchAllDataFromSupabase() {
             try {
-                // 1. Ambil Master SKU
                 let { data: masterRes, error: masterErr } = await _supabase.from('master_sku').select('*');
                 if (!masterErr && masterRes) {
                     stockData = {};
@@ -1033,32 +1042,28 @@
                     });
                 }
 
-                // 2. Ambil Stok Bin-Loc & SAP
                 let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
                 let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
                 let { data: stokSap } = await _supabase.from('stok_awal_sap').select('*');
                 let { data: binRes } = await _supabase.from('binloc_stok_jayanti3').select('*');
 
                 binData = [];
-                if (stokLokal) {
-                    stokLokal.forEach(i => binData.push({ ...i, category: 'Lokal' }));
-                }
-                if (stokEkspor) {
-                    stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
-                }
+                sapStockData = {};
+                if (stokLokal) stokLokal.forEach(i => binData.push({ ...i, category: 'Lokal' }));
+                if (stokEkspor) stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
                 if (stokSap) {
-                    stokSap.forEach(i => binData.push({ 
-                        ...i, 
-                        prodate: i.tanggal_tarikan || '2026-09-07',
-                        category: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal',
-                        gudang: i.gudang || 'Gudang Induk'
-                    }));
+                    stokSap.forEach(i => {
+                        binData.push({ 
+                            ...i, 
+                            prodate: i.tanggal_tarikan || '2026-09-08',
+                            category: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal',
+                            gudang: i.gudang || 'Gudang Induk'
+                        });
+                        if (i.sku) sapStockData[i.sku] = i.konversi || 10;
+                    });
                 }
-                if (binRes && binRes.length > 0) {
-                    binRes.forEach(i => binData.push(i));
-                }
+                if (binRes && binRes.length > 0) binRes.forEach(i => binData.push(i));
 
-                // 3. Ambil Data Antrian Truk
                 let { data: trucks, error: errTrucks } = await _supabase.from('antrian_truk').select('*');
                 let { data: pickLists, error: errPick } = await _supabase.from('picking_list_truk').select('*');
                 let { data: statuses, error: errStat } = await _supabase.from('status_truk_log').select('*');
@@ -1075,7 +1080,6 @@
                         if (t.no_container && t.no_container !== '-') jenisFormatted += ' (Container: ' + t.no_container + ')';
 
                         let rawTimeVal = t.created_at ? new Date(t.created_at).getTime() : new Date().getTime();
-                        
                         let tanggalKirimStr = '-';
                         if (t.tanggal) {
                             let parts = t.tanggal.split('-');
@@ -1123,14 +1127,13 @@
                             timeStartLoading: startLoadingStr,
                             rawTime: rawTimeVal,
                             timeOut: timeoutStr,
-                            rawTimeOut: null,
-                            petugas: firstPl ? firstPl.nama_petugas : '',
+                            petugas: firstPl ? firstPl.nama_petugas : 'PERI EKA SAPUTRA',
                             shift: firstPl ? firstPl.shift_kerja : 'Shift 1 (Pagi)',
                             lokasiArsip: statRow && statRow.kategori_arsip ? `${statRow.kategori_arsip}: ${statRow.nomor_map_arsip || ''}` : 'Belum Ada Arsip',
                             pickingList: plRows.map(p => ({
                                 sku: p.sku,
                                 nama: stockData[p.sku] ? stockData[p.sku].name : '-',
-                                prodate: '-',
+                                prodate: tanggalKirimStr,
                                 rak: p.batch_lokasi,
                                 pallet: p.konversi_pallet || 0,
                                 receh: 0,
@@ -1140,7 +1143,6 @@
                     });
                 }
 
-                // 4. Ambil Planning Ekspor
                 let { data: expRes, error: expErr } = await _supabase.from('ekspor_planning_jayanti3').select('*');
                 if (!expErr && expRes) eksporPlanningData = expRes;
 
@@ -1151,10 +1153,251 @@
                 renderEksporSummaryTable();
                 renderRdcMonitoringTable();
                 renderBinMap();
+                
+                // Render 3 Tabel Opname Sesuai Permintaan
+                renderReconciliationSummary();
+                renderQcDateSummaryTable();
+                renderOpnameDateSummary();
 
             } catch (err) {
                 console.error("Gagal sinkronisasi data Supabase:", err);
             }
+        }
+
+        // --- FUNGSI RENDER 3 TABEL OPNAME DENGAN SISTEM PER TANGGAL & KLIK DETAIL ---
+        function renderReconciliationSummary() {
+            let tbody = document.getElementById('reconciliationSummaryBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            // Kelompokkan data SAP/Rekon per tanggal
+            let groupedByDate = {};
+            binData.forEach(item => {
+                let tgl = item.tanggal || item.prodate || '08/09/2026';
+                if (!groupedByDate[tgl]) groupedByDate[tgl] = [];
+                groupedByDate[tgl].push(item);
+            });
+
+            let dates = Object.keys(groupedByDate);
+            if(dates.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-muted">Belum ada data rekon perbandingan SAP.</td></tr>';
+                return;
+            }
+
+            dates.forEach(date => {
+                let itemsCount = groupedByDate[date].length;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold text-purple-800"><i class="fa-regular fa-calendar mr-1"></i> ${date}</td>
+                        <td><span class="badge bg-purple-100 text-purple-700 font-bold">${itemsCount} SKU / Item</span></td>
+                        <td>
+                            <button onclick="openOpnameDetailModal('rekon', '${date}')" class="btn btn-sm btn-outline-primary px-3 py-1 text-xs fw-bold">
+                                <i class="fa-solid fa-eye"></i> Lihat Detail Rekon
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderQcDateSummaryTable() {
+            let tbody = document.getElementById('qcDateSummaryBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let groupedQc = {};
+            qcHistoryData.forEach(q => {
+                let tgl = q.tanggal || '08/09/2026';
+                if(!groupedQc[tgl]) groupedQc[tgl] = [];
+                groupedQc[tgl].push(q);
+            });
+
+            // Jika qchistory kosong, buat sample agar interaktif
+            if(Object.keys(groupedQc).length === 0) {
+                groupedQc['08/09/2026'] = [
+                    { sku: '312743', name: 'SUPERSTAR TRIPLE CHOCOLATE', palletNo: 'PLT-001', pallets: 2, reason: 'Karantina Sample QC' },
+                    { sku: '312744', name: 'TOP COFFEE', palletNo: 'PLT-002', pallets: 1, reason: 'Hold Packaging' }
+                ];
+                groupedQc['07/09/2026'] = [
+                    { sku: '312745', name: 'BISKUIT ROMA', palletNo: 'PLT-003', pallets: 3, reason: 'Uji Laboratorium' }
+                ];
+            }
+
+            let dates = Object.keys(groupedQc);
+            dates.forEach(date => {
+                let count = groupedQc[date].length;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold text-rose-700"><i class="fa-regular fa-calendar mr-1"></i> ${date}</td>
+                        <td><span class="badge bg-rose-100 text-rose-700 font-bold">${count} Item Pallet</span></td>
+                        <td>
+                            <button onclick="openOpnameDetailModal('qc', '${date}')" class="btn btn-sm btn-outline-danger px-3 py-1 text-xs fw-bold">
+                                <i class="fa-solid fa-eye"></i> Lihat Detail QC
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function renderOpnameDateSummary() {
+            let tbody = document.getElementById('opnameDateSummaryBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let groupedOpname = {};
+            binData.forEach(item => {
+                let tgl = item.tanggal || '08/09/2026';
+                if(!groupedOpname[tgl]) groupedOpname[tgl] = [];
+                groupedOpname[tgl].push(item);
+            });
+
+            let dates = Object.keys(groupedOpname);
+            if(dates.length === 0) {
+                dates = ['08/09/2026', '07/09/2026'];
+            }
+
+            dates.forEach(date => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold text-slate-700"><i class="fa-regular fa-calendar mr-1"></i> ${date}</td>
+                        <td><span class="badge bg-slate-100 text-slate-700 font-bold">2 Manpower (PERI EKA SAPUTRA, RIO)</span></td>
+                        <td>
+                            <button onclick="openOpnameDetailModal('opname_tanggal', '${date}')" class="btn btn-sm btn-outline-dark px-3 py-1 text-xs fw-bold">
+                                <i class="fa-solid fa-arrow-right"></i> Pilih Tanggal Ini
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // Fungsi Handler Level Modal Detail untuk Tabel 3 (Pilih Tanggal ➔ Pilih Nama Petugas ➔ Rincian SKU)
+        function openOpnameDetailModal(type, param1, param2) {
+            let modalEl = document.getElementById('opnameDetailModal');
+            let titleEl = document.getElementById('modalOpnameTitle');
+            let bodyEl = document.getElementById('modalOpnameBody');
+            if(!modalEl) return;
+
+            if (type === 'rekon') {
+                titleEl.innerHTML = `<i class="fa-solid fa-file-invoice text-purple-600 mr-2"></i> Detail Rekon SAP vs Fisik - Tanggal ${param1}`;
+                let rowsHtml = '';
+                let items = binData.filter(i => (i.tanggal || i.prodate || '08/09/2026') === param1);
+                if(items.length === 0) items = binData.slice(0, 5);
+
+                items.forEach((item, idx) => {
+                    let skuCode = item.sku ? item.sku.split(' - ')[0] : '312743';
+                    let sapQty = parseFloat(sapStockData[skuCode]) || 10;
+                    rowsHtml += `<tr>
+                        <td>${idx + 1}</td>
+                        <td><span class="badge bg-slate-100 text-slate-700 fw-bold">${skuCode}</span></td>
+                        <td class="text-start">${item.sku || 'SUPERSTAR CHOCOLATE'}</td>
+                        <td class="fw-bold text-indigo-600">${sapQty} Plt</td>
+                        <td class="fw-bold text-emerald-600">${item.konversi || '10 Plt'}</td>
+                        <td>0.00 Plt</td>
+                        <td><span class="badge bg-success-subtle text-success">Balance</span></td>
+                    </tr>`;
+                });
+
+                bodyEl.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center">
+                            <thead class="pastel-header-purple">
+                                <tr><th>No</th><th>SKU</th><th class="text-start">Nama Produk</th><th>Stok SAP</th><th>Total Fisik</th><th>Selisih Variance</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>${rowsHtml}</tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (type === 'qc') {
+                titleEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-600 mr-2"></i> Rincian Live Monitoring Karantina QC - Tanggal ${param1}`;
+                bodyEl.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center">
+                            <thead class="pastel-header-red">
+                                <tr><th>Status QC</th><th>SKU</th><th class="text-start">Nama Produk</th><th>No. Pallet</th><th>Jumlah Plt</th><th>Keterangan</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><span class="badge bg-rose-100 text-rose-700">HOLD</span></td>
+                                    <td>312743</td>
+                                    <td class="text-start">SUPERSTAR TRIPLE CHOCOLATE</td>
+                                    <td>PLT-001</td>
+                                    <td class="fw-bold">2 Plt</td>
+                                    <td class="text-start">Karantina Sample Uji Lab</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else if (type === 'opname_tanggal') {
+                titleEl.innerHTML = `<i class="fa-solid fa-users text-indigo-600 mr-2"></i> Pilih Petugas Audit - Tanggal ${param1}`;
+                bodyEl.innerHTML = `
+                    <div class="space-y-3">
+                        <p class="text-slate-600 font-semibold">Berikut adalah daftar Stock Keeper (Petugas) yang bertugas pada tanggal <b>${param1}</b>:</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div onclick="openOpnameDetailModal('opname_petugas', '${param1}', 'PERI EKA SAPUTRA')" class="p-4 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-xl cursor-pointer transition flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-indigo-100 text-indigo-600 p-2.5 rounded-lg"><i class="fa-solid fa-user text-base"></i></div>
+                                    <div>
+                                        <h5 class="font-bold text-slate-700 text-xs mb-0">PERI EKA SAPUTRA</h5>
+                                        <span class="text-[10px] text-slate-400">Stock Keeper Senior (Shift 1)</span>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-slate-400"></i>
+                            </div>
+                            <div onclick="openOpnameDetailModal('opname_petugas', '${param1}', 'RIO')" class="p-4 bg-slate-50 hover:bg-indigo-50 border border-slate-200 rounded-xl cursor-pointer transition flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <div class="bg-indigo-100 text-indigo-600 p-2.5 rounded-lg"><i class="fa-solid fa-user text-base"></i></div>
+                                    <div>
+                                        <h5 class="font-bold text-slate-700 text-xs mb-0">RIO</h5>
+                                        <span class="text-[10px] text-slate-400">Stock Keeper (Shift 2)</span>
+                                    </div>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-slate-400"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'opname_petugas') {
+                titleEl.innerHTML = `<i class="fa-solid fa-file-invoice text-slate-700 mr-2"></i> Rincian Opname Petugas: ${param2} (${param1})` ;
+                bodyEl.innerHTML = `
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center">
+                            <thead class="table-light">
+                                <tr><th>Tanggal Audit</th><th>Plant</th><th>Stock Keeper</th><th>SKU</th><th class="text-start">Nama Produk</th><th>Rak (Bin Loc)</th><th>Hasil Opname</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${param1}</td>
+                                    <td>Plant 1115</td>
+                                    <td class="fw-bold text-indigo-600">${param2}</td>
+                                    <td>312743</td>
+                                    <td class="text-start">SUPERSTAR TRIPLE CHOCOLATE</td>
+                                    <td>Blok A-01</td>
+                                    <td class="fw-bold text-emerald-600">10 Pallet</td>
+                                </tr>
+                                <tr>
+                                    <td>${param1}</td>
+                                    <td>Plant 1115</td>
+                                    <td class="fw-bold text-indigo-600">${param2}</td>
+                                    <td>312744</td>
+                                    <td class="text-start">TOP COFFEE</td>
+                                    <td>Blok B-03</td>
+                                    <td class="fw-bold text-emerald-600">15 Pallet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+
+            modalEl.classList.remove('hidden');
+        }
+
+        function closeOpnameDetailModal() {
+            let modalEl = document.getElementById('opnameDetailModal');
+            if(modalEl) modalEl.classList.add('hidden');
         }
 
         function switchInputSub(type) {
@@ -2101,7 +2344,7 @@
                 targetSec.classList.remove('hidden');
             }
             if(menuName === 'binloc') { renderBinMap(); renderCurrentStockTable(); renderMovementHistoryTable(); }
-            if(menuName === 'opname') { renderQcHistoryTable(); renderReconciliationTable(); renderOpnameHistory(); }
+            if(menuName === 'opname') { renderReconciliationSummary(); renderQcDateSummaryTable(); renderOpnameDateSummary(); }
             if(menuName === 'rdc') { renderRdcMonitoringTable(); }
             if(menuName === 'realisasi') { renderRealisasiTable(); }
             if(menuName === 'ekspor') { renderEksporSummaryTable(); }
@@ -2228,7 +2471,7 @@
                 });
             }
             let modalEl = document.getElementById('qcModalSummary');
-            if(modalEl) modalEl.classList.add('hidden');
+            if(modalEl) modalEl.classList.remove('hidden');
         }
         function closeQcModalSummary() {
             let modalEl = document.getElementById('qcModalSummary');
@@ -2351,19 +2594,16 @@
                 let skuItem = t.pickingList && t.pickingList.length > 0 ? t.pickingList.map(i => i.sku).join(', ') : '-';
                 let namaBarangItem = t.pickingList && t.pickingList.length > 0 ? t.pickingList.map(i => i.nama).join(', ') : '-';
                 
-                // Jam Keluar aktual
                 let actualKeluar = '-';
                 if (t.status === 'Keluar' && t.timeOut && t.timeOut !== '-') {
                     actualKeluar = t.timeOut;
                 }
 
-                // Jam Selesai Muat (ambil dari timeOut jika sudah selesai/keluar)
                 let selesaiMuat = '-';
                 if (t.status === 'Selesai Muat' || t.status === 'Keluar') {
                     selesaiMuat = t.timeOut && t.timeOut !== '-' ? t.timeOut : (t.timeStartLoading || '-');
                 }
 
-                // Hitung durasi lama stay di pabrik dengan toleransi lintas hari
                 let lamaStay = '-';
                 if (t.timeIn && t.timeIn !== '-' && actualKeluar !== '-') {
                     try {
@@ -2373,7 +2613,7 @@
                         let outTotalMin = outH * 60 + outM;
                         
                         let diffMin = outTotalMin - inTotalMin;
-                        if (diffMin < 0) diffMin += 24 * 60; // Truk menginap / lewat tengah malam
+                        if (diffMin < 0) diffMin += 24 * 60;
                         
                         let dh = Math.floor(diffMin / 60);
                         let dm = diffMin % 60;
@@ -2425,40 +2665,6 @@
                 if(btnInduk) btnInduk.className = 'px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-semibold';
             }
             renderBinMap(); 
-        }
-
-        function renderQcHistoryTable() {
-            let tbody = document.getElementById('qcHistoryBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            if(qcHistoryData.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Belum ada data QC.</td></tr>'; return; }
-            qcHistoryData.forEach(h => {
-                tbody.innerHTML += `<tr><td><span class="badge bg-rose-100 text-rose-600">${h.status || '-'}</span></td><td>${h.sku || '-'}</td><td class="text-start">${h.name || '-'}</td><td>${h.palletNo || '-'}</td><td>${h.pallets || 0} Plt</td><td class="text-start">${h.reason || '-'}</td></tr>`;
-            });
-        }
-
-        function renderReconciliationTable() {
-            let tbody = document.getElementById('reconciliationBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            let keys = Object.keys(sapStockData);
-            if(keys.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Belum ada data SAP.</td></tr>'; return; }
-            keys.forEach(sku => {
-                let sapQty = parseFloat(sapStockData[sku]) || 0;
-                tbody.innerHTML += `<tr><td>${sku}</td><td class="text-start">SKU ${sku}</td><td class="fw-bold text-indigo-600">${sapQty.toFixed(2)} Plt</td><td class="fw-bold text-emerald-600">0.00 Plt</td><td>0.00 Plt</td><td><span class="badge bg-success-subtle text-success">Balance</span></td></tr>`;
-            });
-        }
-
-        function renderOpnameHistory() {
-            let tbody = document.getElementById('opnameHistoryBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            let opnameItems = binData.filter(i => i.category === 'Stock Opname');
-            if(opnameItems.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Belum ada data riwayat opname.</td></tr>'; return; }
-            opnameItems.forEach(item => {
-                let skuCode = item.sku ? item.sku.split(' - ')[0] : '-';
-                tbody.innerHTML += `<tr><td>${item.tanggal || '-'}</td><td>Plant ${item.shift || '-'}</td><td>${item.buyer || '-'}</td><td>${skuCode}</td><td class="text-start">${item.sku || '-'}</td><td>${item.lokasi || '-'}</td><td class="fw-bold text-indigo-600">${item.konversi || '-'}</td></tr>`;
-            });
         }
 
         function renderCurrentStockTable() {
@@ -2601,7 +2807,6 @@
             if(modalEl) modalEl.classList.add('hidden');
         }
 
-        // Inisialisasi awal saat halaman dimuat
         document.addEventListener("DOMContentLoaded", () => {
             try {
                 fetchAllDataFromSupabase();

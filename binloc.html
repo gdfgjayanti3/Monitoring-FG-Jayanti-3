@@ -699,7 +699,7 @@
                 </div>
 
                 <div class="card shadow-2xs border-0 bg-white p-3 rounded-2xl border border-slate-200 space-y-2">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between items-center">
                         <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0"><i class="fa-solid fa-calendar-days text-amber-600 mr-1.5"></i> Riwayat Sesi Data Input SAP (Per Tanggal)</h5>
                         <button class="btn btn-xs btn-outline-danger" onclick="deleteAllSapSessions()">Hapus Semua Sesi SAP</button>
                     </div>
@@ -1155,11 +1155,6 @@
         const SUPABASE_KEY = 'sb_publishable_9sAzy4cjko7xheXLmDButQ_gDOEsxfN'; 
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // Fungsi Tambah Blok / Tambah Baris Opname
-        function tambahBlokOpname() {
-            addOpnameRow();
-        }
 
         function updateClock() {
             const now = new Date();
@@ -1643,7 +1638,7 @@
             } else {
                 alert('Berhasil memperbarui data plotting!');
                 closeModal('modalEditPlotting');
-                loadPlottingDataFromCloud();
+                loadDataFromCloud();
             }
         }
 
@@ -1663,7 +1658,7 @@
             } else {
                 alert('Berhasil menambahkan penugasan SKU untuk ' + manpower);
                 document.getElementById('plotSkuInput').value = '';
-                loadPlottingDataFromCloud();
+                loadDataFromCloud();
             }
         }
 
@@ -1671,7 +1666,7 @@
             if(confirm('Hapus penugasan SKU ini dari manpower?')) {
                 let { error } = await _supabase.from('master_plotting_opname').delete().eq('id', id);
                 if(error) alert('Gagal menghapus data!');
-                else loadPlottingDataFromCloud();
+                else loadDataFromCloud();
             }
         }
 
@@ -1722,7 +1717,8 @@
                     </td>
                     <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" placeholder="0" oninput="calcMultiRow(${opnameRowIdx})"></td>
                     <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
-                    <td>
+                    <td class="d-flex gap-1 justify-content-center">
+                        <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[10px]" onclick="addBlockRowBelow(${opnameRowIdx})"><i class="fa-solid fa-plus"></i> Tambah Blok</button>
                         <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i> Hapus</button>
                     </td>
                 `;
@@ -1908,11 +1904,51 @@
                 </td>
                 <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" oninput="calcMultiRow(${opnameRowIdx})" placeholder="Karton"></td>
                 <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
-                <td>
+                <td class="d-flex gap-1 justify-content-center">
+                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[10px]" onclick="addBlockRowBelow(${opnameRowIdx})"><i class="fa-solid fa-plus"></i> Tambah Blok</button>
                     <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i> Hapus</button>
                 </td>
             `;
             tbody.appendChild(tr);
+        }
+
+        // Fungsi khusus untuk menduplikasi baris di bawahnya dengan SKU yang sama persis
+        function addBlockRowBelow(currentIdx) {
+            let currentSkuVal = document.getElementById('opSku_' + currentIdx).value;
+            if(!currentSkuVal) {
+                alert('Pilih SKU pada baris ini terlebih dahulu sebelum menambah blok baru!');
+                return;
+            }
+
+            opnameRowIdx++;
+            let newIdx = opnameRowIdx;
+            let wh = document.getElementById('opDestWarehouse').value;
+            let blocks = wh.includes('Induk') ? indukBlocks : agingBlocks;
+            let blockOpts = '<option value="">-- Pilih Blok --</option>';
+            blocks.forEach(b => { blockOpts += `<option value="Blok ${b}">Blok ${b}</option>`; });
+
+            let tr = document.createElement('tr');
+            tr.id = 'opRow_' + newIdx;
+            tr.innerHTML = `
+                <td><select class="form-select form-select-sm border-slate-200" id="opRackBlock_${newIdx}" required>${blockOpts}</select></td>
+                <td><input type="text" class="form-control form-control-sm border-slate-200" id="opRow_${newIdx}" required placeholder="Row 01"></td>
+                <td class="relative">
+                    <input type="text" class="form-control form-control-sm border-slate-200 bg-slate-50" id="opSku_${newIdx}" required value="${currentSkuVal}" readonly>
+                </td>
+                <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${newIdx}" required min="0" oninput="calcMultiRow(${newIdx})" placeholder="Karton"></td>
+                <td class="fw-bold text-indigo-600" id="opPalletDisplay_${newIdx}">0 Plt</td>
+                <td class="d-flex gap-1 justify-content-center">
+                    <button type="button" class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[10px]" onclick="addBlockRowBelow(${newIdx})"><i class="fa-solid fa-plus"></i> Tambah Blok</button>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${newIdx})"><i class="fa-solid fa-trash"></i> Hapus</button>
+                </td>
+            `;
+
+            let currentRow = document.getElementById('opRow_' + currentIdx);
+            if (currentRow) {
+                currentRow.insertAdjacentElement('afterend', tr);
+            } else {
+                document.getElementById('multiOpnameBody').appendChild(tr);
+            }
         }
 
         function calcMultiRow(idx) {
@@ -2806,7 +2842,7 @@
             await _supabase.from('relokasi__barang').insert([logItem]);
             let targetTable = item.category === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
             if(item.id) {
-                await _supabase.from(targetTable).update({ lokasi: `${logItem.blok_tujuan} - ${logItem.lor_tujuan}`, tujuan_gudang: logItem.tujuan_gudang }).eq('id', item.id);
+                await _supabase.from(targetTable).update({ lokasi: `${logItem.blok_tujuan} - ${logItem.lorong_tujuan}`, tujuan_gudang: logItem.tujuan_gudang }).eq('id', item.id);
             }
 
             alert('Berhasil memindahkan barang!');

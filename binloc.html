@@ -495,7 +495,7 @@
 
     </main>
 
-    <!-- MODAL POPUP DETAIL LOG OPNAME PER TANGGAL -->
+    <!-- MODAL POPUP DETAIL LOG OPNAME PER TANGGAL & PER NAMA -->
     <div id="modalOpnameDetail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full overflow-hidden border border-slate-200 animate-fadeIn flex flex-col max-h-[90vh]">
             <div class="pastel-header-purple px-6 py-4 flex justify-between items-center">
@@ -503,23 +503,8 @@
                 <button onclick="closeModal('modalOpnameDetail')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs">
-                        <thead class="pastel-header-purple">
-                            <tr>
-                                <th>Area Gudang</th>
-                                <th>Plant</th>
-                                <th>Stock Keeper</th>
-                                <th>SKU Produk</th>
-                                <th>Lokasi Rak</th>
-                                <th>Fisik (Karton & Pallet)</th>
-                                <th>Aksi (Edit & Hapus)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="modalOpnameBody">
-                            <tr><td colspan="7" class="text-muted">Memuat data...</td></tr>
-                        </tbody>
-                    </table>
+                <div id="opnameManpowerCardsContainer" class="space-y-4">
+                    <!-- Card per manpower akan dirender otomatis disini -->
                 </div>
             </div>
             <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
@@ -1967,45 +1952,83 @@
         function openOpnameDetailModal(dateStr) {
             activeOpnameDate = dateStr;
             document.getElementById('modalOpnameTitle').innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-2"></i> Rincian Hasil Stock Opname — Tanggal: ${dateStr}`;
-            let tbody = document.getElementById('modalOpnameBody');
-            tbody.innerHTML = '';
+            let container = document.getElementById('opnameManpowerCardsContainer');
+            container.innerHTML = '';
 
             let matched = binData.filter(item => item.gudang === 'Stock Opname' && (item.tanggal_masuk || '') === dateStr);
             if(matched.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Tidak ada data opname di tanggal ini.</td></tr>';
+                container.innerHTML = '<p class="text-muted text-center py-4">Tidak ada data opname di tanggal ini.</p>';
             } else {
+                // Kelompokkan per Nama Petugas / Manpower (shift_kerja)
+                let groupedByManpower = {};
                 matched.forEach(item => {
-                    let kartonVal = parseFloat(item.karton) || 0;
-                    let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
-                    let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
-                    let pltVal = (kartonVal / stdKrt).toFixed(2);
-                    let cleanLokasi = item.lokasi ? item.lokasi.replace('- undefined', '').trim() : '-';
-
-                    let detectedPlant = '-';
-                    for (let dKey in sapSessionsData) {
-                        if (sapSessionsData[dKey][skuKey] && sapSessionsData[dKey][skuKey].plant) {
-                            detectedPlant = sapSessionsData[dKey][skuKey].plant;
-                            break;
-                        }
-                    }
-
-                    let escSku = (item.sku || '').replace(/'/g, "\\'");
-                    let escTgl = item.tanggal_masuk || '';
-                    let escShift = item.shift_kerja || '';
-
-                    tbody.innerHTML += `<tr>
-                        <td>${item.tujuan_gudang || '-'}</td>
-                        <td class="fw-bold text-amber-800">${detectedPlant}</td>
-                        <td class="fw-bold text-purple-800">${item.shift_kerja || '-'}</td>
-                        <td class="text-start fw-semibold">${item.sku}</td>
-                        <td>${cleanLokasi}</td>
-                        <td class="fw-bold text-emerald-600">${kartonVal} krt (${pltVal} Plt)</td>
-                        <td class="space-x-1">
-                            <button class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[11px]" onclick="openEditOpnameModal('${item.id}', '${escSku}', '${cleanLokasi}', ${kartonVal})"><i class="fa-solid fa-pen"></i> Edit</button>
-                            <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', false, '${escSku}', '${escTgl}', '${escShift}'); setTimeout(openOpnameDetailModal('${dateStr}'), 300);"><i class="fa-solid fa-trash"></i> Hapus</button>
-                        </td>
-                    </tr>`;
+                    let mp = item.shift_kerja || 'Tanpa Petugas';
+                    if(!groupedByManpower[mp]) groupedByManpower[mp] = [];
+                    groupedByManpower[mp].push(item);
                 });
+
+                for(let mpName in groupedByManpower) {
+                    let items = groupedByManpower[mpName];
+                    let tableRowsHtml = '';
+
+                    items.forEach(item => {
+                        let kartonVal = parseFloat(item.karton) || 0;
+                        let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
+                        let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
+                        let pltVal = (kartonVal / stdKrt).toFixed(2);
+                        let cleanLokasi = item.lokasi ? item.lokasi.replace('- undefined', '').trim() : '-';
+
+                        let detectedPlant = '-';
+                        for (let dKey in sapSessionsData) {
+                            if (sapSessionsData[dKey][skuKey] && sapSessionsData[dKey][skuKey].plant) {
+                                detectedPlant = sapSessionsData[dKey][skuKey].plant;
+                                break;
+                            }
+                        }
+
+                        let escSku = (item.sku || '').replace(/'/g, "\\'");
+                        let escTgl = item.tanggal_masuk || '';
+                        let escShift = item.shift_kerja || '';
+
+                        tableRowsHtml += `<tr>
+                            <td>${item.tujuan_gudang || '-'}</td>
+                            <td class="fw-bold text-amber-800">${detectedPlant}</td>
+                            <td class="text-start fw-semibold">${item.sku}</td>
+                            <td>${cleanLokasi}</td>
+                            <td class="fw-bold text-emerald-600">${kartonVal} krt (${pltVal} Plt)</td>
+                            <td class="space-x-1">
+                                <button class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[11px]" onclick="openEditOpnameModal('${item.id}', '${escSku}', '${cleanLokasi}', ${kartonVal})"><i class="fa-solid fa-pen"></i> Edit</button>
+                                <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', false, '${escSku}', '${escTgl}', '${escShift}'); setTimeout(() => openOpnameDetailModal('${dateStr}'), 300);"><i class="fa-solid fa-trash"></i> Hapus</button>
+                            </td>
+                        </tr>`;
+                    });
+
+                    container.innerHTML += `
+                        <div class="border border-purple-200 rounded-2xl overflow-hidden shadow-2xs bg-white mb-4">
+                            <div class="pastel-header-purple px-4 py-2.5 font-bold flex justify-between items-center text-xs">
+                                <span><i class="fa-solid fa-user-tie mr-1.5"></i> Manpower / Petugas: ${mpName}</span>
+                                <span class="badge bg-purple-200 text-purple-900">${items.length} Item SKU</span>
+                            </div>
+                            <div class="table-responsive m-0">
+                                <table class="table table-bordered align-middle text-center text-xs mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Area Gudang</th>
+                                            <th>Plant</th>
+                                            <th>SKU Produk</th>
+                                            <th>Lokasi Rak</th>
+                                            <th>Fisik (Karton & Pallet)</th>
+                                            <th>Aksi (Edit & Hapus)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${tableRowsHtml}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
             }
             document.getElementById('modalOpnameDetail').classList.remove('hidden');
         }

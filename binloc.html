@@ -2025,10 +2025,17 @@
             loadDataFromCloud();
         }
 
-        async function deleteReportItem(id, isEkspor) {
+        async function deleteReportItem(id, isEkspor, skuVal = '', tglVal = '', shiftVal = '') {
             if(confirm('Hapus log ini dari database?')) {
                 let tableName = isEkspor ? 'stok_ekspor' : 'stok_lokal';
-                await _supabase.from(tableName).delete().eq('id', id);
+                if(id && id !== 'undefined' && id !== 'null') {
+                    await _supabase.from(tableName).delete().eq('id', id);
+                } else {
+                    // Fallback jika ID tidak ada (data lama), hapus berdasarkan kecocokan data
+                    let query = _supabase.from(tableName).delete().eq('gudang', 'Stock Opname').eq('sku', skuVal).eq('tanggal_masuk', tglVal);
+                    if(shiftVal) query = query.eq('shift_kerja', shiftVal);
+                    await query;
+                }
                 loadDataFromCloud();
             }
         }
@@ -2068,6 +2075,7 @@
                 let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
                 let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
                 let pltVal = (kartonVal / stdKrt).toFixed(2);
+                let cleanLokasi = item.lokasi ? item.lokasi.replace('- undefined', '').trim() : '-';
 
                 tbody.innerHTML += `<tr>
                     <td><span class="badge ${item.category === 'Ekspor' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}">${item.category || 'Lokal'}</span></td>
@@ -2076,7 +2084,7 @@
                     <td>${item.nomor_qt || '-'}</td>
                     <td class="text-start fw-semibold">${item.sku}</td>
                     <td>${item.kodefikasi || '-'}</td>
-                    <td><span class="badge bg-indigo-50 text-indigo-600">${item.lokasi}</span></td>
+                    <td><span class="badge bg-indigo-50 text-indigo-600">${cleanLokasi}</span></td>
                     <td class="fw-bold">${item.pallet}</td>
                     <td class="fw-bold text-emerald-600">${pltVal} Plt (${kartonVal} krt)</td>
                     <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', ${item.category === 'Ekspor'})"><i class="fa-solid fa-trash"></i></button></td>
@@ -2100,6 +2108,7 @@
                 let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
                 let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
                 let pltVal = (kartonVal / stdKrt).toFixed(2);
+                let cleanLokasi = item.lokasi ? item.lokasi.replace('- undefined', '').trim() : '-';
 
                 // Mencari plant dari sesi SAP yang tersedia berdasarkan SKU
                 let detectedPlant = '-';
@@ -2110,15 +2119,19 @@
                     }
                 }
 
+                let escSku = (item.sku || '').replace(/'/g, "\\'");
+                let escTgl = item.tanggal_masuk || '';
+                let escShift = item.shift_kerja || '';
+
                 tbody.innerHTML += `<tr>
                     <td>${item.tanggal_masuk || '-'}</td>
                     <td>${item.tujuan_gudang || '-'}</td>
                     <td class="fw-bold text-amber-800">${detectedPlant}</td>
                     <td class="fw-bold text-purple-800">${item.shift_kerja || '-'}</td>
                     <td class="text-start fw-semibold">${item.sku}</td>
-                    <td>${item.lokasi}</td>
+                    <td>${cleanLokasi}</td>
                     <td class="fw-bold text-emerald-600">${kartonVal} krt (${pltVal} Plt)</td>
-                    <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', false)"><i class="fa-solid fa-trash"></i></button></td>
+                    <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', false, '${escSku}', '${escTgl}', '${escShift}')"><i class="fa-solid fa-trash"></i></button></td>
                 </tr>`;
             });
         }

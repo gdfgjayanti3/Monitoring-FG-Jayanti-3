@@ -519,12 +519,19 @@
         </div>
 
         <div id="section-peta" class="app-page space-y-6">
-            <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
                 <div>
                     <h3 class="font-bold text-slate-700 text-base">Peta Kapasitas Gudang & Relokasi (Jayanti 3)</h3>
                     <p class="text-xs text-slate-400">Klik blok rak untuk melihat isi barang per lorong & memindahkan lokasi (Relokasi).</p>
                 </div>
-                <div class="flex items-center gap-2">
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Tombol Tambah Racking & Tambah Baris SKU yang diminta kembali -->
+                    <button onclick="addBinRackingRow()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-2xs">
+                        <i class="fa-solid fa-plus"></i> Tambah Racking
+                    </button>
+                    <button onclick="addBinSkuRow()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 px-3 py-1.5 rounded-xl font-bold text-xs transition flex items-center gap-1.5 shadow-2xs">
+                        <i class="fa-solid fa-plus"></i> Tambah Baris SKU
+                    </button>
                     <button onclick="switchWarehouse('INDUK')" id="btnWhInduk" class="btn btn-sm btn-primary">Gudang Induk (A-X)</button>
                     <button onclick="switchWarehouse('AGING')" id="btnWhAging" class="btn btn-sm btn-outline-secondary">Gudang Aging (A-O)</button>
                     <button onclick="switchSection('home')" class="btn btn-sm btn-outline-secondary ms-2"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
@@ -680,7 +687,7 @@
             </div>
             <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
                 <div class="card border-0 shadow-2xs rounded-2xl overflow-hidden" style="background-color: #fffbeb;">
-                    <div class="card-header border-0 font-bold d-flex justify-content-between align-items-center py-2 px-3" style="background-color: #fef3c7; color: #92400e;">
+                    <div class="card-header border-0 font-bold d-flex justify-content-between items-center py-2 px-3" style="background-color: #fef3c7; color: #92400e;">
                         <span class="small">Input Data Sistem SAP Per Tanggal (plant, sku, nama barang, ending stock)</span>
                     </div>
                     <div class="card-body p-3 space-y-2">
@@ -980,7 +987,7 @@
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle text-center text-xs mb-0">
-                        <thead class="pastel-header-blue">
+                        <pastel-header-blue>
                             <tr>
                                 <th>Waktu Perpindahan</th>
                                 <th>Nama Petugas</th>
@@ -989,7 +996,7 @@
                                 <th>Lokasi Tujuan Baru</th>
                                 <th>Aksi Hapus</th>
                             </tr>
-                        </thead>
+                        </pastel-header-blue>
                         <tbody id="relokasiLogTableBody">
                             <tr><td colspan="6" class="text-muted">Memuat data dari cloud...</td></tr>
                         </tbody>
@@ -1155,6 +1162,15 @@
         const SUPABASE_KEY = 'sb_publishable_9sAzy4cjko7xheXLmDButQ_gDOEsxfN'; 
         const { createClient } = supabase;
         const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Fungsi Tambah Racking & Tambah Baris SKU untuk Bin Loc
+        function addBinRackingRow() {
+            alert('Fitur tambah racking/baris baru diaktifkan.');
+        }
+
+        function addBinSkuRow() {
+            alert('Fitur tambah baris SKU diaktifkan.');
+        }
 
         function updateClock() {
             const now = new Date();

@@ -193,7 +193,7 @@
                                 <th>Lokasi Rak (Bin Loc)</th>
                                 <th>No. Pallet</th>
                                 <th>Jumlah Karton & Konversi</th>
-                                <th>Aksi Hapus</th>
+                                <th>Aksi (Edit & Hapus)</th>
                             </tr>
                         </thead>
                         <tbody id="reportTableBody">
@@ -207,32 +207,20 @@
         <div id="section-opname-log" class="app-page space-y-6 max-w-6xl mx-auto">
             <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
                 <div>
-                    <h3 class="font-bold text-purple-800 text-base"><i class="fa-solid fa-clock-rotate-left mr-2"></i> Log Riwayat Hasil Stock Opname Tersimpan</h3>
-                    <p class="text-xs text-slate-400">Arsip lengkap seluruh hasil perhitungan fisik opname gudang.</p>
+                    <h3 class="font-bold text-purple-800 text-base"><i class="fa-solid fa-clock-rotate-left mr-2"></i> Log Riwayat Hasil Stock Opname Tersimpan (Per Tanggal)</h3>
+                    <p class="text-xs text-slate-400">Arsip lengkap seluruh hasil perhitungan fisik opname gudang yang dikelompokkan per tanggal.</p>
                 </div>
                 <div>
                     <button onclick="switchSection('opname')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali ke Form Opname</button>
                 </div>
             </div>
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs mb-0">
-                        <thead class="pastel-header-purple">
-                            <tr>
-                                <th>Tanggal Opname</th>
-                                <th>Area Gudang</th>
-                                <th>Plant</th>
-                                <th>Stock Keeper</th>
-                                <th>SKU Produk</th>
-                                <th>Lokasi Rak</th>
-                                <th>Fisik (Karton & Pallet)</th>
-                                <th>Aksi Hapus</th>
-                            </tr>
-                        </thead>
-                        <tbody id="opnameReportTableBody">
-                            <tr><td colspan="8" class="text-muted">Memuat data dari cloud...</td></tr>
-                        </tbody>
-                    </table>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0"><i class="fa-solid fa-calendar-days text-purple-600 mr-1.5"></i> Daftar Sesi Tanggal Opname Fisik</h5>
+                    <button class="btn btn-xs btn-outline-danger" onclick="deleteAllOpnameLogs()">Hapus Semua Log Opname</button>
+                </div>
+                <div id="opnameSessionsList" class="space-y-2">
+                    <p class="text-muted small">Memuat data log riwayat opname...</p>
                 </div>
             </div>
         </div>
@@ -337,7 +325,7 @@
                                 <th>No. Pallet (Hold Random)</th>
                                 <th>Alasan Hold</th>
                                 <th>Status Aktif</th>
-                                <th>Tindak Lanjut & Aksi Hapus</th>
+                                <th>Tindak Lanjut & Aksi (Edit & Hapus)</th>
                             </tr>
                         </thead>
                         <tbody id="activeHoldTableBody">
@@ -506,6 +494,131 @@
         </div>
 
     </main>
+
+    <!-- MODAL POPUP DETAIL LOG OPNAME PER TANGGAL -->
+    <div id="modalOpnameDetail" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full overflow-hidden border border-slate-200 animate-fadeIn flex flex-col max-h-[90vh]">
+            <div class="pastel-header-purple px-6 py-4 flex justify-between items-center">
+                <h3 id="modalOpnameTitle" class="font-bold text-xs"><i class="fa-solid fa-clock-rotate-left mr-2"></i> Rincian Hasil Stock Opname</h3>
+                <button onclick="closeModal('modalOpnameDetail')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center text-xs">
+                        <thead class="pastel-header-purple">
+                            <tr>
+                                <th>Area Gudang</th>
+                                <th>Plant</th>
+                                <th>Stock Keeper</th>
+                                <th>SKU Produk</th>
+                                <th>Lokasi Rak</th>
+                                <th>Fisik (Karton & Pallet)</th>
+                                <th>Aksi (Edit & Hapus)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalOpnameBody">
+                            <tr><td colspan="7" class="text-muted">Memuat data...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end">
+                <button type="button" class="btn btn-sm btn-outline-secondary px-4 text-xs" onclick="closeModal('modalOpnameDetail')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT DATA OPNAME ITEM -->
+    <div id="modalEditOpname" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs">
+            <div class="pastel-header-purple px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold">Edit Hasil Stock Opname</h3>
+                <button onclick="closeModal('modalEditOpname')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="updateOpnameItem(event)" class="p-6 space-y-3">
+                <input type="hidden" id="editOpId">
+                <div>
+                    <label class="form-label fw-bold">SKU Produk</label>
+                    <input type="text" id="editOpSku" class="form-control form-control-sm bg-slate-100" readonly>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Lokasi Rak / Bin Loc</label>
+                    <input type="text" id="editOpLokasi" class="form-control form-control-sm" required>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Jumlah Fisik (Karton)</label>
+                    <input type="number" id="editOpKarton" class="form-control form-control-sm" required min="0">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="btn btn-sm text-white w-100 fw-bold" style="background-color: #7c3aed;">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3" onclick="closeModal('modalEditOpname')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT DATA PENERIMAAN / REPORT ITEM -->
+    <div id="modalEditReport" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs">
+            <div class="pastel-header-blue px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold">Edit Data Penerimaan Barang</h3>
+                <button onclick="closeModal('modalEditReport')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="updateReportItem(event)" class="p-6 space-y-3">
+                <input type="hidden" id="editRepId">
+                <input type="hidden" id="editRepCategory">
+                <div>
+                    <label class="form-label fw-bold">SKU & Nama Produk</label>
+                    <input type="text" id="editRepSku" class="form-control form-control-sm bg-slate-100" readonly>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Lokasi Rak (Bin Loc)</label>
+                    <input type="text" id="editRepLokasi" class="form-control form-control-sm" required>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">No. Pallet</label>
+                    <input type="text" id="editRepPallet" class="form-control form-control-sm" required>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Jumlah Karton</label>
+                    <input type="number" id="editRepKarton" class="form-control form-control-sm" required min="1">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3" onclick="closeModal('modalEditReport')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL EDIT QC ITEM -->
+    <div id="modalEditQc" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs">
+            <div class="pastel-header-rose px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold">Edit Karantina QC</h3>
+                <button onclick="closeModal('modalEditQc')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="updateQcItemSubmit(event)" class="p-6 space-y-3">
+                <input type="hidden" id="editQcId">
+                <div>
+                    <label class="form-label fw-bold">SKU Produk</label>
+                    <input type="text" id="editQcSku" class="form-control form-control-sm bg-slate-100" readonly>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Alasan Hold</label>
+                    <input type="text" id="editQcReason" class="form-control form-control-sm" required>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Jumlah Karton</label>
+                    <input type="number" id="editQcKarton" class="form-control form-control-sm" required min="1">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button type="submit" class="btn btn-sm text-white w-100 fw-bold" style="background-color: #f43f5e;">Simpan Perubahan</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3" onclick="closeModal('modalEditQc')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <!-- MODAL POPUP MENU INPUT SAP -->
     <div id="modalSapMenu" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
@@ -1008,7 +1121,7 @@
         let sapNamaBarangMap = {};
         let masterStockData = {};
         let globalPlottingData = [];
-        let activeModalDate = '';
+        let activeOpnameDate = '';
 
         async function loadDataFromCloud() {
             try {
@@ -1069,6 +1182,7 @@
                         palletrange: q.no_pallet,
                         holdmanual: q.pallet_random,
                         pallets: `${q.jumlah_karton} krt`,
+                        karton: q.jumlah_karton,
                         reason: q.alasan_hold
                     }));
                 }
@@ -1090,6 +1204,7 @@
                 renderActiveHoldTable();
                 renderReportTable();
                 renderSapSessionsList();
+                renderOpnameSessionsList();
             } catch (e) {
                 console.error('Gagal mengambil data dari cloud:', e);
             }
@@ -1408,7 +1523,7 @@
                     <td class="text-start">${namaBarang}</td>
                     <td class="space-x-1">
                         <button class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[11px]" onclick="openEditPlotting('${item.id}', '${item.nama_manpower}', '${item.sku}')"><i class="fa-solid fa-pen"></i> Edit</button>
-                        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deletePlottingItem('${item.id}')"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deletePlottingItem('${item.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
                     </td>
                 </tr>`;
             });
@@ -1513,7 +1628,7 @@
                     <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" placeholder="0" oninput="calcMultiRow(${opnameRowIdx})"></td>
                     <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
                     <td>
-                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i> Hapus</button>
                     </td>
                 `;
                 tbody.appendChild(tr);
@@ -1699,7 +1814,7 @@
                 <td><input type="number" class="form-control form-control-sm border-slate-200" id="opCarton_${opnameRowIdx}" required min="0" oninput="calcMultiRow(${opnameRowIdx})" placeholder="Karton"></td>
                 <td class="fw-bold text-indigo-600" id="opPalletDisplay_${opnameRowIdx}">0 Plt</td>
                 <td>
-                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i></button>
+                    <button type="button" class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[10px]" onclick="removeOpnameRow(${opnameRowIdx})"><i class="fa-solid fa-trash"></i> Hapus</button>
                 </td>
             `;
             tbody.appendChild(tr);
@@ -1806,11 +1921,119 @@
                         <div class="d-flex gap-1.5">
                             <button class="btn btn-sm btn-primary fw-bold text-[11px] py-1" onclick="openReconModal('${dateStr}')"><i class="fa-solid fa-magnifying-glass mr-1"></i> Detail Rekon</button>
                             <button class="btn btn-sm btn-outline-success fw-bold text-[11px] py-1" onclick="downloadSessionExcel('${dateStr}')"><i class="fa-solid fa-download mr-1"></i> Download</button>
-                            <button class="btn btn-sm btn-outline-danger fw-bold text-[11px] py-1" onclick="deleteSapSession('${dateStr}')"><i class="fa-solid fa-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-danger fw-bold text-[11px] py-1" onclick="deleteSapSession('${dateStr}')"><i class="fa-solid fa-trash"></i> Hapus</button>
                         </div>
                     </div>
                 `;
             });
+        }
+
+        function renderOpnameSessionsList() {
+            let container = document.getElementById('opnameSessionsList');
+            if(!container) return;
+            container.innerHTML = '';
+
+            let opnameItems = binData.filter(item => item.gudang === 'Stock Opname');
+            let groupedByDate = {};
+            opnameItems.forEach(item => {
+                let tgl = item.tanggal_masuk || 'Tanpa Tanggal';
+                if(!groupedByDate[tgl]) groupedByDate[tgl] = [];
+                groupedByDate[tgl].push(item);
+            });
+
+            let dates = Object.keys(groupedByDate);
+            if(dates.length === 0) {
+                container.innerHTML = '<p class="text-muted small">Belum ada riwayat hasil stock opname.</p>';
+                return;
+            }
+
+            dates.sort().reverse().forEach(dateStr => {
+                let count = groupedByDate[dateStr].length;
+                container.innerHTML += `
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-xl border border-slate-200 bg-slate-50">
+                        <div>
+                            <span class="fw-bold text-purple-900 text-xs"><i class="fa-regular fa-calendar text-purple-600 mr-1.5"></i> Tanggal Opname: ${dateStr}</span>
+                            <span class="badge bg-purple-100 text-purple-800 ml-2">${count} Item terdata</span>
+                        </div>
+                        <div class="d-flex gap-1.5">
+                            <button class="btn btn-sm btn-primary fw-bold text-[11px] py-1" onclick="openOpnameDetailModal('${dateStr}')"><i class="fa-solid fa-magnifying-glass mr-1"></i> Detail Opname</button>
+                            <button class="btn btn-sm btn-outline-danger fw-bold text-[11px] py-1" onclick="deleteOpnameSessionDate('${dateStr}')"><i class="fa-solid fa-trash"></i> Hapus Sesi</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function openOpnameDetailModal(dateStr) {
+            activeOpnameDate = dateStr;
+            document.getElementById('modalOpnameTitle').innerHTML = `<i class="fa-solid fa-clock-rotate-left mr-2"></i> Rincian Hasil Stock Opname — Tanggal: ${dateStr}`;
+            let tbody = document.getElementById('modalOpnameBody');
+            tbody.innerHTML = '';
+
+            let matched = binData.filter(item => item.gudang === 'Stock Opname' && (item.tanggal_masuk || '') === dateStr);
+            if(matched.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Tidak ada data opname di tanggal ini.</td></tr>';
+            } else {
+                matched.forEach(item => {
+                    let kartonVal = parseFloat(item.karton) || 0;
+                    let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
+                    let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
+                    let pltVal = (kartonVal / stdKrt).toFixed(2);
+                    let cleanLokasi = item.lokasi ? item.lokasi.replace('- undefined', '').trim() : '-';
+
+                    let detectedPlant = '-';
+                    for (let dKey in sapSessionsData) {
+                        if (sapSessionsData[dKey][skuKey] && sapSessionsData[dKey][skuKey].plant) {
+                            detectedPlant = sapSessionsData[dKey][skuKey].plant;
+                            break;
+                        }
+                    }
+
+                    let escSku = (item.sku || '').replace(/'/g, "\\'");
+                    let escTgl = item.tanggal_masuk || '';
+                    let escShift = item.shift_kerja || '';
+
+                    tbody.innerHTML += `<tr>
+                        <td>${item.tujuan_gudang || '-'}</td>
+                        <td class="fw-bold text-amber-800">${detectedPlant}</td>
+                        <td class="fw-bold text-purple-800">${item.shift_kerja || '-'}</td>
+                        <td class="text-start fw-semibold">${item.sku}</td>
+                        <td>${cleanLokasi}</td>
+                        <td class="fw-bold text-emerald-600">${kartonVal} krt (${pltVal} Plt)</td>
+                        <td class="space-x-1">
+                            <button class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[11px]" onclick="openEditOpnameModal('${item.id}', '${escSku}', '${cleanLokasi}', ${kartonVal})"><i class="fa-solid fa-pen"></i> Edit</button>
+                            <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', false, '${escSku}', '${escTgl}', '${escShift}'); setTimeout(openOpnameDetailModal('${dateStr}'), 300);"><i class="fa-solid fa-trash"></i> Hapus</button>
+                        </td>
+                    </tr>`;
+                });
+            }
+            document.getElementById('modalOpnameDetail').classList.remove('hidden');
+        }
+
+        function openEditOpnameModal(id, sku, lokasi, karton) {
+            document.getElementById('editOpId').value = id;
+            document.getElementById('editOpSku').value = sku;
+            document.getElementById('editOpLokasi').value = lokasi;
+            document.getElementById('editOpKarton').value = karton;
+            document.getElementById('modalEditOpname').classList.remove('hidden');
+        }
+
+        async function updateOpnameItem(e) {
+            e.preventDefault();
+            let id = document.getElementById('editOpId').value;
+            let lokasi = document.getElementById('editOpLokasi').value.trim();
+            let karton = parseFloat(document.getElementById('editOpKarton').value) || 0;
+
+            if(id && id !== 'undefined' && id !== 'null') {
+                let { error } = await _supabase.from('stok_lokal').update({ lokasi: lokasi, karton: karton }).eq('id', id);
+                if(error) alert('Gagal memperbarui data: ' + error.message);
+                else {
+                    alert('Berhasil mengupdate hasil opname!');
+                    closeModal('modalEditOpname');
+                    loadDataFromCloud();
+                    setTimeout(() => openOpnameDetailModal(activeOpnameDate), 300);
+                }
+            }
         }
 
         async function deleteSapSession(dateStr) {
@@ -1826,6 +2049,22 @@
                 sapSessionsData = {};
                 await _supabase.from('stock_opname_sap').upsert([{ id: 1, data_sap: sapSessionsData }]);
                 renderSapSessionsList();
+            }
+        }
+
+        async function deleteOpnameSessionDate(dateStr) {
+            if(confirm(`Yakin ingin menghapus seluruh hasil opname tanggal ${dateStr}?`)) {
+                let { error } = await _supabase.from('stok_lokal').delete().eq('gudang', 'Stock Opname').eq('tanggal_masuk', dateStr);
+                if(error) alert('Gagal menghapus data!');
+                else loadDataFromCloud();
+            }
+        }
+
+        async function deleteAllOpnameLogs() {
+            if(confirm('Yakin ingin menghapus seluruh log riwayat stock opname?')) {
+                let { error } = await _supabase.from('stok_lokal').delete().eq('gudang', 'Stock Opname');
+                if(error) alert('Gagal menghapus data!');
+                else loadDataFromCloud();
             }
         }
 
@@ -1925,7 +2164,7 @@
             if(sectionId === 'aging') renderAgingTable();
             if(sectionId === 'qc') { autoFillQcByDate(); renderActiveHoldTable(); }
             if(sectionId === 'report') renderReportTable();
-            if(sectionId === 'opname-log') renderOpnameReportTable();
+            if(sectionId === 'opname-log') renderOpnameSessionsList();
         }
 
         function openPenerimaanModal(category) {
@@ -2002,6 +2241,29 @@
             else loadDataFromCloud();
         }
 
+        function openEditQcModal(id, sku, reason, karton) {
+            document.getElementById('editQcId').value = id;
+            document.getElementById('editQcSku').value = sku;
+            document.getElementById('editQcReason').value = reason;
+            document.getElementById('editQcKarton').value = karton;
+            document.getElementById('modalEditQc').classList.remove('hidden');
+        }
+
+        async function updateQcItemSubmit(e) {
+            e.preventDefault();
+            let id = document.getElementById('editQcId').value;
+            let reason = document.getElementById('editQcReason').value.trim();
+            let karton = parseFloat(document.getElementById('editQcKarton').value) || 0;
+
+            let { error } = await _supabase.from('karantina_qc').update({ alasan_hold: reason, jumlah_karton: karton }).eq('id', id);
+            if(error) alert('Gagal update QC: ' + error.message);
+            else {
+                alert('Berhasil memperbarui data karantina QC!');
+                closeModal('modalEditQc');
+                loadDataFromCloud();
+            }
+        }
+
         async function deleteQcItem(id) {
             if(confirm('Hapus data karantina ini?')) {
                 await _supabase.from('karantina_qc').delete().eq('id', id);
@@ -2021,6 +2283,8 @@
             }
 
             activeHolds.forEach(item => {
+                let escSku = (item.sku || '').replace(/'/g, "\\'");
+                let escReason = (item.reason || '').replace(/'/g, "\\'");
                 tbody.innerHTML += `<tr>
                     <td><span class="badge bg-slate-100 text-slate-700">${item.plantline}</span></td>
                     <td>${item.prodate}</td>
@@ -2030,9 +2294,10 @@
                     <td class="fw-bold text-rose-600">${item.holdmanual}</td>
                     <td class="text-start">${item.reason}</td>
                     <td><span class="badge bg-rose-100 text-rose-700 fw-bold px-2 py-1">HOLD</span></td>
-                    <td>
+                    <td class="space-x-1">
                         <button class="btn btn-sm btn-success py-0 px-2 text-[11px] fw-bold" onclick="updateQcStatus('${item.id}', 'RELEASED')">Release</button>
-                        <button class="btn btn-sm btn-outline-danger py-0 px-2 text-[11px] fw-bold" onclick="deleteQcItem('${item.id}')"><i class="fa-solid fa-trash"></i></button>
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 text-[11px] fw-bold" onclick="openEditQcModal('${item.id}', '${escSku}', '${escReason}', ${item.karton || 70})"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2 text-[11px] fw-bold" onclick="deleteQcItem('${item.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
                     </td>
                 </tr>`;
             });
@@ -2101,6 +2366,35 @@
             }
         }
 
+        function openEditReportModal(id, category, sku, lokasi, pallet, karton) {
+            document.getElementById('editRepId').value = id;
+            document.getElementById('editRepCategory').value = category;
+            document.getElementById('editRepSku').value = sku;
+            document.getElementById('editRepLokasi').value = lokasi;
+            document.getElementById('editRepPallet').value = pallet;
+            document.getElementById('editRepKarton').value = karton;
+            document.getElementById('modalEditReport').classList.remove('hidden');
+        }
+
+        async function updateReportItem(e) {
+            e.preventDefault();
+            let id = document.getElementById('editRepId').value;
+            let category = document.getElementById('editRepCategory').value;
+            let lokasi = document.getElementById('editRepLokasi').value.trim();
+            let pallet = document.getElementById('editRepPallet').value.trim();
+            let karton = parseFloat(document.getElementById('editRepKarton').value) || 0;
+
+            let tableName = category === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
+            let { error } = await _supabase.from(tableName).update({ lokasi: lokasi, pallet: pallet, karton: karton }).eq('id', id);
+            
+            if(error) alert('Gagal mengupdate data: ' + error.message);
+            else {
+                alert('Berhasil memperbarui data penerimaan!');
+                closeModal('modalEditReport');
+                loadDataFromCloud();
+            }
+        }
+
         function renderReportTable() { populateReportTableRows(binData); }
         function filterReportTable() {
             let searchVal = document.getElementById('reportSearch').value.toLowerCase().trim();
@@ -2137,6 +2431,9 @@
                 let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
                 let pltVal = (kartonVal / stdKrt).toFixed(2);
                 let cleanLokasi = item.lokasi ? item.lokasi.replace('- undefined', '').trim() : '-';
+                let escSku = (item.sku || '').replace(/'/g, "\\'");
+                let escLokasi = cleanLokasi.replace(/'/g, "\\'");
+                let escPallet = (item.pallet || '').replace(/'/g, "\\'");
 
                 tbody.innerHTML += `<tr>
                     <td><span class="badge ${item.category === 'Ekspor' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}">${item.category || 'Lokal'}</span></td>
@@ -2148,50 +2445,10 @@
                     <td><span class="badge bg-indigo-50 text-indigo-600">${cleanLokasi}</span></td>
                     <td class="fw-bold">${item.pallet}</td>
                     <td class="fw-bold text-emerald-600">${pltVal} Plt (${kartonVal} krt)</td>
-                    <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', ${item.category === 'Ekspor'})"><i class="fa-solid fa-trash"></i></button></td>
-                </tr>`;
-            });
-        }
-
-        function renderOpnameReportTable() {
-            let tbody = document.getElementById('opnameReportTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            let opnameItems = binData.filter(item => item.gudang === 'Stock Opname');
-
-            if(opnameItems.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-muted">Belum ada riwayat stock opname.</td></tr>';
-                return;
-            }
-
-            opnameItems.forEach(item => {
-                let kartonVal = parseFloat(item.karton) || 0;
-                let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
-                let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
-                let pltVal = (kartonVal / stdKrt).toFixed(2);
-                let cleanLokasi = item.lokasi ? item.lokasi.replace('- undefined', '').trim() : '-';
-
-                let detectedPlant = '-';
-                for (let dKey in sapSessionsData) {
-                    if (sapSessionsData[dKey][skuKey] && sapSessionsData[dKey][skuKey].plant) {
-                        detectedPlant = sapSessionsData[dKey][skuKey].plant;
-                        break;
-                    }
-                }
-
-                let escSku = (item.sku || '').replace(/'/g, "\\'");
-                let escTgl = item.tanggal_masuk || '';
-                let escShift = item.shift_kerja || '';
-
-                tbody.innerHTML += `<tr>
-                    <td>${item.tanggal_masuk || '-'}</td>
-                    <td>${item.tujuan_gudang || '-'}</td>
-                    <td class="fw-bold text-amber-800">${detectedPlant}</td>
-                    <td class="fw-bold text-purple-800">${item.shift_kerja || '-'}</td>
-                    <td class="text-start fw-semibold">${item.sku}</td>
-                    <td>${cleanLokasi}</td>
-                    <td class="fw-bold text-emerald-600">${kartonVal} krt (${pltVal} Plt)</td>
-                    <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', false, '${escSku}', '${escTgl}', '${escShift}')"><i class="fa-solid fa-trash"></i></button></td>
+                    <td class="space-x-1">
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 fw-bold text-[11px]" onclick="openEditReportModal('${item.id}', '${item.category || 'Lokal'}', '${escSku}', '${escLokasi}', '${escPallet}', ${kartonVal})"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteReportItem('${item.id}', ${item.category === 'Ekspor'})"><i class="fa-solid fa-trash"></i> Hapus</button>
+                    </td>
                 </tr>`;
             });
         }
@@ -2401,7 +2658,7 @@
                         <td class="text-start fw-semibold">${log.sku}</td>
                         <td><span class="badge bg-slate-100 text-slate-700">${log.asal}</span></td>
                         <td><span class="badge bg-emerald-100 text-emerald-700">${log.tujuan}</span></td>
-                        <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteRelokasiLog('${log.id}')"><i class="fa-solid fa-trash"></i></button></td>
+                        <td><button class="btn btn-sm btn-outline-danger py-0 px-2 fw-bold text-[11px]" onclick="deleteRelokasiLog('${log.id}')"><i class="fa-solid fa-trash"></i> Hapus</button></td>
                     </tr>`;
                 });
             }

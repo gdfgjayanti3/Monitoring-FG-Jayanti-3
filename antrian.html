@@ -98,7 +98,7 @@
         <button class="btn" onclick="resetData()" style="font-size: 11px; background: #fee2e2; color: #991b1b; border-color: #fecaca;">Reset Semua Data</button>
     </div>
 
-    <!-- Tombol Filter Status Dipisah Sesuai Permintaan -->
+    <!-- Tombol Filter Status Terpisah -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchMainTab('SemuaTab', this)">Semua (<span id="countSemuaTab">0</span>)</button>
         <button class="tab-btn" onclick="switchMainTab('AntrianTab', this)">Antrian (<span id="countAntrianTab">0</span>)</button>
@@ -1432,8 +1432,8 @@ function renderAll() {
         return;
     }
 
-    // Urutan kartu dibalik menjadi Ascending (dari tanggal/data terlama/awal ke terbaru)
-    filteredTrucks.sort((a, b) => new Date(a.tanggalKirim || 0) - new Date(b.tanggalKirim || 0));
+    // Urutan dikembalikan ke Descending (terbaru/paling muda di atas, terlama di bawah)
+    filteredTrucks.sort((a, b) => new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0));
 
     let html = '';
     let lastDateGroup = '';
@@ -1443,7 +1443,6 @@ function renderAll() {
         let parts = rawDate.split('-');
         let formattedDateLabel = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : rawDate;
 
-        // Pemisah tanggal baru: Garis full di kiri-kanan dan tanggal di tengah (sejajar penuh dengan lebar kartu)
         if (formattedDateLabel !== lastDateGroup) {
             lastDateGroup = formattedDateLabel;
             html += `<div class="date-divider-container"><div class="date-divider-label">📅 Tanggal: ${formattedDateLabel}</div></div>`;

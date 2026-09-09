@@ -446,6 +446,7 @@ function handleJenisChange() {
 let truckQueue = [];
 let masterStock = {}; 
 let binStockData = [];
+let sapStockCache = {}; // Menyimpan data SAP terbaru untuk alokasi otomatis
 
 async function loadDataFromCloud() {
     try {
@@ -459,6 +460,47 @@ async function loadDataFromCloud() {
                         name: item.nama_produk || '-',
                         cartonPerPallet: parseFloat(item.carton_per_pallet) || 70
                     };
+                }
+            });
+        }
+
+        // --- SINKRONISASI DATA SAP OTOMATIS SEBAGAI SUMBER STOK ---
+        sapStockCache = {};
+        let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
+        if (sapRows && sapRows.length > 0) {
+            sapRows.forEach(row => {
+                if (row.data_sap && row.data_sap.items) {
+                    let items = row.data_sap.items;
+                    for (let skuCode in items) {
+                        sapStockCache[skuCode] = {
+                            sku: skuCode,
+                            nama: items[skuCode].nama || masterStock[skuCode]?.name || 'Produk SAP',
+                            karton: parseFloat(items[skuCode].karton) || 0,
+                            lokasi: 'Blok A - Row 01', // Alokasi default otomatis agar fitur blok/rak tetap bisa dipilih
+                            prodate: '2026-01-01',
+                            pallet: 'SAP-AUTO',
+                            kategori_stok: 'Lokal'
+                        };
+                    }
+                } else if (row.data_sap && typeof row.data_sap === 'object') {
+                    // Tangani struktur objek tanggal sesi lain jika ada
+                    for (let dateKey in row.data_sap) {
+                        let sessionObj = row.data_sap[dateKey];
+                        if (sessionObj && sessionObj.items) {
+                            let items = sessionObj.items;
+                            for (let skuCode in items) {
+                                sapStockCache[skuCode] = {
+                                    sku: skuCode,
+                                    nama: items[skuCode].nama || masterStock[skuCode]?.name || 'Produk SAP',
+                                    karton: parseFloat(items[skuCode].karton) || 0,
+                                    lokasi: 'Blok A - Row 01',
+                                    prodate: '2026-01-01',
+                                    pallet: 'SAP-AUTO',
+                                    kategori_stok: 'Lokal'
+                                };
+                            }
+                        }
+                    }
                 }
             });
         }
@@ -480,6 +522,13 @@ async function loadDataFromCloud() {
                 prodate: item.tanggal_tarikan || '2026-09-07',
                 kategori_stok: item.lokasi && item.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
             }));
+        }
+
+        // Jika binStockData kosong tapi ada data SAP di sapStockCache, masukkan cache SAP ke dalam binStockData secara virtual
+        if (binStockData.length === 0 && Object.keys(sapStockCache).length > 0) {
+            for (let sKey in sapStockCache) {
+                binStockData.push(sapStockCache[sKey]);
+            }
         }
 
         let { data: trucks, error: errTrucks } = await _supabase.from('antrian_truk').select('*');
@@ -564,7 +613,7 @@ async function loadDataFromCloud() {
                         let rchVal = p.total_karton % stdPlt;
                         return {
                             sku: p.sku,
-                            nama: masterStock[p.sku] ? masterStock[p.sku].name : '-',
+                            nama: masterStock[p.sku] ? masterStock[p.sku].name : (sapStockCache[p.sku]?.nama || '-'),
                             prodate: p.prodate || '-',
                             rak: p.batch_lokasi,
                             palletSource: '-',
@@ -600,9 +649,18 @@ function filterAdminSku() {
     dropdown.innerHTML = '';
     if(!inputVal) { dropdown.classList.add('hidden'); return; }
 
+    // Gabungkan masterStock dan master dari sapStockCache agar pencarian SKU dari SAP langsung muncul
+    let combinedItems = {};
+    for (let sKey in masterStock) { combinedItems[sKey] = masterStock[sKey]; }
+    for (let sapKey in sapStockCache) {
+        if (!combinedItems[sapKey]) {
+            combinedItems[sapKey] = { sku: sapKey, name: sapStockCache[sapKey].nama, cartonPerPallet: 70 };
+        }
+    }
+
     let matches = 0;
-    for (let sku in masterStock) {
-        let item = masterStock[sku];
+    for (let sku in combinedItems) {
+        let item = combinedItems[sku];
         let textStr = `${item.sku} | ${item.name}`.toLowerCase();
         if(textStr.includes(inputVal)) {
             matches++;
@@ -657,10 +715,14 @@ async function loadAvailableBatchesForSku(skuCode) {
         kategori_stok: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
     }));
 
+    // Jika binStockData kosong untuk SKU ini, tapi ada di sapStockCache, masukkan data SAP tersebut sebagai opsi batch default
     let matches = binStockData.filter(b => b.sku && b.sku.toLowerCase().includes(skuCode.toLowerCase()));
+    if (matches.length === 0 && sapStockCache[skuCode]) {
+        matches.push(sapStockCache[skuCode]);
+    }
     
     if(matches.length === 0) {
-        select.innerHTML = '<option value="">(Stok kosong di Bin-Loc)</option>';
+        select.innerHTML = '<option value="">(Stok kosong di Bin-Loc / SAP)</option>';
         selectedBatchData = null;
         return;
     }
@@ -668,11 +730,11 @@ async function loadAvailableBatchesForSku(skuCode) {
     const nowTime = new Date().getTime();
     matches.sort((a, b) => new Date(a.prodate || a.tanggal || a.tanggalProduksi || 0) - new Date(b.prodate || b.tanggal || b.tanggalProduksi || 0));
 
-    let prodInfo = masterStock[skuCode] ? masterStock[skuCode].name.toLowerCase() : '';
+    let prodInfo = masterStock[skuCode] ? masterStock[skuCode].name.toLowerCase() : (sapStockCache[skuCode]?.nama.toLowerCase() || '');
     let isBengBengProduct = prodInfo.includes('beng') || skuCode.toLowerCase().includes('beng');
 
     matches.forEach((m, idx) => {
-        let pDate = m.prodate || m.tanggal || m.tanggalProduksi || m.tgl || '-';
+        let pDate = m.prodate || m.tanggal || m.tanggalProduksi || m.tgl || '2026-01-01';
         let itemTime = new Date(pDate).getTime() || nowTime;
         let diffDays = Math.floor((nowTime - itemTime) / (1000 * 60 * 60 * 24));
         if(diffDays < 0) diffDays = 0;
@@ -684,8 +746,9 @@ async function loadAvailableBatchesForSku(skuCode) {
             isNotReady = diffDays < 8;
         }
 
+        let rakLokasi = m.lokasi || 'Blok A - Row 01';
         let statusLabel = isNotReady ? ` ⚠️ [BLOCKED BENG-BENG: Kurang ${Math.max(0, 8 - diffDays)} hari aging]` : ' ✓ [READY KIRIM]';
-        let optionText = `Rak: ${m.lokasi} | Prodate: ${pDate} | Stok: ${m.karton} krt | Pallet: ${m.pallet}${statusLabel}`;
+        let optionText = `Rak: ${rakLokasi} | Prodate: ${pDate} | Stok: ${m.karton} krt | Pallet: ${m.pallet || 'SAP'}${statusLabel}`;
         
         let opt = document.createElement('option');
         opt.value = idx;
@@ -717,7 +780,7 @@ function onBatchSelected() {
     selectedBatchData = batches[parseInt(val)];
 
     let maxKarton = parseInt(selectedBatchData.karton) || 0;
-    document.getElementById('stokWarningInfo').innerHTML = `<span style="color:#059669; font-weight:bold;">✓ Stok tersedia di rak ini: ${maxKarton} karton</span>`;
+    document.getElementById('stokWarningInfo').innerHTML = `<span style="color:#059669; font-weight:bold;">✓ Stok tersedia di lokasi ini: ${maxKarton} karton</span>`;
 }
 
 function hitungKonversiAdmin() {
@@ -737,7 +800,7 @@ function hitungKonversiAdmin() {
         if (krt > maxKarton) {
             warnEl.innerHTML = `<span style="color:#dc2626; font-weight:bold;">⚠️ PERINGATAN: Qty (${krt} krt) melebihi stok rak (${maxKarton} krt)! Silakan gunakan Multi-Pick.</span>`;
         } else {
-            warnEl.innerHTML = `<span style="color:#059669; font-weight:bold;">✓ Stok tersedia di rak ini: ${maxKarton} karton</span>`;
+            warnEl.innerHTML = `<span style="color:#059669; font-weight:bold;">✓ Stok tersedia di lokasi ini: ${maxKarton} karton</span>`;
         }
     }
 }
@@ -826,6 +889,9 @@ async function openPickingListModal(index) {
         prodate: i.tanggal_tarikan || '2026-09-07',
         kategori_stok: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
     }));
+    if (binStockData.length === 0 && Object.keys(sapStockCache).length > 0) {
+        for (let sKey in sapStockCache) { binStockData.push(sapStockCache[sKey]); }
+    }
 
     renderPlTable();
     openModal('modalPickingList');
@@ -885,7 +951,7 @@ async function addItemToTruckPickingList() {
 
     let maxKarton = parseInt(selectedBatchData.karton) || 0;
     if(totalKrt > maxKarton) {
-        alert(`Gagal! Jumlah pengiriman (${totalKrt} krt) melebihi stok yang tersedia di rak ${selectedBatchData.lokasi} (${maxKarton} krt).`);
+        alert(`Gagal! Jumlah pengiriman (${totalKrt} krt) melebihi stok yang tersedia di lokasi ini (${maxKarton} krt).`);
         return;
     }
 
@@ -896,7 +962,8 @@ async function addItemToTruckPickingList() {
     let pallet = Math.floor(totalKrt / std);
     let receh = totalKrt % std;
 
-    let exactProdate = selectedBatchData.prodate || selectedBatchData.tanggal || selectedBatchData.tanggalProduksi || selectedBatchData.tgl || '-';
+    let exactProdate = selectedBatchData.prodate || selectedBatchData.tanggal || selectedBatchData.tanggalProduksi || selectedBatchData.tgl || '2026-01-01';
+    let lokasiRak = selectedBatchData.lokasi || 'Blok A - Row 01';
 
     let pickRecord = {
         no_doc: t.noDoc,
@@ -904,7 +971,7 @@ async function addItemToTruckPickingList() {
         nama_tim: document.getElementById('plTim').value || 'Team A',
         shift_kerja: document.getElementById('plShift').value || 'Shift 1 (Pagi)',
         sku: skuCode,
-        batch_lokasi: selectedBatchData.lokasi,
+        batch_lokasi: lokasiRak,
         total_karton: totalKrt,
         konversi_pallet: pallet,
         prodate: exactProdate
@@ -920,8 +987,8 @@ async function addItemToTruckPickingList() {
         sku: skuCode,
         nama: skuName,
         prodate: exactProdate,
-        rak: selectedBatchData.lokasi,
-        palletSource: selectedBatchData.pallet,
+        rak: lokasiRak,
+        palletSource: selectedBatchData.pallet || 'SAP',
         pallet: pallet,
         receh: receh,
         jumlah: totalKrt
@@ -930,13 +997,16 @@ async function addItemToTruckPickingList() {
     if(!truckQueue[activePlTruckIdx].pickingList) truckQueue[activePlTruckIdx].pickingList = [];
     truckQueue[activePlTruckIdx].pickingList.push(item);
 
+    // Update pemotongan stok pada database (baik stok_lokal, stok_ekspor, maupun sinkronisasi ke data SAP cache)
     let targetTable = selectedBatchData.kategori_stok === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
-    let { data: currentDbStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', selectedBatchData.lokasi);
+    let { data: currentDbStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', lokasiRak);
 
     if (!currentDbStock || currentDbStock.length === 0) {
-        targetTable = 'stok_sap';
-        let { data: sapStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', selectedBatchData.lokasi);
-        currentDbStock = sapStock;
+        targetTable = 'stock_opname_sap';
+        // Kurangi juga di cache SAP lokal agar realtime
+        if (sapStockCache[skuCode]) {
+            sapStockCache[skuCode].karton -= totalKrt;
+        }
     }
 
     if (currentDbStock && currentDbStock.length > 0) {
@@ -952,7 +1022,7 @@ async function addItemToTruckPickingList() {
             if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
             
             let updatePayload = { karton: newKarton };
-            if (targetTable !== 'stok_sap') {
+            if (targetTable !== 'stock_opname_sap') {
                 updatePayload.konversi = konvStr;
             }
             await _supabase.from(targetTable).update(updatePayload).eq('id', dbItem.id);

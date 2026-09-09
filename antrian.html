@@ -81,6 +81,7 @@
 
 <div style="background: #eff6ff; color: #1e40af; padding: 8px 16px; border-radius: 8px; margin-bottom: 12px; overflow: hidden; border: 1px solid #bfdbfe;">
     <marquee behavior="scroll" direction="left" scrollamount="5" style="font-size: 13px; font-weight: 500;">
+        <span id="rtSemua" style="margin-right: 30px;">📋 Semua: <b>0</b></span>
         <span id="rtAntrian" style="margin-right: 30px;">📥 Antrian: <b>0</b></span>
         <span id="rtDokumen" style="margin-right: 30px;">📄 Nunggu Dokumen: <b>0</b></span>
         <span id="rtProses" style="margin-right: 30px;">⏳ Proses Muat: <b>0</b></span>
@@ -97,8 +98,10 @@
         <button class="btn" onclick="resetData()" style="font-size: 11px; background: #fee2e2; color: #991b1b; border-color: #fecaca;">Reset Semua Data</button>
     </div>
 
+    <!-- Tombol Filter Status Dipisah Sesuai Permintaan -->
     <div class="tabs">
-        <button class="tab-btn active" onclick="switchMainTab('AntrianTab', this)">Semua / Antrian (<span id="countAntrianTab">0</span>)</button>
+        <button class="tab-btn active" onclick="switchMainTab('SemuaTab', this)">Semua (<span id="countSemuaTab">0</span>)</button>
+        <button class="tab-btn" onclick="switchMainTab('AntrianTab', this)">Antrian (<span id="countAntrianTab">0</span>)</button>
         <button class="tab-btn" onclick="switchMainTab('MenungguDokumenTab', this)">Menunggu Dokumen (<span id="countMenungguTab">0</span>)</button>
         <button class="tab-btn" onclick="switchMainTab('ProsesMuatTab', this)">Proses Muat (<span id="countProsesTab">0</span>)</button>
         <button class="tab-btn" onclick="switchMainTab('SelesaiMuatTab', this)">Selesai Muat (<span id="countSelesaiTab">0</span>)</button>
@@ -430,6 +433,7 @@ setInterval(() => {
 }, 1000);
 
 function updateRunningTextSummary() {
+    let countSemua = truckQueue.length;
     let countAntri = truckQueue.filter(t => t.status === 'Antrian').length;
     let countDokumen = truckQueue.filter(t => t.status === 'Menunggu Dokumen').length;
     let countProses = truckQueue.filter(t => t.status === 'Proses Muat').length;
@@ -437,6 +441,7 @@ function updateRunningTextSummary() {
     let countTreatment = truckQueue.filter(t => t.status === 'Treatment').length;
     let countKeluar = truckQueue.filter(t => t.status === 'Keluar').length;
 
+    let elSemua = document.getElementById('rtSemua');
     let elAntri = document.getElementById('rtAntrian');
     let elDokumen = document.getElementById('rtDokumen');
     let elProses = document.getElementById('rtProses');
@@ -444,6 +449,7 @@ function updateRunningTextSummary() {
     let elTreatment = document.getElementById('rtTreatment');
     let elKeluar = document.getElementById('rtKeluar');
 
+    if (elSemua) elSemua.querySelector('b').innerText = countSemua;
     if (elAntri) elAntri.querySelector('b').innerText = countAntri;
     if (elDokumen) elDokumen.querySelector('b').innerText = countDokumen;
     if (elProses) elProses.querySelector('b').innerText = countProses;
@@ -1263,7 +1269,7 @@ function printPickingList() {
     printBox.style.display = 'none';
 }
 
-let currentMainTab = 'AntrianTab';
+let currentMainTab = 'SemuaTab';
 function switchMainTab(tabName, btn) {
     currentMainTab = tabName;
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1320,6 +1326,7 @@ function renderAll() {
     let keyword = (document.getElementById('searchInput').value || '').toLowerCase();
     if(!container) return;
 
+    let countSemua = truckQueue.length;
     let countAntrian = truckQueue.filter(t => t.status === 'Antrian').length;
     let countMenunggu = truckQueue.filter(t => t.status === 'Menunggu Dokumen').length;
     let countProses = truckQueue.filter(t => t.status === 'Proses Muat').length;
@@ -1327,6 +1334,7 @@ function renderAll() {
     let countTreatment = truckQueue.filter(t => t.status === 'Treatment').length;
     let countKeluar = truckQueue.filter(t => t.status === 'Keluar').length;
 
+    document.getElementById('countSemuaTab').innerText = countSemua;
     document.getElementById('countAntrianTab').innerText = countAntrian;
     document.getElementById('countMenungguTab').innerText = countMenunggu;
     document.getElementById('countProsesTab').innerText = countProses;
@@ -1402,7 +1410,8 @@ function renderAll() {
 
     let filteredTrucks = truckQueue.filter(t => {
         let matchTab = false;
-        if(currentMainTab === 'AntrianTab') matchTab = (t.status === 'Antrian');
+        if(currentMainTab === 'SemuaTab') matchTab = true;
+        else if(currentMainTab === 'AntrianTab') matchTab = (t.status === 'Antrian');
         else if(currentMainTab === 'MenungguDokumenTab') matchTab = (t.status === 'Menunggu Dokumen');
         else if(currentMainTab === 'ProsesMuatTab') matchTab = (t.status === 'Proses Muat');
         else if(currentMainTab === 'SelesaiMuatTab') matchTab = (t.status === 'Selesai Muat');
@@ -1423,8 +1432,8 @@ function renderAll() {
         return;
     }
 
-    // Urutkan dari tanggal terbaru ke terlama
-    filteredTrucks.sort((a, b) => new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0));
+    // Urutan kartu dibalik menjadi Ascending (dari tanggal/data terlama/awal ke terbaru)
+    filteredTrucks.sort((a, b) => new Date(a.tanggalKirim || 0) - new Date(b.tanggalKirim || 0));
 
     let html = '';
     let lastDateGroup = '';
@@ -1469,7 +1478,6 @@ function renderAll() {
             let isFinished = (t.status === 'Selesai Muat' || t.status === 'Keluar');
             
             if (isFinished) {
-                // Bekukan durasi RDC secara permanen jika sudah selesai/keluar
                 let endTimeRef = t.rawTimeOut || t.rawEndLoading || t.rawTime;
                 diffMs = endTimeRef - t.rawTime;
             } else {

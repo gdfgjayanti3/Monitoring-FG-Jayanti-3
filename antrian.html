@@ -12,7 +12,7 @@
         .btn-nav { padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: #f8fafc; cursor: pointer; font-size: 11px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px; text-decoration: none; }
         .btn-nav:hover { background: #f1f5f9; }
         .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 8px; }
         .btn { padding: 6px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; border: 1px solid #cbd5e1; background: white; transition: 0.2s; }
         .btn-primary { background: #6366f1; color: white; border: none; }
         .btn-primary:hover { background: #4f46e5; }
@@ -25,7 +25,7 @@
         .modal-content { background: white; padding: 25px; border-radius: 16px; width: 650px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; }
         .form-group { margin-bottom: 12px; }
         label { font-size: 11px; font-weight: bold; color: #64748b; display: block; margin-bottom: 4px; }
-        input, select { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; font-size: 12px; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #e2e8f0; border-radius: 6px; box-sizing: border-box; font-size: 12px; font-family: 'Segoe UI', sans-serif; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
         th, td { border: 1px solid #e2e8f0; padding: 8px; text-align: center; font-size: 11px; }
         th { background: #f1f5f9; color: #334155; }
@@ -120,7 +120,7 @@
     <div class="modal-content">
         <button type="button" onclick="closeModal('modalManual')" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:16px; font-weight:bold; cursor:pointer; color:#64748b;">✕</button>
         <h4 style="margin-top:0; color:#1e293b;">Form Pendaftaran Truk Masuk (Time Keeper)</h4>
-        <form onsubmit="submitAntrian(event)">
+        <form id="formPendaftaranTruk" onsubmit="submitAntrian(event)">
             <div class="form-group"><label>Tanggal Masuk *</label><input type="date" id="mTanggal" required></div>
             <div class="form-group"><label>Nama Sopir *</label><input type="text" id="mSopir" required placeholder="Contoh: Budi"></div>
             <div class="form-group"><label>Nama Ekspedisi *</label><input type="text" id="mEkspedisi" required placeholder="Contoh: Seino"></div>
@@ -293,6 +293,38 @@
             <select id="selectDock"></select>
         </div>
 
+        <!-- Tambahan input Checker Loading, Tim Kerja, serta Metode Pemuatan (Internal/TKBM) saat Proses Muat -->
+        <div id="checkerLoadingDiv" class="form-group" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-top:10px;">
+            <strong style="color:#4f46e5; display:block; margin-bottom:6px;">👷 Informasi Checker, Tim & Metode Pemuatan</strong>
+            <div style="display:flex; gap:10px; margin-bottom:8px;">
+                <div style="flex:1;">
+                    <label style="font-size:10px; color:#64748b;">Nama Checker Loading *</label>
+                    <input type="text" id="inputCheckerName" placeholder="Contoh: Rian / Jefri">
+                </div>
+                <div style="width:140px;">
+                    <label style="font-size:10px; color:#64748b;">Pilih Tim Kerja *</label>
+                    <select id="selectCheckerTeam" class="form-select form-select-sm" style="margin-top:4px;">
+                        <option value="Team A">Team A</option>
+                        <option value="Team B">Team B</option>
+                        <option value="Team C">Team C</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display:flex; gap:10px;">
+                <div style="flex:1;">
+                    <label style="font-size:10px; color:#64748b;">Metode Pemuatan (Internal / TKBM) *</label>
+                    <select id="selectMetodePemuatan" class="form-select form-select-sm" style="margin-top:4px;">
+                        <option value="Internal">Internal</option>
+                        <option value="TKBM">TKBM</option>
+                    </select>
+                </div>
+                <div style="flex:1;">
+                    <label style="font-size:10px; color:#64748b;">Note / Catatan Pemuatan (Opsional)</label>
+                    <input type="text" id="inputNotePemuatan" placeholder="Cth: Muat manual / forklift" style="margin-top:4px;">
+                </div>
+            </div>
+        </div>
+
         <div id="arsipSection" class="form-group" style="display:none; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px; margin-top:10px;">
             <strong style="color:#15803d; display:block; margin-bottom:6px;">📁 Pengarsipan Dokumen Saat Mobil Keluar</strong>
             <label style="font-size:11px; color:#166534; font-weight:bold;">Pilih Kategori Arsip Fisik Dokumen:</label>
@@ -425,6 +457,8 @@ window.addEventListener('DOMContentLoaded', () => {
 
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function openManualModal() {
+    let formEl = document.getElementById('formPendaftaranTruk');
+    if (formEl) formEl.reset(); 
     let todayIso = new Date().toISOString().split('T')[0];
     let tanggalEl = document.getElementById('mTanggal');
     if (tanggalEl) tanggalEl.value = todayIso;
@@ -446,7 +480,7 @@ function handleJenisChange() {
 let truckQueue = [];
 let masterStock = {}; 
 let binStockData = [];
-let sapStockCache = {}; // Menyimpan data SAP terbaru untuk alokasi otomatis
+let sapStockCache = {}; 
 
 async function loadDataFromCloud() {
     try {
@@ -464,7 +498,6 @@ async function loadDataFromCloud() {
             });
         }
 
-        // --- SINKRONISASI DATA SAP OTOMATIS SEBAGAI SUMBER STOK ---
         sapStockCache = {};
         let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
         if (sapRows && sapRows.length > 0) {
@@ -476,14 +509,13 @@ async function loadDataFromCloud() {
                             sku: skuCode,
                             nama: items[skuCode].nama || masterStock[skuCode]?.name || 'Produk SAP',
                             karton: parseFloat(items[skuCode].karton) || 0,
-                            lokasi: 'Blok A - Row 01', // Alokasi default otomatis agar fitur blok/rak tetap bisa dipilih
+                            lokasi: 'Blok A - Row 01',
                             prodate: '2026-01-01',
                             pallet: 'SAP-AUTO',
                             kategori_stok: 'Lokal'
                         };
                     }
                 } else if (row.data_sap && typeof row.data_sap === 'object') {
-                    // Tangani struktur objek tanggal sesi lain jika ada
                     for (let dateKey in row.data_sap) {
                         let sessionObj = row.data_sap[dateKey];
                         if (sessionObj && sessionObj.items) {
@@ -524,7 +556,6 @@ async function loadDataFromCloud() {
             }));
         }
 
-        // Jika binStockData kosong tapi ada data SAP di sapStockCache, masukkan cache SAP ke dalam binStockData secara virtual
         if (binStockData.length === 0 && Object.keys(sapStockCache).length > 0) {
             for (let sKey in sapStockCache) {
                 binStockData.push(sapStockCache[sKey]);
@@ -574,6 +605,11 @@ async function loadDataFromCloud() {
                     startLoadingStr = new Date(statRow.time_start_loading).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
 
+                let endLoadingStr = '-';
+                if (statRow && statRow.time_end_loading) {
+                    endLoadingStr = new Date(statRow.time_end_loading).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                }
+
                 let timeoutStr = '-';
                 let rawTimeoutVal = null;
                 if (statRow && statRow.time_out) {
@@ -583,6 +619,9 @@ async function loadDataFromCloud() {
                 }
                 
                 let currentStatus = t.status_antrian || (statRow ? statRow.status_truk : 'Antrian');
+
+                let metodeMuatVal = statRow && statRow.metode_pemuatan ? statRow.metode_pemuatan : 'Internal';
+                let noteMuatVal = statRow && statRow.note_pemuatan ? statRow.note_pemuatan : '';
 
                 return {
                     id: 'TRK-' + t.id,
@@ -599,13 +638,16 @@ async function loadDataFromCloud() {
                     timeIn: timeInStr,
                     tanggalKirim: tanggalKirimStr,
                     timeStartLoading: startLoadingStr,
+                    timeEndLoading: endLoadingStr,
                     rawTime: rawTimeVal,
                     timeOut: timeoutStr,
                     rawTimeOut: rawTimeoutVal,
                     frozenDurationMs: null,
-                    petugas: firstPl ? firstPl.nama_petugas : '',
-                    tim: firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A',
+                    petugas: firstPl ? firstPl.nama_petugas : (statRow && statRow.checker_name ? statRow.checker_name : ''),
+                    tim: firstPl ? (firstPl.nama_tim || 'Team A') : (statRow && statRow.checker_team ? statRow.checker_team : 'Team A'),
                     shift: firstPl ? firstPl.shift_kerja : 'Shift 1 (Pagi)',
+                    metodePemuatan: metodeMuatVal,
+                    notePemuatan: noteMuatVal,
                     lokasiArsip: statRow && statRow.kategori_arsip ? `${statRow.kategori_arsip}: ${statRow.nomor_map_arsip || ''}` : 'Belum Ada Arsip',
                     pickingList: plRows.map(p => {
                         let stdPlt = getCartonPerPallet(p.sku);
@@ -649,7 +691,6 @@ function filterAdminSku() {
     dropdown.innerHTML = '';
     if(!inputVal) { dropdown.classList.add('hidden'); return; }
 
-    // Gabungkan masterStock dan master dari sapStockCache agar pencarian SKU dari SAP langsung muncul
     let combinedItems = {};
     for (let sKey in masterStock) { combinedItems[sKey] = masterStock[sKey]; }
     for (let sapKey in sapStockCache) {
@@ -715,7 +756,6 @@ async function loadAvailableBatchesForSku(skuCode) {
         kategori_stok: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
     }));
 
-    // Jika binStockData kosong untuk SKU ini, tapi ada di sapStockCache, masukkan data SAP tersebut sebagai opsi batch default
     let matches = binStockData.filter(b => b.sku && b.sku.toLowerCase().includes(skuCode.toLowerCase()));
     if (matches.length === 0 && sapStockCache[skuCode]) {
         matches.push(sapStockCache[skuCode]);
@@ -997,13 +1037,11 @@ async function addItemToTruckPickingList() {
     if(!truckQueue[activePlTruckIdx].pickingList) truckQueue[activePlTruckIdx].pickingList = [];
     truckQueue[activePlTruckIdx].pickingList.push(item);
 
-    // Update pemotongan stok pada database (baik stok_lokal, stok_ekspor, maupun sinkronisasi ke data SAP cache)
     let targetTable = selectedBatchData.kategori_stok === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
     let { data: currentDbStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', lokasiRak);
 
     if (!currentDbStock || currentDbStock.length === 0) {
         targetTable = 'stock_opname_sap';
-        // Kurangi juga di cache SAP lokal agar realtime
         if (sapStockCache[skuCode]) {
             sapStockCache[skuCode].karton -= totalKrt;
         }
@@ -1222,7 +1260,8 @@ function showDockDetail(dockName) {
 
     if(assignedTruck) {
         let totalQty = (assignedTruck.pickingList || []).reduce((sum, i) => sum + i.jumlah, 0);
-        let pInfo = assignedTruck.petugas ? `<br><strong>Petugas:</strong> ${assignedTruck.petugas} (${assignedTruck.tim} - ${assignedTruck.shift})` : '';
+        let pInfo = assignedTruck.petugas ? `<br><strong>Checker / Petugas:</strong> ${assignedTruck.petugas} (${assignedTruck.tim} - ${assignedTruck.shift})` : '';
+        let mInfo = assignedTruck.metodePemuatan ? `<br><strong>Metode Pemuatan:</strong> ${assignedTruck.metodePemuatan} ${assignedTruck.notePemuatan ? '('+assignedTruck.notePemuatan+')' : ''}` : '';
         bodyEl.innerHTML = `
             <p><strong>ID Antrian:</strong> ${assignedTruck.id}</p>
             <p><strong>No. Polisi:</strong> ${assignedTruck.noPol}</p>
@@ -1231,7 +1270,7 @@ function showDockDetail(dockName) {
             <p><strong>No. Doc (SPE/SPM/SO/QT):</strong> ${assignedTruck.noDoc}</p>
             <p><strong>Jenis / Tujuan:</strong> ${assignedTruck.jenis} &rarr; ${assignedTruck.tujuan}</p>
             <p><strong>Total Muatan:</strong> ${totalQty} karton</p>
-            <p><strong>Tanggal / Waktu Masuk:</strong> ${assignedTruck.tanggalKirim} ${assignedTruck.timeIn} ${pInfo}</p>
+            <p><strong>Tanggal / Waktu Masuk:</strong> ${assignedTruck.tanggalKirim} ${assignedTruck.timeIn} ${pInfo} ${mInfo}</p>
         `;
     } else {
         let dockNum = parseInt(dockName.replace('Dock ', ''));
@@ -1374,8 +1413,10 @@ function renderAll() {
         let displayTanggal = t.tanggalKirim || '-';
         let displayTimeIn = t.timeIn || '-';
         let displayStartLoading = t.timeStartLoading || '-';
+        let displayEndLoading = t.timeEndLoading || '-';
         let displayTimeOut = (t.status === 'Keluar' && t.timeOut && t.timeOut !== '-') ? t.timeOut : '-';
-        let petugasBadge = t.petugas ? ` | 👤 ${t.petugas} (${t.tim} - ${t.shift})` : '';
+        let petugasBadge = t.petugas ? ` | 👤 Checker: <b>${t.petugas} (${t.tim} - ${t.shift})</b>` : '';
+        let metodeMuatBadge = t.metodePemuatan ? ` | 📦 Muat Oleh: <b style="color:#0284c7;">${t.metodePemuatan}</b>${t.notePemuatan ? ' ('+t.notePemuatan+')' : ''}` : '';
         let arsipBadge = (t.lokasiArsip && t.lokasiArsip !== 'Belum Ada Arsip') ? ` | 📁 Arsip: <b>${t.lokasiArsip}</b>` : '';
 
         let stayDurationInfo = '';
@@ -1449,27 +1490,30 @@ function renderAll() {
             `;
         }
 
-        html += `<div class="card" style="display:flex; justify-content:space-between; align-items:center;">
-            <div>
-                <div style="font-weight:bold; font-size:13px; color:#1e293b;">
-                    <span style="background:#e0e7ff; color:#4338ca; padding:2px 6px; border-radius:4px; margin-right:5px;">${t.id}</span> 
-                    ${t.noPol} &bull; ${t.ekspedisi} &bull; <span style="color:#0284c7;">Doc: ${t.noDoc}</span>
+        html += `<div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                <div>
+                    <div style="font-weight:bold; font-size:13px; color:#1e293b;">
+                        <span style="background:#e0e7ff; color:#4338ca; padding:2px 6px; border-radius:4px; margin-right:5px;">${t.id}</span> 
+                        ${t.noPol} &bull; ${t.ekspedisi} &bull; <span style="color:#0284c7;">Doc: ${t.noDoc}</span>
+                    </div>
+                    <div style="margin-top:4px; color:#64748b;">
+                        Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Total Qty: <b>${totalQty} krt</b> ${petugasBadge} ${metodeMuatBadge} ${arsipBadge}
+                    </div>
+                    <div style="margin-top:6px; font-size:10px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
+                        <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold; color:#334155;">Status: ${t.status} | Dock: ${t.dock}</span>
+                        <span style="background:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:4px; font-weight:bold;">📅 Tgl: ${displayTanggal}</span>
+                        <span style="background:#eff6ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold;">🕒 Masuk: ${displayTimeIn}</span>
+                        <span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:4px; font-weight:bold;">🚀 Start Loading: ${displayStartLoading}</span>
+                        <span style="background:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:4px; font-weight:bold;">🏁 Selesai Muat: ${displayEndLoading}</span>
+                        ${isKeluar ? `<span style="background:#fef2f2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:bold;">🚪 Keluar: ${displayTimeOut}</span>` : ''}
+                        ${stayDurationInfo}
+                        ${rdcSlaHtml}
+                    </div>
                 </div>
-                <div style="margin-top:4px; color:#64748b;">
-                    Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Total Qty: <b>${totalQty} krt</b> ${petugasBadge} ${arsipBadge}
+                <div style="display:flex; gap:6px; align-items:center; flex-shrink: 0; margin-left: 10px;">
+                    ${actionButtonsHtml}
                 </div>
-                <div style="margin-top:4px; font-size:10px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                    <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold; color:#334155;">Status: ${t.status} | Dock: ${t.dock}</span>
-                    <span style="background:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:4px; font-weight:bold;">📅 Tgl: ${displayTanggal}</span>
-                    <span style="background:#eff6ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold;">🕒 Masuk: ${displayTimeIn}</span>
-                    <span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:4px; font-weight:bold;">🚀 Start Loading: ${displayStartLoading}</span>
-                    ${isKeluar ? `<span style="background:#fef2f2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:bold;">🏁 Keluar: ${displayTimeOut}</span>` : ''}
-                    ${stayDurationInfo}
-                    ${rdcSlaHtml}
-                </div>
-            </div>
-            <div style="display:flex; gap:6px; align-items:center;">
-                ${actionButtonsHtml}
             </div>
         `;
     });
@@ -1492,6 +1536,11 @@ function openStatusModal(idx) {
     document.getElementById('selectStatus').value = t.status;
     populateDockDropdown(t.dock);
     
+    document.getElementById('inputCheckerName').value = t.petugas || '';
+    document.getElementById('selectCheckerTeam').value = t.tim || 'Team A';
+    document.getElementById('selectMetodePemuatan').value = t.metodePemuatan || 'Internal';
+    document.getElementById('inputNotePemuatan').value = t.notePemuatan || '';
+
     parseExistingArsip(t.lokasiArsip);
     checkStatusChange();
     openModal('modalStatus');
@@ -1503,6 +1552,7 @@ function openArsipModal(idx) {
 
     document.getElementById('statusSelectionGroup').style.display = 'none';
     document.getElementById('dockDiv').style.display = 'none';
+    document.getElementById('checkerLoadingDiv').style.display = 'none';
     document.getElementById('outboundSection').style.display = 'none';
     document.getElementById('arsipSection').style.display = 'block';
     document.getElementById('modalStatusTitle').innerText = '📁 Perbarui Lokasi Arsip Dokumen Truk Keluar';
@@ -1586,6 +1636,7 @@ function populateDockDropdown(currentTruckDock) {
 function checkStatusChange() {
     let st = document.getElementById('selectStatus').value;
     document.getElementById('dockDiv').style.display = st === 'Proses Muat' ? 'block' : 'none';
+    document.getElementById('checkerLoadingDiv').style.display = st === 'Proses Muat' ? 'block' : 'none';
     let outboundDiv = document.getElementById('outboundSection');
     let arsipDiv = document.getElementById('arsipSection');
     
@@ -1628,6 +1679,10 @@ async function saveStatus() {
         newSt = document.getElementById('selectStatus').value;
     }
     let selectedDock = document.getElementById('selectDock').value;
+    let checkerNameVal = document.getElementById('inputCheckerName').value.trim();
+    let checkerTeamVal = document.getElementById('selectCheckerTeam').value;
+    let metodePemuatanVal = document.getElementById('selectMetodePemuatan').value;
+    let notePemuatanVal = document.getElementById('inputNotePemuatan').value.trim();
     let currentIsoTime = new Date().toISOString();
 
     if (newSt === 'Proses Muat') {
@@ -1641,13 +1696,23 @@ async function saveStatus() {
 
     targetTruck.status = newSt;
     targetTruck.dock = (newSt === 'Proses Muat') ? (selectedDock || 'Dock 01') : '-';
+    if (checkerNameVal) {
+        targetTruck.petugas = checkerNameVal;
+        targetTruck.tim = checkerTeamVal;
+    }
+    targetTruck.metodePemuatan = metodePemuatanVal;
+    targetTruck.notePemuatan = notePemuatanVal;
 
     let logRecord = {
         no_doc: targetTruck.noDoc,
         status_truk: newSt,
         loading_dock: targetTruck.dock,
         kategori_arsip: kat,
-        nomor_map_arsip: detailArsip || '-'
+        nomor_map_arsip: detailArsip || '-',
+        checker_name: checkerNameVal || '-',
+        checker_team: checkerTeamVal || 'Team A',
+        metode_pemuatan: metodePemuatanVal,
+        note_pemuatan: notePemuatanVal || '-'
     };
 
     if (newSt === 'Proses Muat' && targetTruck.timeStartLoading === '-') {
@@ -1655,7 +1720,16 @@ async function saveStatus() {
         targetTruck.timeStartLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
+    if (newSt === 'Selesai Muat') {
+        logRecord.time_end_loading = currentIsoTime;
+        targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
     if (newSt === 'Selesai Muat' || newSt === 'Keluar') {
+        if (!targetTruck.timeEndLoading || targetTruck.timeEndLoading === '-') {
+            logRecord.time_end_loading = currentIsoTime;
+            targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
         logRecord.time_out = currentIsoTime;
         targetTruck.timeOut = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
@@ -1678,6 +1752,13 @@ async function saveStatus() {
     }
 
     await _supabase.from('antrian_truk').update({ status_antrian: newSt }).eq('id', targetTruck.dbId);
+
+    if (checkerNameVal) {
+        await _supabase.from('picking_list_truk').update({
+            nama_petugas: checkerNameVal,
+            nama_tim: checkerTeamVal
+        }).eq('no_doc', targetTruck.noDoc);
+    }
 
     targetTruck.lokasiArsip = finalArsipStr;
     closeModal('modalStatus');

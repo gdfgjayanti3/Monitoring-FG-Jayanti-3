@@ -1223,21 +1223,26 @@
                 sapSessionsData = {};
                 sapNamaBarangMap = {};
 
-                let { data: sap } = await _supabase.from('stock_opname_sap').select('*');
-                if(sap && sap.length > 0) {
-                    let sapRow = sap.find(s => s.data_sap);
-                    if(sapRow && sapRow.data_sap) {
-                        if(typeof sapRow.data_sap === 'object' && !sapRow.data_sap['Default_Session']) {
-                            let firstKey = Object.keys(sapRow.data_sap)[0];
-                            if(firstKey && sapRow.data_sap[firstKey] && typeof sapRow.data_sap[firstKey] === 'object' && sapRow.data_sap[firstKey].karton !== undefined) {
-                                sapSessionsData = sapRow.data_sap;
+                // --- 2. LOAD DATA SAP BERDASARKAN BARIS TANGGAL DI SUPABASE ---
+                let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
+                if(sapRows && sapRows.length > 0) {
+                    sapRows.forEach(row => {
+                        if(row.tanggal && row.data_sap) {
+                            sapSessionsData[row.tanggal] = row.data_sap;
+                        } else if(row.data_sap && typeof row.data_sap === 'object') {
+                            // Kompatibilitas format lama jika ada
+                            if(!row.data_sap['Default_Session']) {
+                                let firstKey = Object.keys(row.data_sap)[0];
+                                if(firstKey && row.data_sap[firstKey] && typeof row.data_sap[firstKey] === 'object' && row.data_sap[firstKey].karton !== undefined) {
+                                    sapSessionsData = row.data_sap;
+                                } else {
+                                    sapSessionsData = { "Default_Session": row.data_sap };
+                                }
                             } else {
-                                sapSessionsData = { "Default_Session": sapRow.data_sap };
+                                sapSessionsData = row.data_sap;
                             }
-                        } else {
-                            sapSessionsData = sapRow.data_sap;
                         }
-                    }
+                    });
                 }
 
                 let { data: qc } = await _supabase.from('karantina_qc').select('*');
@@ -1418,7 +1423,7 @@
                     div.onclick = function() {
                         document.getElementById(inputId).value = `${item.sku} | ${item.name}`;
                         
-                        // --- 2. CONTOH IMPLEMENTASI PADA MODUL (Misal: cek stok SAP terbaru saat SKU dipilih) ---
+                        // --- 3. CONTOH IMPLEMENTASI PADA MODUL (Misal: cek stok SAP terbaru saat SKU dipilih) ---
                         let cleanSku = item.sku.split('|')[0].trim();
                         let stokSapTerbaru = getLatestSapStock(cleanSku);
                         console.log(`Stok SAP terbaru untuk ${cleanSku} adalah ${stokSapTerbaru} karton`);
@@ -1989,6 +1994,7 @@
             renderSapSessionsList();
         }
 
+        // --- 4. PROSES SIMPAN SAP BERDASARKAN TANGGAL SEBAGAI ID UNIK DI SUPABASE ---
         async function processSapPaste() {
             const sessionDate = document.getElementById('sapSessionDate').value;
             if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
@@ -2046,14 +2052,35 @@
             document.getElementById('sapPasteArea').value = '';
 
             const { error } = await _supabase.from('stock_opname_sap').upsert([{ 
-                id: 1, 
-                data_sap: sapSessionsData 
+                id: sessionDate,
+                tanggal: sessionDate, 
+                data_sap: sessionItems 
             }]);
 
             if (error) {
                 alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
             } else {
                 alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
+                renderSapSessionsList();
+            }
+        }
+
+        async function deleteSapSession(dateStr) {
+            if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
+                delete sapSessionsData[dateStr];
+                await _supabase.from('stock_opname_sap').delete().eq('tanggal', dateStr);
+                renderSapSessionsList();
+            }
+        }
+
+        async function deleteAllSapSessions() {
+            if(confirm('Yakin ingin menghapus seluruh sesi SAP?')) {
+                sapSessionsData = {};
+                let dates = Object.keys(sapSessionsData);
+                for(let d of dates) {
+                    await _supabase.from('stock_opname_sap').delete().eq('tanggal', d);
+                }
+                await _supabase.from('stock_opname_sap').delete().eq('id', 1); // Bersihkan legacy ID 1
                 renderSapSessionsList();
             }
         }
@@ -2229,22 +2256,6 @@
                     loadDataFromCloud();
                     setTimeout(() => openOpnameDetailModal(activeOpnameDate), 300);
                 }
-            }
-        }
-
-        async function deleteSapSession(dateStr) {
-            if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
-                delete sapSessionsData[dateStr];
-                await _supabase.from('stock_opname_sap').upsert([{ id: 1, data_sap: sapSessionsData }]);
-                renderSapSessionsList();
-            }
-        }
-
-        async function deleteAllSapSessions() {
-            if(confirm('Yakin ingin menghapus seluruh sesi SAP?')) {
-                sapSessionsData = {};
-                await _supabase.from('stock_opname_sap').upsert([{ id: 1, data_sap: sapSessionsData }]);
-                renderSapSessionsList();
             }
         }
 

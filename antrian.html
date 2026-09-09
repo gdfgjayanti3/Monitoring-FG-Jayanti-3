@@ -13,12 +13,14 @@
         .btn-nav:hover { background: #f1f5f9; }
         .container { max-width: 1150px; margin: 20px auto; padding: 0 20px; }
         
-        /* Card UI Modern, Bersih & Tidak Menumpuk */
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; }
+        /* Card UI Modern, Bersih & Terstruktur */
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; width: 100%; box-sizing: border-box; }
         .card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
         
-        /* Garis Pemisah Tanggal Otomatis */
-        .date-divider { font-size: 12px; font-weight: bold; color: #334155; background: #e2e8f0; padding: 6px 12px; border-radius: 6px; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; }
+        /* Pemisah Tanggal Estetik: Garis panjang penuh & Tanggal di tengah */
+        .date-divider-container { display: flex; align-items: center; text-align: center; margin: 22px 0 12px 0; width: 100%; }
+        .date-divider-container::before, .date-divider-container::after { content: ''; flex: 1; border-bottom: 2px solid #cbd5e1; }
+        .date-divider-label { padding: 0 16px; font-size: 12px; font-weight: bold; color: #334155; background: #f8fafc; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
 
         .btn { padding: 6px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; border: 1px solid #cbd5e1; background: white; transition: 0.2s; }
         .btn-primary { background: #6366f1; color: white; border: none; }
@@ -1432,10 +1434,10 @@ function renderAll() {
         let parts = rawDate.split('-');
         let formattedDateLabel = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : rawDate;
 
-        // Pemisah garis tanggal otomatis
+        // Pemisah tanggal baru: Garis full di kiri-kanan dan tanggal di tengah (sejajar penuh dengan lebar kartu)
         if (formattedDateLabel !== lastDateGroup) {
             lastDateGroup = formattedDateLabel;
-            html += `<div class="date-divider">📅 ---------------------------------------- Tanggal: ${formattedDateLabel} ----------------------------------------</div>`;
+            html += `<div class="date-divider-container"><div class="date-divider-label">📅 Tanggal: ${formattedDateLabel}</div></div>`;
         }
 
         let plCount = (t.pickingList || []).length;
@@ -1522,7 +1524,7 @@ function renderAll() {
             `;
         }
 
-        // Tata letak kartu yang rapi, terstruktur, dan tidak menumpuk
+        // Kartu Truk Utama
         html += `<div class="card">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%;">
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">

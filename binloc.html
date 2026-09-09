@@ -1175,6 +1175,24 @@
         let globalPlottingData = [];
         let activeOpnameDate = '';
 
+        // --- 1. FUNGSI HELPER UNTUK MENGAMBIL STOK SAP TERAKHIR (UNTUK PICKING LIST / ANTREAN) ---
+        function getLatestSapStock(skuCode) {
+            let dates = Object.keys(sapSessionsData);
+            if (dates.length === 0) return 0;
+
+            // Urutkan tanggal sesi dari yang terbaru ke terlama
+            dates.sort().reverse();
+            
+            // Cek ke sesi tanggal terbaru yang memuat SKU tersebut
+            for (let d of dates) {
+                let sessionItems = sapSessionsData[d];
+                if (sessionItems && sessionItems[skuCode]) {
+                    return parseFloat(sessionItems[skuCode].karton) || 0;
+                }
+            }
+            return 0;
+        }
+
         async function loadDataFromCloud() {
             try {
                 let { data: skuMaster, error: errSku } = await _supabase.from('master_sku').select('*');
@@ -1399,6 +1417,12 @@
                     div.innerText = `${item.sku} | ${item.name}`;
                     div.onclick = function() {
                         document.getElementById(inputId).value = `${item.sku} | ${item.name}`;
+                        
+                        // --- 2. CONTOH IMPLEMENTASI PADA MODUL (Misal: cek stok SAP terbaru saat SKU dipilih) ---
+                        let cleanSku = item.sku.split('|')[0].trim();
+                        let stokSapTerbaru = getLatestSapStock(cleanSku);
+                        console.log(`Stok SAP terbaru untuk ${cleanSku} adalah ${stokSapTerbaru} karton`);
+
                         if(inputId === 'pSku') {
                             if(item.kodefikasi) document.getElementById('pKodefikasi').value = item.kodefikasi;
                             hitungKonversi();
@@ -1912,7 +1936,6 @@
             tbody.appendChild(tr);
         }
 
-        // Fungsi khusus untuk menduplikasi baris di bawahnya dengan SKU yang sama persis
         function addBlockRowBelow(currentIdx) {
             let currentSkuVal = document.getElementById('opSku_' + currentIdx).value;
             if(!currentSkuVal) {
@@ -1966,7 +1989,6 @@
             renderSapSessionsList();
         }
 
-        // --- PARSER OTOMATIS SAP MENTAH (Fokus SKU & Ending Balance) ---
         async function processSapPaste() {
             const sessionDate = document.getElementById('sapSessionDate').value;
             if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
@@ -1985,7 +2007,6 @@
                     return;
                 }
 
-                // Cari kolom mana yang berisi kode SKU (angka 5 sampai 7 digit)
                 let skuColIndex = -1;
                 for (let i = 0; i < cols.length; i++) {
                     if (/^\d{5,7}$/.test(cols[i])) {
@@ -1994,12 +2015,9 @@
                     }
                 }
 
-                // Jika ketemu baris SKU
                 if (skuColIndex !== -1) {
                     let skuVal = cols[skuColIndex];
                     let namaBarang = cols[skuColIndex + 1] || masterStockData[skuVal]?.name || '-';
-                    
-                    // Ending Balance selalu berada di kolom paling ujung kanan dari baris yang di-copy
                     let rawEndingBalance = cols[cols.length - 1] || "0";
                     let qtyVal = parseFloat(rawEndingBalance.replace(/\./g, '').replace(',', '.')) || 0;
 

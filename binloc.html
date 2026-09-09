@@ -1175,15 +1175,10 @@
         let globalPlottingData = [];
         let activeOpnameDate = '';
 
-        // --- 1. FUNGSI HELPER UNTUK MENGAMBIL STOK SAP TERAKHIR (UNTUK PICKING LIST / ANTREAN) ---
         function getLatestSapStock(skuCode) {
             let dates = Object.keys(sapSessionsData);
             if (dates.length === 0) return 0;
-
-            // Urutkan tanggal sesi dari yang terbaru ke terlama
             dates.sort().reverse();
-            
-            // Cek ke sesi tanggal terbaru yang memuat SKU tersebut
             for (let d of dates) {
                 let sessionItems = sapSessionsData[d];
                 if (sessionItems && sessionItems[skuCode]) {
@@ -1223,23 +1218,16 @@
                 sapSessionsData = {};
                 sapNamaBarangMap = {};
 
-                // --- 2. LOAD DATA SAP BERDASARKAN BARIS TANGGAL DI SUPABASE ---
                 let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
                 if(sapRows && sapRows.length > 0) {
                     sapRows.forEach(row => {
-                        if(row.tanggal && row.data_sap) {
-                            sapSessionsData[row.tanggal] = row.data_sap;
+                        if(row.data_sap && row.data_sap.tanggal_sesi && row.data_sap.items) {
+                            sapSessionsData[row.data_sap.tanggal_sesi] = row.data_sap.items;
                         } else if(row.data_sap && typeof row.data_sap === 'object') {
-                            // Kompatibilitas format lama jika ada
-                            if(!row.data_sap['Default_Session']) {
-                                let firstKey = Object.keys(row.data_sap)[0];
-                                if(firstKey && row.data_sap[firstKey] && typeof row.data_sap[firstKey] === 'object' && row.data_sap[firstKey].karton !== undefined) {
-                                    sapSessionsData = row.data_sap;
-                                } else {
-                                    sapSessionsData = { "Default_Session": row.data_sap };
-                                }
-                            } else {
-                                sapSessionsData = row.data_sap;
+                            if(!row.data_sap['Default_Session'] && !row.data_sap.tanggal_sesi) {
+                                sapSessionsData = { ...sapSessionsData, ...row.data_sap };
+                            } else if(row.data_sap['Default_Session']) {
+                                sapSessionsData['Default_Session'] = row.data_sap['Default_Session'];
                             }
                         }
                     });
@@ -1422,11 +1410,8 @@
                     div.innerText = `${item.sku} | ${item.name}`;
                     div.onclick = function() {
                         document.getElementById(inputId).value = `${item.sku} | ${item.name}`;
-                        
-                        // --- 3. CONTOH IMPLEMENTASI PADA MODUL (Misal: cek stok SAP terbaru saat SKU dipilih) ---
                         let cleanSku = item.sku.split('|')[0].trim();
                         let stokSapTerbaru = getLatestSapStock(cleanSku);
-                        console.log(`Stok SAP terbaru untuk ${cleanSku} adalah ${stokSapTerbaru} karton`);
 
                         if(inputId === 'pSku') {
                             if(item.kodefikasi) document.getElementById('pKodefikasi').value = item.kodefikasi;
@@ -1994,7 +1979,7 @@
             renderSapSessionsList();
         }
 
-        // --- 4. PROSES SIMPAN SAP BERDASARKAN TANGGAL SEBAGAI ID UNIK DI SUPABASE ---
+        // --- PROSES SIMPAN SAP (MENGGUNAKAN ID BIGINT & MENYIMPAN TANGGAL DI DALAM OBJEK) ---
         async function processSapPaste() {
             const sessionDate = document.getElementById('sapSessionDate').value;
             if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
@@ -2051,10 +2036,9 @@
             sapSessionsData[sessionDate] = sessionItems;
             document.getElementById('sapPasteArea').value = '';
 
-            const { error } = await _supabase.from('stock_opname_sap').upsert([{ 
-                id: sessionDate,
-                tanggal: sessionDate, 
-                data_sap: sessionItems 
+            const { error } = await _supabase.from('stock_opname_sap').insert([{ 
+                id: Date.now(),
+                data_sap: { tanggal_sesi: sessionDate, items: sessionItems } 
             }]);
 
             if (error) {
@@ -2068,7 +2052,14 @@
         async function deleteSapSession(dateStr) {
             if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
                 delete sapSessionsData[dateStr];
-                await _supabase.from('stock_opname_sap').delete().eq('tanggal', dateStr);
+                let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
+                if(sapRows) {
+                    for(let r of sapRows) {
+                        if(r.data_sap && r.data_sap.tanggal_sesi === dateStr) {
+                            await _supabase.from('stock_opname_sap').delete().eq('id', r.id);
+                        }
+                    }
+                }
                 renderSapSessionsList();
             }
         }
@@ -2076,11 +2067,7 @@
         async function deleteAllSapSessions() {
             if(confirm('Yakin ingin menghapus seluruh sesi SAP?')) {
                 sapSessionsData = {};
-                let dates = Object.keys(sapSessionsData);
-                for(let d of dates) {
-                    await _supabase.from('stock_opname_sap').delete().eq('tanggal', d);
-                }
-                await _supabase.from('stock_opname_sap').delete().eq('id', 1); // Bersihkan legacy ID 1
+                await _supabase.from('stock_opname_sap').delete().neq('id', 0);
                 renderSapSessionsList();
             }
         }

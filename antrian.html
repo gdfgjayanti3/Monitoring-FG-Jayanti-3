@@ -1432,8 +1432,13 @@ function renderAll() {
         return;
     }
 
-    // Urutan dikembalikan ke Descending (terbaru/paling muda di atas, terlama di bawah)
-    filteredTrucks.sort((a, b) => new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0));
+    // Urutan diset berdasarkan ID database (dbId) atau waktu masuk secara menurun (descending)
+    // Supaya data yang baru masuk (ID/waktu terbesar) otomatis muncul paling atas di bawah garis tanggal.
+    filteredTrucks.sort((a, b) => {
+        let dateCompare = new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0);
+        if (dateCompare !== 0) return dateCompare;
+        return (b.dbId || 0) - (a.dbId || 0);
+    });
 
     let html = '';
     let lastDateGroup = '';

@@ -11,16 +11,25 @@
         .nav-actions { display: flex; gap: 6px; align-items: center; }
         .btn-nav { padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; background: #f8fafc; cursor: pointer; font-size: 11px; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 4px; text-decoration: none; }
         .btn-nav:hover { background: #f1f5f9; }
-        .container { max-width: 1100px; margin: 20px auto; padding: 0 20px; }
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px; margin-bottom: 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 8px; }
+        .container { max-width: 1150px; margin: 20px auto; padding: 0 20px; }
+        
+        /* Card UI Modern, Bersih & Tidak Menumpuk */
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; }
+        .card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        
+        /* Garis Pemisah Tanggal Otomatis */
+        .date-divider { font-size: 12px; font-weight: bold; color: #334155; background: #e2e8f0; padding: 6px 12px; border-radius: 6px; margin: 20px 0 10px 0; display: flex; align-items: center; gap: 8px; letter-spacing: 0.5px; }
+
         .btn { padding: 6px 14px; border-radius: 8px; cursor: pointer; font-weight: 600; border: 1px solid #cbd5e1; background: white; transition: 0.2s; }
         .btn-primary { background: #6366f1; color: white; border: none; }
         .btn-primary:hover { background: #4f46e5; }
         .btn-danger { background: #fee2e2; color: #991b1b; border-color: #fecaca; }
         .btn-danger:hover { background: #fecaca; }
+        
         .tabs { display: flex; gap: 6px; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; overflow-x: auto; }
         .tab-btn { padding: 6px 12px; cursor: pointer; border-radius: 6px; border: 1px solid #e2e8f0; background: white; font-weight: 600; color: #64748b; font-size: 11px; white-space: nowrap; }
         .tab-btn.active { background: #818cf8; color: white; border-color: #818cf8; }
+        
         .modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.3); align-items: center; justify-content: center; z-index: 1000; }
         .modal-content { background: white; padding: 25px; border-radius: 16px; width: 650px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); position: relative; }
         .form-group { margin-bottom: 12px; }
@@ -34,24 +43,10 @@
         .relative { position: relative; }
 
         @media print {
-            @page { 
-                size: A5 portrait; 
-                margin: 5mm; 
-            }
+            @page { size: A5 portrait; margin: 5mm; }
             body * { visibility: hidden; }
             #printArea, #printArea * { visibility: visible; }
-            #printArea { 
-                position: absolute; 
-                left: 0; 
-                top: 0; 
-                width: 100vw; 
-                background: white; 
-                padding: 5mm; 
-                font-family: 'Segoe UI', sans-serif; 
-                font-size: 10px; 
-                color: black; 
-                box-sizing: border-box;
-            }
+            #printArea { position: absolute; left: 0; top: 0; width: 100vw; background: white; padding: 5mm; font-family: 'Segoe UI', sans-serif; font-size: 10px; color: black; box-sizing: border-box; }
         }
         #printArea { display: none; }
     </style>
@@ -77,7 +72,7 @@
             <p id="userRoleDisplay" style="font-size: 10px; color: #64748b; margin: 0; text-transform: capitalize;">-</p>
         </div>
         <button onclick="prosesLogout()" style="background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; padding: 5px 10px; border-radius: 6px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px;" title="Keluar Akun">
-            <i class="fa-solid fa-power-off"></i> Logout
+            Logout
         </button>
     </div>
 </header>
@@ -596,23 +591,22 @@ async function loadDataFromCloud() {
                     timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
 
-                let tanggalKirimStr = '-';
-                if (t.tanggal) {
-                    let parts = t.tanggal.split('-');
-                    if (parts.length === 3) tanggalKirimStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
-                    else tanggalKirimStr = t.tanggal;
-                } else if (t.created_at) {
-                    tanggalKirimStr = new Date(t.created_at).toLocaleDateString('id-ID');
-                }
+                let tanggalKirimStr = t.tanggal || (t.created_at ? t.created_at.split('T')[0] : '2026-09-09');
                 
                 let startLoadingStr = '-';
+                let rawStartLoading = null;
                 if (statRow && statRow.time_start_loading) {
-                    startLoadingStr = new Date(statRow.time_start_loading).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    let dStart = new Date(statRow.time_start_loading);
+                    rawStartLoading = dStart.getTime();
+                    startLoadingStr = dStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
 
                 let endLoadingStr = '-';
+                let rawEndLoading = null;
                 if (statRow && statRow.time_end_loading) {
-                    endLoadingStr = new Date(statRow.time_end_loading).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    let dEnd = new Date(statRow.time_end_loading);
+                    rawEndLoading = dEnd.getTime();
+                    endLoadingStr = dEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
 
                 let timeoutStr = '-';
@@ -629,7 +623,6 @@ async function loadDataFromCloud() {
                 let noteMuatVal = statRow && statRow.note_pemuatan ? statRow.note_pemuatan : '';
                 let treatmentNoteVal = statRow && statRow.treatment_note ? statRow.treatment_note : '';
 
-                // Pisahkan murni: adminPicking khusus dari tabel picking_list, checkerName khusus dari status_truk_log
                 let adminPickingVal = firstPl ? (firstPl.nama_petugas || '') : '';
                 let checkerNameVal = statRow ? (statRow.checker_name || '') : '';
                 let checkerTeamVal = statRow ? (statRow.checker_team || 'Team A') : (firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A');
@@ -652,9 +645,10 @@ async function loadDataFromCloud() {
                     timeStartLoading: startLoadingStr,
                     timeEndLoading: endLoadingStr,
                     rawTime: rawTimeVal,
+                    rawStartLoading: rawStartLoading,
+                    rawEndLoading: rawEndLoading,
                     timeOut: timeoutStr,
                     rawTimeOut: rawTimeoutVal,
-                    frozenDurationMs: null,
                     adminPicking: adminPickingVal,
                     checkerName: checkerNameVal,
                     tim: checkerTeamVal,
@@ -923,7 +917,6 @@ async function openPickingListModal(index) {
     let t = truckQueue[index];
     document.getElementById('plTruckInfo').innerText = `${t.noPol} (${t.ekspedisi}) - Doc: ${t.noDoc}`;
     
-    // Tampilkan admin picking list yang benar (Resa)
     document.getElementById('plPetugas').value = t.adminPicking || '';
     document.getElementById('plTim').value = t.tim || 'Team A';
     document.getElementById('plShift').value = t.shift || 'Shift 1 (Pagi)';
@@ -991,7 +984,6 @@ async function savePetugasShift() {
     t.tim = document.getElementById('plTim').value;
     t.shift = document.getElementById('plShift').value;
 
-    // Simpan nama admin picking ke database tabel picking_list_truk
     await _supabase.from('picking_list_truk').update({
         nama_petugas: newAdmin,
         nama_tim: t.tim,
@@ -1406,22 +1398,14 @@ function renderAll() {
         return;
     }
 
-    let html = '';
-    truckQueue.forEach((t, idx) => {
+    let filteredTrucks = truckQueue.filter(t => {
         let matchTab = false;
-        if(currentMainTab === 'AntrianTab') {
-            matchTab = (t.status === 'Antrian');
-        } else if(currentMainTab === 'MenungguDokumenTab') {
-            matchTab = (t.status === 'Menunggu Dokumen');
-        } else if(currentMainTab === 'ProsesMuatTab') {
-            matchTab = (t.status === 'Proses Muat');
-        } else if(currentMainTab === 'SelesaiMuatTab') {
-            matchTab = (t.status === 'Selesai Muat');
-        } else if(currentMainTab === 'TreatmentTab') {
-            matchTab = (t.status === 'Treatment');
-        } else if(currentMainTab === 'KeluarTab') {
-            matchTab = (t.status === 'Keluar');
-        }
+        if(currentMainTab === 'AntrianTab') matchTab = (t.status === 'Antrian');
+        else if(currentMainTab === 'MenungguDokumenTab') matchTab = (t.status === 'Menunggu Dokumen');
+        else if(currentMainTab === 'ProsesMuatTab') matchTab = (t.status === 'Proses Muat');
+        else if(currentMainTab === 'SelesaiMuatTab') matchTab = (t.status === 'Selesai Muat');
+        else if(currentMainTab === 'TreatmentTab') matchTab = (t.status === 'Treatment');
+        else if(currentMainTab === 'KeluarTab') matchTab = (t.status === 'Keluar');
 
         let textMatch = (t.id.toLowerCase().includes(keyword) || 
                          t.noPol.toLowerCase().includes(keyword) || 
@@ -1429,12 +1413,33 @@ function renderAll() {
                          t.ekspedisi.toLowerCase().includes(keyword) ||
                          t.tujuan.toLowerCase().includes(keyword) ||
                          (t.noDoc && t.noDoc.toLowerCase().includes(keyword)));
+        return matchTab && textMatch;
+    });
 
-        if(!matchTab || !textMatch) return;
+    if(filteredTrucks.length === 0) {
+        container.innerHTML = '<div class="card" style="text-align:center; color:#94a3b8; padding:30px;">Tidak ada data truk untuk kategori atau pencarian ini.</div>';
+        return;
+    }
+
+    // Urutkan dari tanggal terbaru ke terlama
+    filteredTrucks.sort((a, b) => new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0));
+
+    let html = '';
+    let lastDateGroup = '';
+
+    filteredTrucks.forEach((t, idx) => {
+        let rawDate = t.tanggalKirim || '2026-09-09';
+        let parts = rawDate.split('-');
+        let formattedDateLabel = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : rawDate;
+
+        // Pemisah garis tanggal otomatis
+        if (formattedDateLabel !== lastDateGroup) {
+            lastDateGroup = formattedDateLabel;
+            html += `<div class="date-divider">📅 ---------------------------------------- Tanggal: ${formattedDateLabel} ----------------------------------------</div>`;
+        }
 
         let plCount = (t.pickingList || []).length;
         let totalQty = (t.pickingList || []).reduce((sum, i) => sum + i.jumlah, 0);
-        let displayTanggal = t.tanggalKirim || '-';
         let displayTimeIn = t.timeIn || '-';
         let displayStartLoading = t.timeStartLoading || '-';
         let displayEndLoading = t.timeEndLoading || '-';
@@ -1446,9 +1451,11 @@ function renderAll() {
         let arsipBadge = (t.lokasiArsip && t.lokasiArsip !== 'Belum Ada Arsip') ? ` | 📁 Arsip: <b>${t.lokasiArsip}</b>` : '';
 
         let stayDurationInfo = '';
-        if (t.status === 'Keluar' && t.rawTime && t.rawTimeOut) {
-            let durationMs = t.rawTimeOut - t.rawTime;
+        if (t.rawTime && (t.status === 'Selesai Muat' || t.status === 'Keluar')) {
+            let endRefTime = t.rawTimeOut || t.rawEndLoading || new Date().getTime();
+            let durationMs = endRefTime - t.rawTime;
             let totalMins = Math.floor(durationMs / (1000 * 60));
+            if(totalMins < 0) totalMins = 0;
             let hrs = Math.floor(totalMins / 60);
             let mins = totalMins % 60;
             stayDurationInfo = ` | ⏳ Stay di Pabrik: <b>${hrs}j ${mins}m</b>`;
@@ -1457,18 +1464,17 @@ function renderAll() {
         let rdcSlaHtml = '';
         if(t.jenis && t.jenis.includes('RDC')) {
             let diffMs = 0;
-            if (t.status === 'Selesai Muat' || t.status === 'Keluar') {
-                if (!t.frozenDurationMs) {
-                    let startRaw = t.rawTime || new Date().getTime();
-                    t.frozenDurationMs = new Date().getTime() - startRaw;
-                }
-                diffMs = t.frozenDurationMs;
+            let isFinished = (t.status === 'Selesai Muat' || t.status === 'Keluar');
+            
+            if (isFinished) {
+                // Bekukan durasi RDC secara permanen jika sudah selesai/keluar
+                let endTimeRef = t.rawTimeOut || t.rawEndLoading || t.rawTime;
+                diffMs = endTimeRef - t.rawTime;
             } else {
-                t.frozenDurationMs = null;
                 let startRaw = t.rawTime || new Date().getTime();
                 diffMs = new Date().getTime() - startRaw;
-                if(diffMs < 0) diffMs = 0;
             }
+            if(diffMs < 0) diffMs = 0;
 
             let diffHrs = diffMs / (1000 * 60 * 60);
             let totalMins = Math.floor(diffMs / (1000 * 60));
@@ -1489,8 +1495,8 @@ function renderAll() {
                 labelSla = '⚠️ Perhatian (2-4 Jam)';
             }
 
-            let freezeNotice = (t.status === 'Selesai Muat' || t.status === 'Keluar') ? ' [Selesai]' : '';
-            rdcSlaHtml = `<span style="background:${bgCol}; color:${textCol}; padding:2px 8px; border-radius:4px; font-weight:bold; margin-left:6px; font-size:10px;">
+            let freezeNotice = isFinished ? ' [Selesai]' : '';
+            rdcSlaHtml = `<span style="background:${bgCol}; color:${textCol}; padding:2px 8px; border-radius:4px; font-weight:bold; font-size:10px;">
                 ⏱️ RDC Timer${freezeNotice}: ${h}j ${m}m (${labelSla})
             </span>`;
         }
@@ -1499,54 +1505,62 @@ function renderAll() {
         let actionButtonsHtml = '';
         if (isKeluar) {
             actionButtonsHtml = `
-                <button class="btn" style="background:${plCount > 0 ? '#f0fdf4' : '#fffbeb'}; color:${plCount > 0 ? '#15803d' : '#b45309'}; border-color:${plCount > 0 ? '#bbf7d0' : '#fde68a'}; font-size:11px;" onclick="openPickingListModal(${idx})">
-                    📄 Picking List (${plCount})
+                <button class="btn" style="background:${plCount > 0 ? '#f0fdf4' : '#fffbeb'}; color:${plCount > 0 ? '#15803d' : '#b45309'}; border-color:${plCount > 0 ? '#bbf7d0' : '#fde68a'}; font-size:11px;" onclick="openPickingListModal(${truckQueue.indexOf(t)})">
+                    📄 Picking (${plCount})
                 </button>
-                <button class="btn" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0; font-size:11px;" onclick="openArsipModal(${idx})">📁 Edit Arsip</button>
+                <button class="btn" style="background:#f0fdf4; color:#15803d; border-color:#bbf7d0; font-size:11px;" onclick="openArsipModal(${truckQueue.indexOf(t)})">📁 Arsip</button>
                 <span style="background:#fef3c7; color:#b45309; padding:4px 8px; border-radius:6px; font-weight:bold; font-size:10px;">🔒 Locked</span>
-                <button class="btn btn-danger" style="font-size:11px;" onclick="deleteTruck(${idx})">Hapus</button>
+                <button class="btn btn-danger" style="font-size:11px;" onclick="deleteTruck(${truckQueue.indexOf(t)})">Hapus</button>
             `;
         } else {
             actionButtonsHtml = `
-                <button class="btn" style="background:${plCount > 0 ? '#f0fdf4' : '#fffbeb'}; color:${plCount > 0 ? '#15803d' : '#b45309'}; border-color:${plCount > 0 ? '#bbf7d0' : '#fde68a'}; font-size:11px;" onclick="openPickingListModal(${idx})">
-                    📄 Picking List (${plCount})
+                <button class="btn" style="background:${plCount > 0 ? '#f0fdf4' : '#fffbeb'}; color:${plCount > 0 ? '#15803d' : '#b45309'}; border-color:${plCount > 0 ? '#bbf7d0' : '#fde68a'}; font-size:11px;" onclick="openPickingListModal(${truckQueue.indexOf(t)})">
+                    📄 Picking (${plCount})
                 </button>
-                <button class="btn btn-primary" style="font-size:11px;" onclick="openStatusModal(${idx})">Pindah Status</button>
-                <button class="btn btn-danger" style="font-size:11px;" onclick="deleteTruck(${idx})">Hapus</button>
+                <button class="btn btn-primary" style="font-size:11px;" onclick="openStatusModal(${truckQueue.indexOf(t)})">Pindah Status</button>
+                <button class="btn btn-danger" style="font-size:11px;" onclick="deleteTruck(${truckQueue.indexOf(t)})">Hapus</button>
             `;
         }
 
+        // Tata letak kartu yang rapi, terstruktur, dan tidak menumpuk
         html += `<div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
-                <div>
-                    <div style="font-weight:bold; font-size:13px; color:#1e293b;">
-                        <span style="background:#e0e7ff; color:#4338ca; padding:2px 6px; border-radius:4px; margin-right:5px;">${t.id}</span> 
-                        ${t.noPol} &bull; ${t.ekspedisi} &bull; <span style="color:#0284c7;">Doc: ${t.noDoc}</span>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%;">
+                <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+                    <!-- Baris Atas: ID, No Polisi, Ekspedisi, No Doc -->
+                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:11px;">${t.id}</span>
+                        <strong style="font-size:13px; color:#1e293b;">${t.noPol}</strong>
+                        <span style="color:#64748b;">&bull;</span>
+                        <span style="font-weight:600; color:#334155;">${t.ekspedisi}</span>
+                        <span style="color:#64748b;">&bull;</span>
+                        <span style="color:#0284c7; font-weight:600;">Doc: ${t.noDoc}</span>
                     </div>
-                    <div style="margin-top:4px; color:#64748b;">
-                        Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Total Qty: <b>${totalQty} krt</b> ${checkerBadge} ${metodeMuatBadge} ${treatmentBadge} ${arsipBadge}
+
+                    <!-- Baris Informasi Detail Muatan -->
+                    <div style="color:#475569; font-size:11px; line-height: 1.4;">
+                        Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Qty: <b>${totalQty} krt</b> 
+                        ${checkerBadge} ${metodeMuatBadge} ${treatmentBadge} ${arsipBadge}
                     </div>
-                    <div style="margin-top:6px; font-size:10px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
-                        <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold; color:#334155;">Status: ${t.status} | Dock: ${t.dock}</span>
-                        <span style="background:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:4px; font-weight:bold;">📅 Tgl: ${displayTanggal}</span>
-                        <span style="background:#eff6ff; color:#1d4ed8; padding:2px 6px; border-radius:4px; font-weight:bold;">🕒 Masuk: ${displayTimeIn}</span>
-                        <span style="background:#fef3c7; color:#92400e; padding:2px 6px; border-radius:4px; font-weight:bold;">🚀 Start Loading: ${displayStartLoading}</span>
-                        <span style="background:#e0e7ff; color:#3730a3; padding:2px 6px; border-radius:4px; font-weight:bold;">🏁 Selesai Muat: ${displayEndLoading}</span>
-                        ${isKeluar ? `<span style="background:#fef2f2; color:#b91c1c; padding:2px 6px; border-radius:4px; font-weight:bold;">🚪 Keluar: ${displayTimeOut}</span>` : ''}
-                        ${stayDurationInfo}
+
+                    <!-- Baris Status, Waktu, dan Timer -->
+                    <div style="font-size: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 2px;">
+                        <span style="background:#f1f5f9; color:#334155; padding:3px 8px; border-radius:5px; font-weight:bold;">Status: ${t.status} | Dock: ${t.dock}</span>
+                        <span style="background:#eff6ff; color:#1d4ed8; padding:3px 8px; border-radius:5px; font-weight:bold;">🕒 Masuk: ${displayTimeIn}</span>
+                        <span style="background:#fef3c7; color:#92400e; padding:3px 8px; border-radius:5px; font-weight:bold;">🚀 Start: ${displayStartLoading}</span>
+                        <span style="background:#e0e7ff; color:#3730a3; padding:3px 8px; border-radius:5px; font-weight:bold;">🏁 Selesai: ${displayEndLoading}</span>
+                        ${isKeluar ? `<span style="background:#fef2f2; color:#b91c1c; padding:3px 8px; border-radius:5px; font-weight:bold;">🚪 Keluar: ${displayTimeOut}</span>` : ''}
+                        ${stayDurationInfo ? `<span style="background:#f3f4f6; color:#1f2937; padding:3px 8px; border-radius:5px; font-weight:bold;">${stayDurationInfo}</span>` : ''}
                         ${rdcSlaHtml}
                     </div>
                 </div>
-                <div style="display:flex; gap:6px; align-items:center; flex-shrink: 0; margin-left: 10px;">
+
+                <!-- Bagian Tombol Aksi di Kanan -->
+                <div style="display:flex; gap:6px; align-items:center; flex-shrink: 0;">
                     ${actionButtonsHtml}
                 </div>
             </div>
-        `;
+        </div>`;
     });
-
-    if(html === '') {
-        html = '<div class="card" style="text-align:center; color:#94a3b8; padding:30px;">Tidak ada data truk untuk kategori atau pencarian ini.</div>';
-    }
 
     container.innerHTML = html;
 }

@@ -191,7 +191,7 @@
         <div style="display:flex; gap:10px; margin-bottom:10px; background:#f1f5f9; padding:10px; border-radius:8px; border:1px solid #e2e8f0;">
             <div style="flex:1;">
                 <label>Nama Petugas / Admin *</label>
-                <input type="text" id="plPetugas" placeholder="Cth: Budi Setiawan" oninput="savePetugasShift()">
+                <input type="text" id="plPetugas" placeholder="Cth: Resa" oninput="savePetugasShift()">
             </div>
             <div style="width:130px;">
                 <label>Tim Kerja *</label>
@@ -298,7 +298,7 @@
             <div style="display:flex; gap:10px; margin-bottom:8px;">
                 <div style="flex:1;">
                     <label style="font-size:10px; color:#64748b;">Nama Checker Loading *</label>
-                    <input type="text" id="inputCheckerName" placeholder="Contoh: Rian / Jefri">
+                    <input type="text" id="inputCheckerName" placeholder="Contoh: Iqbal">
                 </div>
                 <div style="width:140px;">
                     <label style="font-size:10px; color:#64748b;">Pilih Tim Kerja *</label>
@@ -324,7 +324,6 @@
             </div>
         </div>
 
-        <!-- Kolom Note / Alasan khusus untuk status Treatment -->
         <div id="treatmentNoteDiv" class="form-group" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px; margin-top:10px;">
             <strong style="color:#b91c1c; display:block; margin-bottom:6px;">⚠️ Catatan / Alasan Treatment</strong>
             <label style="font-size:10px; color:#991b1b;">Tuliskan alasan atau keterangan treatment (Bau, Kotor, Basah, dll) *</label>
@@ -630,10 +629,11 @@ async function loadDataFromCloud() {
                 let noteMuatVal = statRow && statRow.note_pemuatan ? statRow.note_pemuatan : '';
                 let treatmentNoteVal = statRow && statRow.treatment_note ? statRow.treatment_note : '';
 
-                // Prioritaskan checker_name dari proses muat, fallback ke petugas picking list jika kosong
-                let finalCheckerName = (statRow && statRow.checker_name && statRow.checker_name !== '-') ? statRow.checker_name : (firstPl ? firstPl.nama_petugas : '');
-                let finalCheckerTeam = (statRow && statRow.checker_team) ? statRow.checker_team : (firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A');
-                let finalShift = firstPl ? firstPl.shift_kerja : 'Shift 1 (Pagi)';
+                // Pisahkan murni: adminPicking khusus dari tabel picking_list, checkerName khusus dari status_truk_log
+                let adminPickingVal = firstPl ? (firstPl.nama_petugas || '') : '';
+                let checkerNameVal = statRow ? (statRow.checker_name || '') : '';
+                let checkerTeamVal = statRow ? (statRow.checker_team || 'Team A') : (firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A');
+                let shiftVal = firstPl ? (firstPl.shift_kerja || 'Shift 1 (Pagi)') : 'Shift 1 (Pagi)';
 
                 return {
                     id: 'TRK-' + t.id,
@@ -655,9 +655,10 @@ async function loadDataFromCloud() {
                     timeOut: timeoutStr,
                     rawTimeOut: rawTimeoutVal,
                     frozenDurationMs: null,
-                    petugas: finalCheckerName,
-                    tim: finalCheckerTeam,
-                    shift: finalShift,
+                    adminPicking: adminPickingVal,
+                    checkerName: checkerNameVal,
+                    tim: checkerTeamVal,
+                    shift: shiftVal,
                     metodePemuatan: metodeMuatVal,
                     notePemuatan: noteMuatVal,
                     treatmentNote: treatmentNoteVal,
@@ -922,7 +923,8 @@ async function openPickingListModal(index) {
     let t = truckQueue[index];
     document.getElementById('plTruckInfo').innerText = `${t.noPol} (${t.ekspedisi}) - Doc: ${t.noDoc}`;
     
-    document.getElementById('plPetugas').value = t.petugas || '';
+    // Tampilkan admin picking list yang benar (Resa)
+    document.getElementById('plPetugas').value = t.adminPicking || '';
     document.getElementById('plTim').value = t.tim || 'Team A';
     document.getElementById('plShift').value = t.shift || 'Shift 1 (Pagi)';
 
@@ -983,9 +985,18 @@ function renderPlTable() {
 
 async function savePetugasShift() {
     if(activePlTruckIdx === null) return;
-    truckQueue[activePlTruckIdx].petugas = document.getElementById('plPetugas').value;
-    truckQueue[activePlTruckIdx].tim = document.getElementById('plTim').value;
-    truckQueue[activePlTruckIdx].shift = document.getElementById('plShift').value;
+    let t = truckQueue[activePlTruckIdx];
+    let newAdmin = document.getElementById('plPetugas').value;
+    t.adminPicking = newAdmin;
+    t.tim = document.getElementById('plTim').value;
+    t.shift = document.getElementById('plShift').value;
+
+    // Simpan nama admin picking ke database tabel picking_list_truk
+    await _supabase.from('picking_list_truk').update({
+        nama_petugas: newAdmin,
+        nama_tim: t.tim,
+        shift_kerja: t.shift
+    }).eq('no_doc', t.noDoc);
 }
 
 async function addItemToTruckPickingList() {
@@ -1156,7 +1167,7 @@ function printPickingList() {
     const tglCetakStr = String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear();
     const jamCetakStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0') + ':' + String(now.getSeconds()).padStart(2, '0');
 
-    let petugasName = t.petugas || '-';
+    let adminName = t.adminPicking || '-';
     let timName = t.tim || '-';
     let shiftName = t.shift || '-';
 
@@ -1218,7 +1229,7 @@ function printPickingList() {
                     <td style="text-align:left; border:none; padding:2px;"><strong>JAM CETAK :</strong> ${jamCetakStr}</td>
                 </tr>
                 <tr>
-                    <td colspan="3" style="text-align:left; border:none; padding:2px; padding-top:4px;"><strong>PETUGAS / TIM / SHIFT :</strong> ${petugasName} | ${timName} | ${shiftName}</td>
+                    <td colspan="3" style="text-align:left; border:none; padding:2px; padding-top:4px;"><strong>PETUGAS / TIM / SHIFT :</strong> ${adminName} | ${timName} | ${shiftName}</td>
                 </tr>
             </table>
 
@@ -1243,7 +1254,7 @@ function printPickingList() {
             <div style="display:flex; justify-content:space-between; margin-top:20px; font-size:10px; text-align:center;">
                 <div style="width: 40%;">
                     <span>Admin GDFC</span><br><br><br>
-                    <strong>(${petugasName})</strong>
+                    <strong>(${adminName})</strong>
                 </div>
                 <div style="width: 40%;">
                     <span>Checker / Driver</span><br><br><br>
@@ -1273,7 +1284,7 @@ function showDockDetail(dockName) {
 
     if(assignedTruck) {
         let totalQty = (assignedTruck.pickingList || []).reduce((sum, i) => sum + i.jumlah, 0);
-        let pInfo = assignedTruck.petugas ? `<br><strong>Checker / Petugas:</strong> ${assignedTruck.petugas} (${assignedTruck.tim} - ${assignedTruck.shift})` : '';
+        let cInfo = assignedTruck.checkerName ? `<br><strong>Checker Loading:</strong> ${assignedTruck.checkerName} (${assignedTruck.tim} - ${assignedTruck.shift})` : '';
         let mInfo = assignedTruck.metodePemuatan ? `<br><strong>Metode Pemuatan:</strong> ${assignedTruck.metodePemuatan} ${assignedTruck.notePemuatan ? '('+assignedTruck.notePemuatan+')' : ''}` : '';
         bodyEl.innerHTML = `
             <p><strong>ID Antrian:</strong> ${assignedTruck.id}</p>
@@ -1283,7 +1294,7 @@ function showDockDetail(dockName) {
             <p><strong>No. Doc (SPE/SPM/SO/QT):</strong> ${assignedTruck.noDoc}</p>
             <p><strong>Jenis / Tujuan:</strong> ${assignedTruck.jenis} &rarr; ${assignedTruck.tujuan}</p>
             <p><strong>Total Muatan:</strong> ${totalQty} karton</p>
-            <p><strong>Tanggal / Waktu Masuk:</strong> ${assignedTruck.tanggalKirim} ${assignedTruck.timeIn} ${pInfo} ${mInfo}</p>
+            <p><strong>Tanggal / Waktu Masuk:</strong> ${assignedTruck.tanggalKirim} ${assignedTruck.timeIn} ${cInfo} ${mInfo}</p>
         `;
     } else {
         let dockNum = parseInt(dockName.replace('Dock ', ''));
@@ -1428,7 +1439,8 @@ function renderAll() {
         let displayStartLoading = t.timeStartLoading || '-';
         let displayEndLoading = t.timeEndLoading || '-';
         let displayTimeOut = (t.status === 'Keluar' && t.timeOut && t.timeOut !== '-') ? t.timeOut : '-';
-        let petugasBadge = t.petugas ? ` | 👤 Checker: <b>${t.petugas} (${t.tim} - ${t.shift})</b>` : '';
+        
+        let checkerBadge = t.checkerName ? ` | 👤 Checker: <b>${t.checkerName} (${t.tim} - ${t.shift})</b>` : '';
         let metodeMuatBadge = t.metodePemuatan ? ` | 📦 Muat Oleh: <b style="color:#0284c7;">${t.metodePemuatan}</b>${t.notePemuatan ? ' ('+t.notePemuatan+')' : ''}` : '';
         let treatmentBadge = (t.status === 'Treatment' && t.treatmentNote) ? ` | ⚠️ Alasan: <b style="color:#b91c1c;">${t.treatmentNote}</b>` : '';
         let arsipBadge = (t.lokasiArsip && t.lokasiArsip !== 'Belum Ada Arsip') ? ` | 📁 Arsip: <b>${t.lokasiArsip}</b>` : '';
@@ -1512,7 +1524,7 @@ function renderAll() {
                         ${t.noPol} &bull; ${t.ekspedisi} &bull; <span style="color:#0284c7;">Doc: ${t.noDoc}</span>
                     </div>
                     <div style="margin-top:4px; color:#64748b;">
-                        Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Total Qty: <b>${totalQty} krt</b> ${petugasBadge} ${metodeMuatBadge} ${treatmentBadge} ${arsipBadge}
+                        Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Total Qty: <b>${totalQty} krt</b> ${checkerBadge} ${metodeMuatBadge} ${treatmentBadge} ${arsipBadge}
                     </div>
                     <div style="margin-top:6px; font-size:10px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
                         <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold; color:#334155;">Status: ${t.status} | Dock: ${t.dock}</span>
@@ -1550,7 +1562,7 @@ function openStatusModal(idx) {
     document.getElementById('selectStatus').value = t.status;
     populateDockDropdown(t.dock);
     
-    document.getElementById('inputCheckerName').value = t.petugas || '';
+    document.getElementById('inputCheckerName').value = t.checkerName || '';
     document.getElementById('selectCheckerTeam').value = t.tim || 'Team A';
     document.getElementById('selectMetodePemuatan').value = t.metodePemuatan || 'Internal';
     document.getElementById('inputNotePemuatan').value = t.notePemuatan || '';
@@ -1720,7 +1732,7 @@ async function saveStatus() {
     targetTruck.status = newSt;
     targetTruck.dock = (newSt === 'Proses Muat') ? (selectedDock || 'Dock 01') : '-';
     if (checkerNameVal) {
-        targetTruck.petugas = checkerNameVal;
+        targetTruck.checkerName = checkerNameVal;
         targetTruck.tim = checkerTeamVal;
     }
     targetTruck.metodePemuatan = metodePemuatanVal;
@@ -1777,13 +1789,6 @@ async function saveStatus() {
     }
 
     await _supabase.from('antrian_truk').update({ status_antrian: newSt }).eq('id', targetTruck.dbId);
-
-    if (checkerNameVal) {
-        await _supabase.from('picking_list_truk').update({
-            nama_petugas: checkerNameVal,
-            nama_tim: checkerTeamVal
-        }).eq('no_doc', targetTruck.noDoc);
-    }
 
     targetTruck.lokasiArsip = finalArsipStr;
     closeModal('modalStatus');

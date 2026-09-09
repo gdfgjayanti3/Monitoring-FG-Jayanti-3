@@ -681,7 +681,7 @@
             <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
                 <div class="card border-0 shadow-2xs rounded-2xl overflow-hidden" style="background-color: #fffbeb;">
                     <div class="card-header border-0 font-bold d-flex justify-content-between items-center py-2 px-3" style="background-color: #fef3c7; color: #92400e;">
-                        <span class="small">Input Data Sistem SAP Per Tanggal (plant, sku, nama barang, ending stock)</span>
+                        <span class="small">Input Data Sistem SAP (Cukup Paste Mentah: Otomatis Baca SKU, Nama & Ending Balance)</span>
                     </div>
                     <div class="card-body p-3 space-y-2">
                         <div class="row g-2">
@@ -692,9 +692,9 @@
                         </div>
                         <div>
                             <label class="form-label fw-bold text-amber-900 mb-1">Paste Data SAP dari Excel *</label>
-                            <textarea class="form-control font-monospace text-nowrap mb-2 bg-white border-amber-200 text-xs" id="sapPasteArea" rows="3" placeholder="plant &#9; sku &#9; nama barang &#9; ending stock"></textarea>
+                            <textarea class="form-control font-monospace text-nowrap mb-2 bg-white border-amber-200 text-xs" id="sapPasteArea" rows="4" placeholder="Blok & paste seluruh tabel laporan SAP mentah di sini..."></textarea>
                         </div>
-                        <button type="button" class="btn btn-sm fw-bold px-4 text-xs" style="background-color: #f59e0b; color: white;" onclick="processSapPaste()">Simpan Sesi SAP Baru</button>
+                        <button type="button" class="btn btn-sm fw-bold px-4 text-xs" style="background-color: #f59e0b; color: white;" onclick="processSapPaste()">Simpan Sesi SAP Baru (Auto-Parse)</button>
                     </div>
                 </div>
 
@@ -980,7 +980,7 @@
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                 <div class="table-responsive">
                     <table class="table table-bordered align-middle text-center text-xs mb-0">
-                        <pastel-header-blue>
+                        <thead class="pastel-header-blue">
                             <tr>
                                 <th>Waktu Perpindahan</th>
                                 <th>Nama Petugas</th>
@@ -989,7 +989,7 @@
                                 <th>Lokasi Tujuan Baru</th>
                                 <th>Aksi Hapus</th>
                             </tr>
-                        </pastel-header-blue>
+                        </thead>
                         <tbody id="relokasiLogTableBody">
                             <tr><td colspan="6" class="text-muted">Memuat data dari cloud...</td></tr>
                         </tbody>
@@ -1966,6 +1966,7 @@
             renderSapSessionsList();
         }
 
+        // --- PARSER OTOMATIS SAP MENTAH (Fokus SKU & Ending Balance) ---
         async function processSapPaste() {
             const sessionDate = document.getElementById('sapSessionDate').value;
             if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
@@ -1975,32 +1976,36 @@
             
             let sapMapAccumulator = {}; 
             let sessionNamaBarang = {};
-            let sessionPlant = {};
             
             let lines = text.split('\n');
-            lines.forEach((line, index) => {
-                let lowerLine = line.toLowerCase();
-                if (index === 0 && (lowerLine.includes('plant') || lowerLine.includes('sku') || lowerLine.includes('ending'))) {
+            lines.forEach((line) => {
+                let cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+                let fullLine = line.trim();
+                if (!fullLine || fullLine.toUpperCase().includes("TOTAL") || fullLine.toUpperCase().includes("PLANT")) {
                     return;
                 }
 
-                const cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
-                if (cols.length >= 4) {
-                    let plantVal = cols[0];
-                    let skuVal = cols[1];
-                    let namaBarang = cols[2];
-                    let qtyVal = parseFloat(cols[3].replace(/\./g, '').replace(/,/g, '.')) || 0;
+                // Cari kolom mana yang berisi kode SKU (angka 5 sampai 7 digit)
+                let skuColIndex = -1;
+                for (let i = 0; i < cols.length; i++) {
+                    if (/^\d{5,7}$/.test(cols[i])) {
+                        skuColIndex = i;
+                        break;
+                    }
+                }
+
+                // Jika ketemu baris SKU
+                if (skuColIndex !== -1) {
+                    let skuVal = cols[skuColIndex];
+                    let namaBarang = cols[skuColIndex + 1] || masterStockData[skuVal]?.name || '-';
+                    
+                    // Ending Balance selalu berada di kolom paling ujung kanan dari baris yang di-copy
+                    let rawEndingBalance = cols[cols.length - 1] || "0";
+                    let qtyVal = parseFloat(rawEndingBalance.replace(/\./g, '').replace(',', '.')) || 0;
 
                     if (skuVal && !isNaN(qtyVal)) {
                         sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
                         sessionNamaBarang[skuVal] = namaBarang;
-                        sessionPlant[skuVal] = plantVal;
-                    }
-                } else if (cols.length >= 2) {
-                    let skuVal = cols[0];
-                    let qtyVal = parseFloat(cols[1].replace(/\./g, '').replace(/,/g, '.')) || 0;
-                    if (skuVal && !isNaN(qtyVal)) {
-                        sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
                     }
                 }
             });
@@ -2008,10 +2013,15 @@
             let sessionItems = {};
             for (let sku in sapMapAccumulator) {
                 sessionItems[sku] = {
-                    plant: sessionPlant[sku] || '-',
+                    plant: '-',
                     nama: sessionNamaBarang[sku] || masterStockData[sku]?.name || '-',
                     karton: sapMapAccumulator[sku]
                 };
+            }
+
+            if(Object.keys(sessionItems).length === 0) {
+                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan format copy-paste dari SAP sudah benar!');
+                return;
             }
 
             sapSessionsData[sessionDate] = sessionItems;
@@ -2025,7 +2035,7 @@
             if (error) {
                 alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
             } else {
-                alert(`Berhasil menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
+                alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
                 renderSapSessionsList();
             }
         }

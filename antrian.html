@@ -293,7 +293,6 @@
             <select id="selectDock"></select>
         </div>
 
-        <!-- Tambahan input Checker Loading, Tim Kerja, serta Metode Pemuatan (Internal/TKBM) saat Proses Muat -->
         <div id="checkerLoadingDiv" class="form-group" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-top:10px;">
             <strong style="color:#4f46e5; display:block; margin-bottom:6px;">👷 Informasi Checker, Tim & Metode Pemuatan</strong>
             <div style="display:flex; gap:10px; margin-bottom:8px;">
@@ -323,6 +322,13 @@
                     <input type="text" id="inputNotePemuatan" placeholder="Cth: Muat manual / forklift" style="margin-top:4px;">
                 </div>
             </div>
+        </div>
+
+        <!-- Kolom Note / Alasan khusus untuk status Treatment -->
+        <div id="treatmentNoteDiv" class="form-group" style="display:none; background:#fef2f2; border:1px solid #fecaca; border-radius:8px; padding:10px; margin-top:10px;">
+            <strong style="color:#b91c1c; display:block; margin-bottom:6px;">⚠️ Catatan / Alasan Treatment</strong>
+            <label style="font-size:10px; color:#991b1b;">Tuliskan alasan atau keterangan treatment (Bau, Kotor, Basah, dll) *</label>
+            <input type="text" id="inputTreatmentNote" placeholder="Contoh: Lantai truk bau menyengat / kontainer basah" style="margin-top:4px; border-color:#fca5a5;">
         </div>
 
         <div id="arsipSection" class="form-group" style="display:none; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px; margin-top:10px;">
@@ -622,6 +628,12 @@ async function loadDataFromCloud() {
 
                 let metodeMuatVal = statRow && statRow.metode_pemuatan ? statRow.metode_pemuatan : 'Internal';
                 let noteMuatVal = statRow && statRow.note_pemuatan ? statRow.note_pemuatan : '';
+                let treatmentNoteVal = statRow && statRow.treatment_note ? statRow.treatment_note : '';
+
+                // Prioritaskan checker_name dari proses muat, fallback ke petugas picking list jika kosong
+                let finalCheckerName = (statRow && statRow.checker_name && statRow.checker_name !== '-') ? statRow.checker_name : (firstPl ? firstPl.nama_petugas : '');
+                let finalCheckerTeam = (statRow && statRow.checker_team) ? statRow.checker_team : (firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A');
+                let finalShift = firstPl ? firstPl.shift_kerja : 'Shift 1 (Pagi)';
 
                 return {
                     id: 'TRK-' + t.id,
@@ -643,11 +655,12 @@ async function loadDataFromCloud() {
                     timeOut: timeoutStr,
                     rawTimeOut: rawTimeoutVal,
                     frozenDurationMs: null,
-                    petugas: firstPl ? firstPl.nama_petugas : (statRow && statRow.checker_name ? statRow.checker_name : ''),
-                    tim: firstPl ? (firstPl.nama_tim || 'Team A') : (statRow && statRow.checker_team ? statRow.checker_team : 'Team A'),
-                    shift: firstPl ? firstPl.shift_kerja : 'Shift 1 (Pagi)',
+                    petugas: finalCheckerName,
+                    tim: finalCheckerTeam,
+                    shift: finalShift,
                     metodePemuatan: metodeMuatVal,
                     notePemuatan: noteMuatVal,
+                    treatmentNote: treatmentNoteVal,
                     lokasiArsip: statRow && statRow.kategori_arsip ? `${statRow.kategori_arsip}: ${statRow.nomor_map_arsip || ''}` : 'Belum Ada Arsip',
                     pickingList: plRows.map(p => {
                         let stdPlt = getCartonPerPallet(p.sku);
@@ -1417,6 +1430,7 @@ function renderAll() {
         let displayTimeOut = (t.status === 'Keluar' && t.timeOut && t.timeOut !== '-') ? t.timeOut : '-';
         let petugasBadge = t.petugas ? ` | 👤 Checker: <b>${t.petugas} (${t.tim} - ${t.shift})</b>` : '';
         let metodeMuatBadge = t.metodePemuatan ? ` | 📦 Muat Oleh: <b style="color:#0284c7;">${t.metodePemuatan}</b>${t.notePemuatan ? ' ('+t.notePemuatan+')' : ''}` : '';
+        let treatmentBadge = (t.status === 'Treatment' && t.treatmentNote) ? ` | ⚠️ Alasan: <b style="color:#b91c1c;">${t.treatmentNote}</b>` : '';
         let arsipBadge = (t.lokasiArsip && t.lokasiArsip !== 'Belum Ada Arsip') ? ` | 📁 Arsip: <b>${t.lokasiArsip}</b>` : '';
 
         let stayDurationInfo = '';
@@ -1498,7 +1512,7 @@ function renderAll() {
                         ${t.noPol} &bull; ${t.ekspedisi} &bull; <span style="color:#0284c7;">Doc: ${t.noDoc}</span>
                     </div>
                     <div style="margin-top:4px; color:#64748b;">
-                        Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Total Qty: <b>${totalQty} krt</b> ${petugasBadge} ${metodeMuatBadge} ${arsipBadge}
+                        Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Total Qty: <b>${totalQty} krt</b> ${petugasBadge} ${metodeMuatBadge} ${treatmentBadge} ${arsipBadge}
                     </div>
                     <div style="margin-top:6px; font-size:10px; display: flex; align-items: center; flex-wrap: wrap; gap: 4px;">
                         <span style="background:#f1f5f9; padding:2px 6px; border-radius:4px; font-weight:bold; color:#334155;">Status: ${t.status} | Dock: ${t.dock}</span>
@@ -1540,6 +1554,7 @@ function openStatusModal(idx) {
     document.getElementById('selectCheckerTeam').value = t.tim || 'Team A';
     document.getElementById('selectMetodePemuatan').value = t.metodePemuatan || 'Internal';
     document.getElementById('inputNotePemuatan').value = t.notePemuatan || '';
+    document.getElementById('inputTreatmentNote').value = t.treatmentNote || '';
 
     parseExistingArsip(t.lokasiArsip);
     checkStatusChange();
@@ -1553,6 +1568,7 @@ function openArsipModal(idx) {
     document.getElementById('statusSelectionGroup').style.display = 'none';
     document.getElementById('dockDiv').style.display = 'none';
     document.getElementById('checkerLoadingDiv').style.display = 'none';
+    document.getElementById('treatmentNoteDiv').style.display = 'none';
     document.getElementById('outboundSection').style.display = 'none';
     document.getElementById('arsipSection').style.display = 'block';
     document.getElementById('modalStatusTitle').innerText = '📁 Perbarui Lokasi Arsip Dokumen Truk Keluar';
@@ -1637,6 +1653,7 @@ function checkStatusChange() {
     let st = document.getElementById('selectStatus').value;
     document.getElementById('dockDiv').style.display = st === 'Proses Muat' ? 'block' : 'none';
     document.getElementById('checkerLoadingDiv').style.display = st === 'Proses Muat' ? 'block' : 'none';
+    document.getElementById('treatmentNoteDiv').style.display = st === 'Treatment' ? 'block' : 'none';
     let outboundDiv = document.getElementById('outboundSection');
     let arsipDiv = document.getElementById('arsipSection');
     
@@ -1683,6 +1700,7 @@ async function saveStatus() {
     let checkerTeamVal = document.getElementById('selectCheckerTeam').value;
     let metodePemuatanVal = document.getElementById('selectMetodePemuatan').value;
     let notePemuatanVal = document.getElementById('inputNotePemuatan').value.trim();
+    let treatmentNoteVal = document.getElementById('inputTreatmentNote').value.trim();
     let currentIsoTime = new Date().toISOString();
 
     if (newSt === 'Proses Muat') {
@@ -1694,6 +1712,11 @@ async function saveStatus() {
         }
     }
 
+    if (newSt === 'Treatment' && !treatmentNoteVal) {
+        alert('Harap isi catatan / alasan treatment terlebih dahulu!');
+        return;
+    }
+
     targetTruck.status = newSt;
     targetTruck.dock = (newSt === 'Proses Muat') ? (selectedDock || 'Dock 01') : '-';
     if (checkerNameVal) {
@@ -1702,6 +1725,7 @@ async function saveStatus() {
     }
     targetTruck.metodePemuatan = metodePemuatanVal;
     targetTruck.notePemuatan = notePemuatanVal;
+    targetTruck.treatmentNote = treatmentNoteVal;
 
     let logRecord = {
         no_doc: targetTruck.noDoc,
@@ -1712,7 +1736,8 @@ async function saveStatus() {
         checker_name: checkerNameVal || '-',
         checker_team: checkerTeamVal || 'Team A',
         metode_pemuatan: metodePemuatanVal,
-        note_pemuatan: notePemuatanVal || '-'
+        note_pemuatan: notePemuatanVal || '-',
+        treatment_note: treatmentNoteVal || '-'
     };
 
     if (newSt === 'Proses Muat' && targetTruck.timeStartLoading === '-') {

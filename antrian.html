@@ -204,9 +204,9 @@
             <div style="width:150px;">
                 <label>Shift Kerja *</label>
                 <select id="plShift" onchange="savePetugasShift()">
-                    <option value="Shift 1 (Pagi)">Shift 1 (Pagi)</option>
-                    <option value="Shift 2 (Sore)">Shift 2 (Sore)</option>
-                    <option value="Shift 3 (Malam)">Shift 3 (Malam)</option>
+                    <option value="Shift 1">Shift 1</option>
+                    <option value="Shift 2">Shift 2</option>
+                    <option value="Shift 3">Shift 3</option>
                 </select>
             </div>
         </div>
@@ -294,18 +294,26 @@
         </div>
 
         <div id="checkerLoadingDiv" class="form-group" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:10px; margin-top:10px;">
-            <strong style="color:#4f46e5; display:block; margin-bottom:6px;">👷 Informasi Checker, Tim & Metode Pemuatan</strong>
+            <strong style="color:#4f46e5; display:block; margin-bottom:6px;">👷 Informasi Checker, Tim, Shift & Metode Pemuatan</strong>
             <div style="display:flex; gap:10px; margin-bottom:8px;">
                 <div style="flex:1;">
                     <label style="font-size:10px; color:#64748b;">Nama Checker Loading *</label>
                     <input type="text" id="inputCheckerName" placeholder="Contoh: Iqbal">
                 </div>
-                <div style="width:140px;">
-                    <label style="font-size:10px; color:#64748b;">Pilih Tim Kerja *</label>
+                <div style="width:120px;">
+                    <label style="font-size:10px; color:#64748b;">Tim Kerja *</label>
                     <select id="selectCheckerTeam" class="form-select form-select-sm" style="margin-top:4px;">
                         <option value="Team A">Team A</option>
                         <option value="Team B">Team B</option>
                         <option value="Team C">Team C</option>
+                    </select>
+                </div>
+                <div style="width:120px;">
+                    <label style="font-size:10px; color:#64748b;">Shift Kerja *</label>
+                    <select id="selectCheckerShift" class="form-select form-select-sm" style="margin-top:4px;">
+                        <option value="Shift 1">Shift 1</option>
+                        <option value="Shift 2">Shift 2</option>
+                        <option value="Shift 3">Shift 3</option>
                     </select>
                 </div>
             </div>
@@ -415,6 +423,22 @@ const SUPABASE_URL = 'https://dmmybcscwxvxztcgjnbe.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_9sAzy4cjko7xheXLmDButQ_gDOEsxfN'; 
 const { createClient } = supabase;
 const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function getAutomaticShift(dateObj = new Date()) {
+    let hours = dateObj.getHours();
+    // Shift 1: 07:00 - 14:59
+    if (hours >= 7 && hours < 15) {
+        return 'Shift 1';
+    } 
+    // Shift 2: 15:00 - 22:59
+    else if (hours >= 15 && hours < 23) {
+        return 'Shift 2';
+    } 
+    // Shift 3: 23:00 - 06:59
+    else {
+        return 'Shift 3';
+    }
+}
 
 function updateClock() {
     const now = new Date();
@@ -634,7 +658,8 @@ async function loadDataFromCloud() {
                 let adminPickingVal = firstPl ? (firstPl.nama_petugas || '') : '';
                 let checkerNameVal = statRow ? (statRow.checker_name || '') : '';
                 let checkerTeamVal = statRow ? (statRow.checker_team || 'Team A') : (firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A');
-                let shiftVal = firstPl ? (firstPl.shift_kerja || 'Shift 1 (Pagi)') : 'Shift 1 (Pagi)';
+                let shiftVal = firstPl ? (firstPl.shift_kerja || getAutomaticShift()) : getAutomaticShift();
+                if (statRow && statRow.checker_shift) shiftVal = statRow.checker_shift;
 
                 return {
                     id: 'TRK-' + t.id,
@@ -927,7 +952,7 @@ async function openPickingListModal(index) {
     
     document.getElementById('plPetugas').value = t.adminPicking || '';
     document.getElementById('plTim').value = t.tim || 'Team A';
-    document.getElementById('plShift').value = t.shift || 'Shift 1 (Pagi)';
+    document.getElementById('plShift').value = t.shift || getAutomaticShift();
 
     let isLocked = (t.status === 'Selesai Muat' || t.status === 'Keluar');
     document.getElementById('formInputItemSection').style.display = isLocked ? 'none' : 'block';
@@ -1033,7 +1058,7 @@ async function addItemToTruckPickingList() {
         no_doc: t.noDoc,
         nama_petugas: document.getElementById('plPetugas').value || '-',
         nama_tim: document.getElementById('plTim').value || 'Team A',
-        shift_kerja: document.getElementById('plShift').value || 'Shift 1 (Pagi)',
+        shift_kerja: document.getElementById('plShift').value || getAutomaticShift(),
         sku: skuCode,
         batch_lokasi: lokasiRak,
         total_karton: totalKrt,
@@ -1432,8 +1457,7 @@ function renderAll() {
         return;
     }
 
-    // Urutan diset berdasarkan ID database (dbId) atau waktu masuk secara menurun (descending)
-    // Supaya data yang baru masuk (ID/waktu terbesar) otomatis muncul paling atas di bawah garis tanggal.
+    // Urutan Descending (terbaru di atas)
     filteredTrucks.sort((a, b) => {
         let dateCompare = new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0);
         if (dateCompare !== 0) return dateCompare;
@@ -1536,11 +1560,9 @@ function renderAll() {
             `;
         }
 
-        // Kartu Truk Utama
         html += `<div class="card">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%;">
                 <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
-                    <!-- Baris Atas: ID, No Polisi, Ekspedisi, No Doc -->
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:11px;">${t.id}</span>
                         <strong style="font-size:13px; color:#1e293b;">${t.noPol}</strong>
@@ -1550,13 +1572,11 @@ function renderAll() {
                         <span style="color:#0284c7; font-weight:600;">Doc: ${t.noDoc}</span>
                     </div>
 
-                    <!-- Baris Informasi Detail Muatan -->
                     <div style="color:#475569; font-size:11px; line-height: 1.4;">
                         Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Qty: <b>${totalQty} krt</b> 
                         ${checkerBadge} ${metodeMuatBadge} ${treatmentBadge} ${arsipBadge}
                     </div>
 
-                    <!-- Baris Status, Waktu, dan Timer -->
                     <div style="font-size: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-top: 2px;">
                         <span style="background:#f1f5f9; color:#334155; padding:3px 8px; border-radius:5px; font-weight:bold;">Status: ${t.status} | Dock: ${t.dock}</span>
                         <span style="background:#eff6ff; color:#1d4ed8; padding:3px 8px; border-radius:5px; font-weight:bold;">🕒 Masuk: ${displayTimeIn}</span>
@@ -1568,7 +1588,6 @@ function renderAll() {
                     </div>
                 </div>
 
-                <!-- Bagian Tombol Aksi di Kanan -->
                 <div style="display:flex; gap:6px; align-items:center; flex-shrink: 0;">
                     ${actionButtonsHtml}
                 </div>
@@ -1592,6 +1611,7 @@ function openStatusModal(idx) {
     
     document.getElementById('inputCheckerName').value = t.checkerName || '';
     document.getElementById('selectCheckerTeam').value = t.tim || 'Team A';
+    document.getElementById('selectCheckerShift').value = t.shift || getAutomaticShift();
     document.getElementById('selectMetodePemuatan').value = t.metodePemuatan || 'Internal';
     document.getElementById('inputNotePemuatan').value = t.notePemuatan || '';
     document.getElementById('inputTreatmentNote').value = t.treatmentNote || '';
@@ -1738,6 +1758,7 @@ async function saveStatus() {
     let selectedDock = document.getElementById('selectDock').value;
     let checkerNameVal = document.getElementById('inputCheckerName').value.trim();
     let checkerTeamVal = document.getElementById('selectCheckerTeam').value;
+    let checkerShiftVal = document.getElementById('selectCheckerShift').value;
     let metodePemuatanVal = document.getElementById('selectMetodePemuatan').value;
     let notePemuatanVal = document.getElementById('inputNotePemuatan').value.trim();
     let treatmentNoteVal = document.getElementById('inputTreatmentNote').value.trim();
@@ -1762,6 +1783,7 @@ async function saveStatus() {
     if (checkerNameVal) {
         targetTruck.checkerName = checkerNameVal;
         targetTruck.tim = checkerTeamVal;
+        targetTruck.shift = checkerShiftVal;
     }
     targetTruck.metodePemuatan = metodePemuatanVal;
     targetTruck.notePemuatan = notePemuatanVal;
@@ -1775,6 +1797,7 @@ async function saveStatus() {
         nomor_map_arsip: detailArsip || '-',
         checker_name: checkerNameVal || '-',
         checker_team: checkerTeamVal || 'Team A',
+        checker_shift: checkerShiftVal || 'Shift 1',
         metode_pemuatan: metodePemuatanVal,
         note_pemuatan: notePemuatanVal || '-',
         treatment_note: treatmentNoteVal || '-'

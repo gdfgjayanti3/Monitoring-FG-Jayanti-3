@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portal Bin-Loc & Operasional Gudang - PT. Mayora Indah Tbk</title>
-    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@3"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -227,7 +227,7 @@
             <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
                 <div>
                     <h3 class="font-bold text-purple-800 text-base"><i class="fa-solid fa-clock-rotate-left mr-2"></i> Log Riwayat Hasil Stock Opname Tersimpan (Per Tanggal)</h3>
-                    <p class="text-xs text-slate-400">Arsip lengkap seluruh perhitungan fisik opname gudang yang dikelompokkan per tanggal.</p>
+                    <p class="text-xs text-slate-400">Arsip lengkap seluruh hasil perhitungan fisik opname gudang yang dikelompokkan per tanggal.</p>
                 </div>
                 <div>
                     <button onclick="switchSection('opname')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali ke Form Opname</button>
@@ -887,11 +887,10 @@
                                 <th>Total Fisik (Pallet & Karton)</th>
                                 <th>Selisih Variance</th>
                                 <th>Status Balance</th>
-                                <th>Aksi Edit SAP</th>
                             </tr>
                         </thead>
                         <tbody id="modalReconBody">
-                            <tr><td colspan="7" class="text-muted">Memuat data...</td></tr>
+                            <tr><td colspan="6" class="text-muted">Memuat data...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -1194,7 +1193,6 @@
         let masterStockData = {};
         let globalPlottingData = [];
         let activeOpnameDate = '';
-        let activeModalDate = '';
 
         function getLatestSapStock(skuCode) {
             let dates = Object.keys(sapSessionsData);
@@ -2297,7 +2295,7 @@
 
             let sessionItems = sapSessionsData[activeModalDate] || {};
             let keys = Object.keys(sessionItems);
-            if(keys.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-muted">Tidak ada data SKU.</td></tr>'; return; }
+            if(keys.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-muted">Tidak ada data SKU.</td></tr>'; return; }
 
             let filteredKeys = keys.filter(skuCode => {
                 let itemData = sessionItems[skuCode];
@@ -2324,7 +2322,6 @@
                 let varianceKarton = totalFisikKarton - sapQtyKarton;
                 let balanceBadge = Math.abs(variancePlt) < 0.01 ? '<span class="badge bg-success-subtle text-success border px-2 py-1">Balance</span>' : '<span class="badge bg-danger-subtle text-danger border px-2 py-1">Selisih</span>';
 
-                let escSku = skuCode.replace(/'/g, "\\'");
                 tbody.innerHTML += `<tr>
                     <td class="fw-bold text-slate-700">${skuCode}</td>
                     <td class="text-start">${namaBarangVal}</td>
@@ -2332,41 +2329,8 @@
                     <td class="fw-bold text-emerald-600">${totalFisikPlt.toFixed(2)} Plt (${totalFisikKarton} krt)</td>
                     <td class="fw-bold">${variancePlt.toFixed(2)} Plt (${varianceKarton} krt)</td>
                     <td>${balanceBadge}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-warning py-0.5 px-2 fw-bold text-[11px]" onclick="promptEditSapQty('${escSku}', ${sapQtyKarton})"><i class="fa-solid fa-pen"></i> Edit SAP</button>
-                    </td>
                 </tr>`;
             });
-        }
-
-        async function promptEditSapQty(skuCode, currentQty) {
-            let newQtyStr = prompt(`Masukkan jumlah karton SAP terbaru untuk SKU ${skuCode}:`, currentQty);
-            if (newQtyStr === null) return;
-            let newQty = parseFloat(newQtyStr);
-            if (isNaN(newQty) || newQty < 0) {
-                alert('Jumlah karton tidak valid!');
-                return;
-            }
-
-            if (!sapSessionsData[activeModalDate]) sapSessionsData[activeModalDate] = {};
-            if (!sapSessionsData[activeModalDate][skuCode]) {
-                sapSessionsData[activeModalDate][skuCode] = { plant: '-', nama: masterStockData[skuCode]?.name || '-', karton: 0 };
-            }
-            sapSessionsData[activeModalDate][skuCode].karton = newQty;
-
-            let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
-            if (sapRows) {
-                for (let r of sapRows) {
-                    if (r.data_sap && r.data_sap.tanggal_sesi === activeModalDate) {
-                        r.data_sap.items = sapSessionsData[activeModalDate];
-                        await _supabase.from('stock_opname_sap').update({ data_sap: r.data_sap }).eq('id', r.id);
-                        break;
-                    }
-                }
-            }
-
-            alert('Berhasil memperbarui jumlah stok SAP!');
-            renderModalReconTableRows(document.getElementById('reconSearchInput').value);
         }
 
         function filterReconModalTable() { renderModalReconTableRows(document.getElementById('reconSearchInput').value); }

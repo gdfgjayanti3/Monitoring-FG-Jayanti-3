@@ -48,6 +48,10 @@
 
         .card-menu-title { font-size: 13px !important; font-weight: 700 !important; line-height: 1.2; }
         .card-menu-desc { font-size: 11px !important; color: #64748b !important; margin-top: 2px; }
+
+        /* Tambahan CSS khusus agar tabel aman & tidak numpuk di HP */
+        .table-custom-responsive th { font-size: 10px !important; padding: 6px 4px !important; white-space: nowrap; }
+        .table-custom-responsive td { padding: 6px 4px !important; vertical-align: middle; }
     </style>
     <!-- Supabase JS SDK CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -196,7 +200,7 @@
 
             <div id="reportTableContainer" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                 <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs">
+                    <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 900px;">
                         <thead class="pastel-header-blue">
                             <tr>
                                 <th>Kategori</th>
@@ -250,7 +254,7 @@
             </div>
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                 <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs">
+                    <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 700px;">
                         <thead class="pastel-header-yellow">
                             <tr>
                                 <th>SKU & Nama Produk</th>
@@ -377,7 +381,7 @@
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
                 <h5 class="fw-bold text-slate-700 text-xs uppercase mb-3">Daftar Aktif Barang Terkarantina (Hold) & Tindak Lanjut</h5>
                 <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs">
+                    <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 900px;">
                         <thead class="pastel-header-rose">
                             <tr>
                                 <th>Plant / Line</th>
@@ -485,7 +489,7 @@
                         </div>
 
                         <div class="table-responsive">
-                            <table class="table table-bordered align-middle text-xs text-center">
+                            <table class="table table-bordered align-middle text-xs text-center table-custom-responsive" style="min-width: 600px;">
                                 <thead class="pastel-header-purple">
                                     <tr>
                                         <th>Blok Rak (Bin Loc)</th>
@@ -516,7 +520,7 @@
                     <input type="text" id="searchKeyword" class="form-control text-xs bg-white border-slate-200" placeholder="Ketik kata kunci pencarian..." oninput="executeSearch()">
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs">
+                    <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 500px;">
                         <thead class="table-light">
                             <tr>
                                 <th>SKU & Nama Produk</th>
@@ -827,7 +831,7 @@
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs mb-0">
+                    <table class="table table-bordered align-middle text-center text-xs mb-0 table-custom-responsive" style="min-width: 1000px;">
                         <thead class="table-dark text-white">
                             <tr>
                                 <th>SKU</th>
@@ -874,7 +878,7 @@
                     </div>
                 </div>
                 <div class="table-responsive">
-                    <table class="table table-bordered table-hover align-middle text-center text-xs">
+                    <table class="table table-bordered table-hover align-middle text-center text-xs table-custom-responsive" style="min-width: 700px;">
                         <thead class="pastel-header-purple">
                             <tr>
                                 <th>SKU</th>
@@ -906,7 +910,7 @@
             </div>
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                 <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs mb-0">
+                    <table class="table table-bordered align-middle text-center text-xs mb-0 table-custom-responsive" style="min-width: 600px;">
                         <thead class="pastel-header-purple">
                             <tr>
                                 <th>Lorong / Row</th>
@@ -994,7 +998,7 @@
             </div>
             <div class="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
                 <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs mb-0">
+                    <table class="table table-bordered align-middle text-center text-xs mb-0 table-custom-responsive" style="min-width: 600px;">
                         <thead class="pastel-header-blue">
                             <tr>
                                 <th>Waktu Perpindahan</th>
@@ -1116,7 +1120,7 @@
                             <button type="button" class="btn btn-xs btn-outline-primary py-0 px-2 fw-bold" onclick="addPenerimaanRow()">+ Tambah Rak</button>
                         </div>
                         <div class="table-responsive">
-                            <table class="table table-bordered align-middle text-center text-xs mb-0">
+                            <table class="table table-bordered align-middle text-center text-xs mb-0 table-custom-responsive" style="min-width: 500px;">
                                 <thead class="table-light">
                                     <tr>
                                         <th>Blok Rak</th>
@@ -2211,7 +2215,7 @@
                                 <span class="badge bg-purple-200 text-purple-900">${items.length} Item SKU</span>
                             </div>
                             <div class="table-responsive m-0">
-                                <table class="table table-bordered align-middle text-center text-xs mb-0">
+                                <table class="table table-bordered align-middle text-center text-xs mb-0 table-custom-responsive" style="min-width: 500px;">
                                     <thead class="table-light">
                                         <tr>
                                             <th>Area Gudang</th>

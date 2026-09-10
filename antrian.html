@@ -616,11 +616,11 @@ async function loadDataFromCloud() {
                 if (statRow && statRow.time_in) {
                     let dIn = new Date(statRow.time_in);
                     rawTimeVal = dIn.getTime();
-                    timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                 } else if (t.created_at) {
                     let dIn = new Date(t.created_at);
                     rawTimeVal = dIn.getTime();
-                    timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                 }
 
                 let tanggalKirimStr = t.tanggal || (t.created_at ? t.created_at.split('T')[0] : '2026-09-09');
@@ -630,7 +630,7 @@ async function loadDataFromCloud() {
                 if (statRow && statRow.time_start_loading) {
                     let dStart = new Date(statRow.time_start_loading);
                     rawStartLoading = dStart.getTime();
-                    startLoadingStr = dStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    startLoadingStr = dStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                 }
 
                 let endLoadingStr = '-';
@@ -638,7 +638,7 @@ async function loadDataFromCloud() {
                 if (statRow && statRow.time_end_loading) {
                     let dEnd = new Date(statRow.time_end_loading);
                     rawEndLoading = dEnd.getTime();
-                    endLoadingStr = dEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    endLoadingStr = dEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                 }
 
                 let timeoutStr = '-';
@@ -646,7 +646,7 @@ async function loadDataFromCloud() {
                 if (statRow && statRow.time_out) {
                     let dOut = new Date(statRow.time_out);
                     rawTimeoutVal = dOut.getTime();
-                    timeoutStr = dOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    timeoutStr = dOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
                 }
                 
                 let currentStatus = t.status_antrian || (statRow ? statRow.status_truk : 'Antrian');
@@ -658,7 +658,9 @@ async function loadDataFromCloud() {
                 let adminPickingVal = firstPl ? (firstPl.nama_petugas || '') : '';
                 let checkerNameVal = statRow ? (statRow.checker_name || '') : '';
                 let checkerTeamVal = statRow ? (statRow.checker_team || 'Team A') : (firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A');
-                let shiftVal = firstPl ? (firstPl.shift_kerja || getAutomaticShift()) : getAutomaticShift();
+                
+                let determinedShift = getAutomaticShift(statRow && statRow.time_start_loading ? new Date(statRow.time_start_loading) : new Date());
+                let shiftVal = firstPl ? (firstPl.shift_kerja || determinedShift) : determinedShift;
                 if (statRow && statRow.checker_shift) shiftVal = statRow.checker_shift;
 
                 return {
@@ -1805,21 +1807,21 @@ async function saveStatus() {
 
     if (newSt === 'Proses Muat' && targetTruck.timeStartLoading === '-') {
         logRecord.time_start_loading = currentIsoTime;
-        targetTruck.timeStartLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        targetTruck.timeStartLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
     if (newSt === 'Selesai Muat') {
         logRecord.time_end_loading = currentIsoTime;
-        targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
     if (newSt === 'Selesai Muat' || newSt === 'Keluar') {
         if (!targetTruck.timeEndLoading || targetTruck.timeEndLoading === '-') {
             logRecord.time_end_loading = currentIsoTime;
-            targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         }
         logRecord.time_out = currentIsoTime;
-        targetTruck.timeOut = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        targetTruck.timeOut = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
     let { data: existingLog } = await _supabase.from('status_truk_log').select('id').eq('no_doc', targetTruck.noDoc);

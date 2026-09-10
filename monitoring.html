@@ -614,7 +614,7 @@
                             </div>
                             <div>
                                 <h5 class="font-bold text-slate-700 text-xs">Klik untuk memilih atau drag & drop file Excel / CSV ke sini</h5>
-                                <p class="text-[10px] text-slate-400 mt-1">Otomatis mendeteksi kolom: Week, Tgl SI, No Quotation, No SO, SKU, Qty, Ekspedisi, dll.</p>
+                                <p class="text-[10px] text-slate-400 mt-1">Otomatis mendeteksi kolom: Week, Tgl SI, No Quotation, No SO, No. EO (SO Portal), SKU, Qty, Ekspedisi, dll.</p>
                             </div>
                             <div id="uploadStatusText" class="text-xs font-bold text-indigo-600 mt-2"></div>
                         </div>
@@ -644,7 +644,8 @@
                                             <th>WEEK</th>
                                             <th>PLANNING TGL SI</th>
                                             <th class="bg-indigo-50 text-indigo-900">NOMOR QUOTATION</th>
-                                            <th class="bg-amber-50 text-amber-900">NO SO (SO PORTAL)</th>
+                                            <th class="bg-amber-50 text-amber-900">NO. SO</th>
+                                            <th class="bg-amber-50 text-amber-900">No. EO (SO Portal)</th>
                                             <th>SKU</th>
                                             <th class="text-start">NAME OF PRODUCT (Auto-Fill)</th>
                                             <th>TOTAL QUANTITY SI</th>
@@ -662,7 +663,8 @@
                                             <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200" placeholder="15"></td>
                                             <td><input type="date" class="form-control form-control-sm rounded-xl border-slate-200"></td>
                                             <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No Quotation"></td>
-                                            <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No SO..."></td>
+                                            <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No. SO..."></td>
+                                            <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-amber-700" placeholder="No. EO..."></td>
                                             <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 sku-input" placeholder="Ketik SKU..." oninput="checkMasterSku(this)"></td>
                                             <td class="text-start"><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 name-input bg-slate-50" placeholder="Otomatis terisi..." readonly></td>
                                             <td><input type="number" class="form-control form-control-sm rounded-xl border-slate-200" placeholder="Qty SI..."></td>
@@ -696,11 +698,11 @@
                         <table class="table table-bordered align-middle text-center">
                             <thead class="pastel-header-purple">
                                 <tr>
-                                    <th>#</th><th>WEEK</th><th>TGL SI</th><th>NO QUOTATION</th><th>NO SO (PORTAL)</th><th>SKU</th><th class="text-start">NAME OF PRODUCT</th><th>QTY SI</th><th>EKSPEDISI</th><th>CONTAINER</th><th>DESTINATION</th><th>PLANT</th><th>NEGARA</th><th>Aksi Hapus</th>
+                                    <th>#</th><th>WEEK</th><th>TGL SI</th><th>NO QUOTATION</th><th>NO. SO</th><th>No. EO (SO Portal)</th><th>SKU</th><th class="text-start">NAME OF PRODUCT</th><th>QTY SI</th><th>EKSPEDISI</th><th>CONTAINER</th><th>DESTINATION</th><th>PLANT</th><th>NEGARA</th><th>Aksi Hapus</th>
                                 </tr>
                             </thead>
                             <tbody id="savedEksporPlanningBody">
-                                <tr><td colspan="14" class="text-muted py-4">Memuat planning ekspor...</td></tr>
+                                <tr><td colspan="15" class="text-muted py-4">Memuat planning ekspor...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -2004,18 +2006,19 @@
                             let tglSi = row[2] || '';
                             let quotation = row[3] || '-';
                             let noSo = row[4] || '';
-                            let sku = row[5] || '';
-                            let name = row[6] || '-';
-                            let qtySi = row[7] || 0;
-                            let ekspedisi = row[8] || '-';
-                            let container = row[9] || 1;
-                            let destination = row[10] || '-';
-                            let plant = row[11] || '-';
-                            let negara = row[12] || '-';
+                            let noEo = row[5] || '';
+                            let sku = row[6] || '';
+                            let name = row[7] || '-';
+                            let qtySi = row[8] || 0;
+                            let ekspedisi = row[9] || '-';
+                            let container = row[10] || 1;
+                            let destination = row[11] || '-';
+                            let plant = row[12] || '-';
+                            let negara = row[13] || '-';
 
                             if (noSo) {
                                 let newPlan = {
-                                    week: String(week), tglSi: String(tglSi), quotation: String(quotation), noSo: String(noSo),
+                                    week: String(week), tglSi: String(tglSi), quotation: String(quotation), noSo: String(noSo), noEo: String(noEo),
                                     sku: String(sku), name: String(name), qtySi: String(qtySi), ekspedisi: String(ekspedisi),
                                     container: String(container), destination: String(destination), plant: String(plant), negara: String(negara),
                                     noDo: '-', proDate: '-', expDate: '-', kodifikasi: '-', realisasiStuffing: '-',
@@ -2092,7 +2095,8 @@
                 <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200" placeholder="15"></td>
                 <td><input type="date" class="form-control form-control-sm rounded-xl border-slate-200"></td>
                 <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No Quotation"></td>
-                <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No SO..."></td>
+                <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No. SO..."></td>
+                <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-amber-700" placeholder="No. EO..."></td>
                 <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 sku-input" placeholder="Ketik SKU..." oninput="checkMasterSku(this)"></td>
                 <td class="text-start"><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 name-input bg-slate-50" placeholder="Otomatis terisi..." readonly></td>
                 <td><input type="number" class="form-control form-control-sm rounded-xl border-slate-200" placeholder="Qty SI..."></td>
@@ -2120,7 +2124,8 @@
                     <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200" placeholder="15"></td>
                     <td><input type="date" class="form-control form-control-sm rounded-xl border-slate-200"></td>
                     <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No Quotation"></td>
-                    <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No SO..."></td>
+                    <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-indigo-600" placeholder="No. SO..."></td>
+                    <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 font-bold text-amber-700" placeholder="No. EO..."></td>
                     <td><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 sku-input" placeholder="Ketik SKU..." oninput="checkMasterSku(this)"></td>
                     <td class="text-start"><input type="text" class="form-control form-control-sm rounded-xl border-slate-200 name-input bg-slate-50" placeholder="Otomatis terisi..." readonly></td>
                     <td><input type="number" class="form-control form-control-sm rounded-xl border-slate-200" placeholder="Qty SI..."></td>
@@ -2154,18 +2159,19 @@
                 let tglSi = inputs[1].value.trim();
                 let quotation = inputs[2].value.trim();
                 let noSo = inputs[3].value.trim();
-                let sku = inputs[4].value.trim();
-                let namaProduk = inputs[5].value.trim();
-                let qtySi = inputs[6].value.trim();
-                let ekspedisi = inputs[7].value.trim();
-                let container = inputs[8].value.trim();
-                let destination = inputs[9].value.trim();
-                let plant = inputs[10].value.trim();
-                let negara = inputs[11].value.trim();
+                let noEo = inputs[4].value.trim();
+                let sku = inputs[5].value.trim();
+                let namaProduk = inputs[6].value.trim();
+                let qtySi = inputs[7].value.trim();
+                let ekspedisi = inputs[8].value.trim();
+                let container = inputs[9].value.trim();
+                let destination = inputs[10].value.trim();
+                let plant = inputs[11].value.trim();
+                let negara = inputs[12].value.trim();
 
                 if (noSo) {
                     let newPlan = {
-                        week: week, tglSi: tglSi, quotation: quotation, noSo: noSo,
+                        week: week, tglSi: tglSi, quotation: quotation, noSo: noSo, noEo: noEo,
                         sku: sku, name: namaProduk, qtySi: qtySi, ekspedisi: ekspedisi,
                         container: container, destination: destination, plant: plant, negara: negara,
                         noDo: '-', proDate: '-', expDate: '-', kodifikasi: '-', realisasiStuffing: '-',
@@ -2280,7 +2286,7 @@
             tbody.innerHTML = '';
 
             if(eksporPlanningData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="14" class="text-muted py-4">Belum ada planning ekspor tersimpan.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="15" class="text-muted py-4">Belum ada planning ekspor tersimpan.</td></tr>';
                 return;
             }
 
@@ -2292,6 +2298,7 @@
                         <td>${p.tglSi || '-'}</td>
                         <td><span class="badge bg-indigo-50 text-indigo-700 fw-bold border border-indigo-100">${p.quotation || '-'}</span></td>
                         <td><span class="badge bg-indigo-50 text-indigo-700 fw-bold border border-indigo-100">${p.noSo || '-'}</span></td>
+                        <td><span class="badge bg-amber-50 text-amber-800 fw-bold border border-amber-100">${p.noEo || '-'}</span></td>
                         <td>${p.sku || '-'}</td>
                         <td class="text-start fw-semibold">${p.name || '-'}</td>
                         <td class="fw-bold text-emerald-600">${p.qtySi || '0'}</td>

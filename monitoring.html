@@ -755,7 +755,7 @@
                     <p class="text-[10px] text-slate-400 mt-0.5">Daftar pengiriman truk di jalur.</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button onclick="downloadStockJalurExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 text-xs px-3.5 py-2 rounded-xl font-bold transition flex items-center gap-1.5 shadow-2xs">
+                    <button onclick="downloadStockJalurExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 text-xs px-3.5 py-2 rounded-xl font-bold transition shadow-2xs flex items-center gap-1.5">
                         <i class="fa-solid fa-file-excel"></i> Export Data Lengkap ke Excel
                     </button>
                     <button onclick="switchMenu('kapasitas')" class="btn btn-sm btn-outline-secondary text-xs rounded-xl">Kembali</button>
@@ -1368,7 +1368,7 @@
 
                         let rawTimeVal = t.created_at ? new Date(t.created_at).getTime() : new Date().getTime();
                         let tanggalKirimStr = '-';
-                        let rawDateStr = t.tanggal || ''; // simpan format YYYY-MM-DD asli jika ada untuk filter
+                        let rawDateStr = t.tanggal || ''; 
                         if (t.tanggal) {
                             let parts = t.tanggal.split('-');
                             if (parts.length === 3) tanggalKirimStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -2838,8 +2838,8 @@
 
             let keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
             let jenisVal = filterJenis ? filterJenis.value : '';
-            let tglMulai = filterTglMulai ? filterTglMulai.value : ''; // format YYYY-MM-DD
-            let tglSelesai = filterTglSelesai ? filterTglSelesai.value : ''; // format YYYY-MM-DD
+            let tglMulai = filterTglMulai ? filterTglMulai.value : ''; 
+            let tglSelesai = filterTglSelesai ? filterTglSelesai.value : ''; 
 
             return antrianData.filter(t => {
                 let noPol = (t.noPol || '').toLowerCase();
@@ -2847,7 +2847,7 @@
                 let noDoc = (t.noDoc || '').toLowerCase();
                 let tujuan = (t.tujuan || '').toLowerCase();
                 let jenisTruk = (t.jenis || '').toUpperCase();
-                let truckRawDate = t.rawDate || ''; // YYYY-MM-DD
+                let truckRawDate = t.rawDate || ''; 
 
                 let matchSearch = !keyword || noPol.includes(keyword) || ekspedisi.includes(keyword) || noDoc.includes(keyword) || tujuan.includes(keyword);
                 let matchJenis = !jenisVal || jenisTruk.includes(jenisVal);
@@ -2872,7 +2872,7 @@
             let filteredTrucks = getFilteredRealisasiData();
 
             if(filteredTrucks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="14" class="text-muted py-4">Tidak ada data realisasi truk yang sesuai dengan filter/pencarian tanggal.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="14" class="text-muted py-4">Tidak ada data realisasi truk yang sesuai dengan filter/pencarian.</td></tr>';
                 return;
             }
 
@@ -2900,7 +2900,7 @@
                 </tr>`;
             });
 
-            // Baris Total Keseluruhan Karton di bawah tabel Realisasi
+            // Baris Total Dinamis di bawah tabel
             tbody.innerHTML += `
                 <tr class="table-active fw-bold">
                     <td colspan="9" class="text-end">TOTAL KARTON PENGIRIMAN:</td>

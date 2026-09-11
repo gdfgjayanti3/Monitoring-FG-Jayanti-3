@@ -150,7 +150,7 @@
 
     <main class="flex-1 max-w-[98%] w-full mx-auto p-4 space-y-6">
         
-        <!-- SECTION DASHBOARD UTAMA (PRODUKTIVITAS 3D & GRAFIK LENGKAP) -->
+        <!-- SECTION DASHBOARD UTAMA -->
         <div id="section-dashboard-utama" class="app-page space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs">
                 <div>
@@ -164,7 +164,6 @@
                 </div>
             </div>
 
-            <!-- Sub-Menu Navigasi di dalam Dashboard Utama (Overview vs Matriks Operasional) -->
             <div class="flex items-center gap-2 border-b border-slate-100 pb-3 text-xs font-semibold">
                 <button onclick="switchDashboardSubTab('overview')" id="btnSubOverview" class="px-4 py-2 rounded-xl bg-indigo-600 text-white shadow-2xs flex items-center gap-1.5">
                     <i class="fa-solid fa-chart-pie"></i> Overview & Grafik 3D
@@ -174,9 +173,7 @@
                 </button>
             </div>
 
-            <!-- SUB-SECTION 1: OVERVIEW & GRAFIK 3D -->
             <div id="dashSubContent-overview" class="space-y-6">
-                <!-- Top KPI Cards -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-cyan-50/50 p-4 rounded-2xl border border-cyan-100 shadow-2xs space-y-1">
                         <div class="text-[10px] font-bold text-cyan-700 uppercase tracking-wide">TOTAL REALISASI VOLUME</div>
@@ -200,9 +197,7 @@
                     </div>
                 </div>
 
-                <!-- Main Interactive 3D Charts Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <!-- Pie 3D Interaktif Chart -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
                         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                             <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider">
@@ -213,7 +208,6 @@
                         <div id="pie3DChartContainer" style="height: 320px; width: 100%;"></div>
                     </div>
 
-                    <!-- Bar Chart Volume Realisasi -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
                         <div class="flex justify-between items-center border-b border-slate-100 pb-3">
                             <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider">
@@ -225,9 +219,7 @@
                     </div>
                 </div>
 
-                <!-- Bottom Supporting Tables & Summary Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Destinasi Table Summary -->
                     <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3 lg:col-span-2">
                         <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
                             <i class="fa-solid fa-table-list text-purple-500 mr-1.5"></i> Rekapitulasi Destinasi & Kinerja Outbound
@@ -250,7 +242,6 @@
                         </div>
                     </div>
 
-                    <!-- Utilitas Warehouse & Stock Terbanyak -->
                     <div class="space-y-6">
                         <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
                             <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
@@ -283,12 +274,11 @@
                 </div>
             </div>
 
-            <!-- SUB-SECTION 2: TABEL REKAPITULASI MATRIKS OPERASIONAL HARIAN / BULANAN -->
             <div id="dashSubContent-matriks" class="space-y-6 hidden">
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
                         <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider">
-                            <i class="fa-solid fa-table-cells text-indigo-600 mr-1.5"></i> Tabel Rekapitulasi Matriks Operasional Harian / Bulanan (Team A, B, C, RDC, Direct, Ekspor, MDC, MT, Plant Lain)
+                            <i class="fa-solid fa-table-cells text-indigo-600 mr-1.5"></i> Tabel Rekapitulasi Matriks Operasional Harian / Bulanan
                         </h3>
                         <div class="flex items-center gap-2">
                             <select id="filterBulanDashboard" class="form-select form-select-sm text-xs rounded-xl border-slate-200 font-semibold" onchange="updateDashboardByFilter()">
@@ -409,12 +399,32 @@
             </div>
         </div>
 
-        <!-- SECTION REALISASI -->
+        <!-- SECTION REALISASI (DENGAN FILTER PENCARIAN & KOLOM TERPISAH) -->
         <div id="section-realisasi" class="app-page space-y-6">
-            <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
-                <h2 class="font-bold text-slate-700 text-xs"><i class="fa-solid fa-truck-ramp-box text-emerald-500 mr-2"></i> Realisasi Muat & Pengiriman Truk</h2>
-                <button onclick="switchMenu('kapasitas')" class="btn btn-sm btn-outline-secondary text-xs">Kembali</button>
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
+                <div>
+                    <h2 class="font-bold text-slate-700 text-xs flex items-center gap-2">
+                        <i class="fa-solid fa-truck-ramp-box text-emerald-500"></i> Realisasi Muat & Pengiriman Truk
+                    </h2>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Daftar realisasi operasional harian truk.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="renderRealisasiTable()" class="btn btn-sm btn-outline-secondary text-xs rounded-xl"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
+                    <button onclick="switchMenu('kapasitas')" class="btn btn-sm btn-outline-secondary text-xs rounded-xl">Kembali</button>
+                </div>
             </div>
+
+            <!-- Filter Pencarian Realisasi Truk -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex flex-col sm:flex-row gap-3">
+                <input type="text" id="realisasiSearchInput" class="form-control form-control-sm flex-1 rounded-xl border-slate-200" placeholder="Cari No. Polisi / Ekspedisi / No. Dokumen / Tujuan..." oninput="renderRealisasiTable()">
+                <select id="realisasiFilterJenis" class="form-select form-select-sm sm:w-60 rounded-xl border-slate-200" onchange="renderRealisasiTable()">
+                    <option value="">📁 Filter Jenis Truk: Semua</option>
+                    <option value="LOKAL">Lokal</option>
+                    <option value="EKSPOR">Ekspor</option>
+                    <option value="RDC">RDC</option>
+                </select>
+            </div>
+
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-100">
                 <div class="card-body table-responsive">
                     <table class="table table-bordered align-middle text-center">
@@ -425,26 +435,27 @@
                                 <th>No Polisi</th>
                                 <th>Ekspedisi</th>
                                 <th>No. Doc</th>
-                                <th>Jenis Truk / Pengiriman</th>
+                                <th>Jenis Truk</th>
+                                <th>Tipe Pengiriman</th>
+                                <th>No. Container</th>
                                 <th>Tujuan</th>
                                 <th>Total Qty</th>
                                 <th>Status Terkini</th>
                                 <th>Jam Masuk</th>
                                 <th>Jam Keluar</th>
-                                <th>Durasi Stay (Pabrik)</th>
+                                <th>Durasi Stay</th>
                             </tr>
                         </thead>
-                        <tbody id="realisasiTableBody"><tr><td colspan="12" class="text-muted">Memuat data realisasi...</td></tr></tbody>
+                        <tbody id="realisasiTableBody"><tr><td colspan="14" class="text-muted">Memuat data realisasi...</td></tr></tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- SECTION OPNAME (SINKRON 3 TABEL DENGAN LEVEL TANGGAL & KLIK DETAIL) -->
+        <!-- SECTION OPNAME -->
         <div id="section-opname" class="app-page space-y-6">
             <h4 class="font-bold mb-3 text-slate-700 text-xs">Stock Opname & Laporan Riwayat (Audit Fisik)</h4>
             
-            <!-- TABEL 1: Rekon Perbandingan (SAP vs Fisik Aktual) -->
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-100">
                 <div class="card-header pastel-header-purple py-2.5 px-4 rounded-xl mb-3 border-0 flex justify-between items-center">
                     <span>Tabel Rekonsiliasi Perbandingan SAP vs Fisik Aktual (Per Tanggal Sesi)</span>
@@ -460,7 +471,6 @@
                 </div>
             </div>
 
-            <!-- TABEL 2: Live Monitoring Status Karantina QC -->
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-rose-100">
                 <div class="card-header pastel-header-red py-2.5 px-4 rounded-xl mb-3 border-0 flex justify-between items-center">
                     <span>Daftar / Laporan Live Monitoring Status Karantina QC (Per Tanggal)</span>
@@ -476,7 +486,6 @@
                 </div>
             </div>
 
-            <!-- TABEL 3: Riwayat / Log Audit Stock Keeper Terakhir (Terhubung master_plotting_opname) -->
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-100">
                 <div class="card-header pastel-header-dark py-2.5 px-4 rounded-xl mb-3 border-0 flex justify-between items-center">
                     <span>Riwayat / Log Audit Stock Keeper Terakhir (Per Tanggal ➔ Petugas ➔ Detail)</span>
@@ -1190,7 +1199,6 @@
                 if (namaEl) namaEl.innerText = userObj.nama_lengkap || userObj.username;
                 if (roleEl) roleEl.innerText = userObj.role;
             }
-            // Otomatis masuk ke Dashboard Utama saat halaman dibuka / direfresh[cite: 3]
             switchMenu('dashboard-utama');
             fetchAllDataFromSupabase();
             initHighcharts3D(775713, 326433, 254862, 93142, 67593, 23438, 10245);
@@ -1345,8 +1353,8 @@
                         let firstPl = plRows.length > 0 ? plRows[0] : null;
 
                         let jenisVal = t.jenis || 'LOKAL';
-                        let tipePengirimanVal = t.tipe_pengiriman && t.tipe_pengiriman !== '-' ? t.tipe_pengiriman : '';
-                        let containerVal = t.no_container && t.no_container !== '-' ? t.no_container : '';
+                        let tipePengirimanVal = t.tipe_pengiriman && t.tipe_pengiriman !== '-' ? t.tipe_pengiriman : '-';
+                        let containerVal = t.no_container && t.no_container !== '-' ? t.no_container : '-';
 
                         let rawTimeVal = t.created_at ? new Date(t.created_at).getTime() : new Date().getTime();
                         let tanggalKirimStr = '-';
@@ -2680,8 +2688,6 @@
             if(menuName === 'ekspor') { renderEksporSummaryTable(); }
             if(menuName === 'jalur') { renderStockJalurTable(); }
             if(menuName === 'report') { renderReportData(); }
-            
-            // Otomatis menutup sidebar (pop-up hide) ketika menu diklik di perangkat apa pun
             toggleSidebar();
         }
 
@@ -2814,28 +2820,43 @@
             let tbody = document.getElementById('realisasiTableBody');
             if(!tbody) return;
             tbody.innerHTML = '';
-            if(antrianData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="12" class="text-muted">Belum ada data realisasi truk.</td></tr>';
+
+            let searchInput = document.getElementById('realisasiSearchInput');
+            let filterJenis = document.getElementById('realisasiFilterJenis');
+
+            let keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
+            let jenisVal = filterJenis ? filterJenis.value : '';
+
+            let filteredTrucks = antrianData.filter(t => {
+                let noPol = (t.noPol || '').toLowerCase();
+                let ekspedisi = (t.ekspedisi || '').toLowerCase();
+                let noDoc = (t.noDoc || '').toLowerCase();
+                let tujuan = (t.tujuan || '').toLowerCase();
+                let jenisTruk = (t.jenis || '').toUpperCase();
+
+                let matchSearch = !keyword || noPol.includes(keyword) || ekspedisi.includes(keyword) || noDoc.includes(keyword) || tujuan.includes(keyword);
+                let matchJenis = !jenisVal || jenisTruk.includes(jenisVal);
+
+                return matchSearch && matchJenis;
+            });
+
+            if(filteredTrucks.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="14" class="text-muted py-4">Tidak ada data realisasi truk yang sesuai dengan filter/pencarian.</td></tr>';
                 return;
             }
-            antrianData.forEach(t => {
+
+            filteredTrucks.forEach(t => {
                 let totalQty = (t.pickingList || []).reduce((sum, i) => sum + (parseFloat(i.jumlah) || 0), 0);
                 
-                let jenisBadge = `<span class="badge bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5">${t.jenis || 'LOKAL'}</span>`;
-                if (t.tipePengiriman) {
-                    jenisBadge += `<br><span class="text-[10px] text-slate-500">${t.tipePengiriman}</span>`;
-                }
-                if (t.container) {
-                    jenisBadge += `<br><span class="text-[10px] text-amber-600 font-semibold">Ctn: ${t.container}</span>`;
-                }
-
                 tbody.innerHTML += `<tr>
                     <td class="fw-bold text-slate-600">${t.tanggalKirim || '-'}</td>
                     <td><span class="badge bg-slate-100 text-slate-700 fw-bold border">${t.id || '-'}</span></td>
                     <td class="fw-bold">${t.noPol || '-'}</td>
                     <td>${t.ekspedisi || '-'}</td>
                     <td>${t.noDoc || '-'}</td>
-                    <td>${jenisBadge}</td>
+                    <td><span class="badge bg-indigo-50 text-indigo-700 border border-indigo-100 px-2.5 py-1">${t.jenis || 'LOKAL'}</span></td>
+                    <td class="text-slate-600 font-medium">${t.tipePengiriman || '-'}</td>
+                    <td><span class="text-amber-700 font-semibold">${t.container || '-'}</span></td>
                     <td class="fw-semibold text-slate-700">${t.tujuan || '-'}</td>
                     <td class="fw-bold text-emerald-600">${totalQty} krt</td>
                     <td><span class="badge bg-slate-50 text-slate-700 border border-slate-100">${t.status || '-'}</span></td>

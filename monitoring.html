@@ -398,7 +398,7 @@
             </div>
         </div>
 
-        <!-- SECTION REALISASI (DENGAN FILTER PENCARIAN, KOLOM TERPISAH, & TOTAL KARTON KESELURUHAN) -->
+        <!-- SECTION REALISASI (DENGAN FILTER TANGGAL, FILTER PENCARIAN, FILTER JENIS TRUK, & EXPORT EXCEL) -->
         <div id="section-realisasi" class="app-page space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
                 <div>
@@ -408,16 +408,27 @@
                     <p class="text-[10px] text-slate-400 mt-0.5">Daftar realisasi operasional harian truk.</p>
                 </div>
                 <div class="flex items-center gap-2">
+                    <button onclick="exportRealisasiExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 text-xs px-3.5 py-2 rounded-xl font-bold transition shadow-2xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-file-excel"></i> Export Excel
+                    </button>
                     <button onclick="renderRealisasiTable()" class="btn btn-sm btn-outline-secondary text-xs rounded-xl"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
                     <button onclick="switchMenu('kapasitas')" class="btn btn-sm btn-outline-secondary text-xs rounded-xl">Kembali</button>
                 </div>
             </div>
 
-            <!-- Filter Pencarian Realisasi Truk -->
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex flex-col sm:flex-row gap-3">
+            <!-- Filter Pencarian, Filter Tanggal, & Filter Jenis Truk -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex flex-col md:flex-row gap-3">
                 <input type="text" id="realisasiSearchInput" class="form-control form-control-sm flex-1 rounded-xl border-slate-200" placeholder="Cari No. Polisi / Ekspedisi / No. Dokumen / Tujuan..." oninput="renderRealisasiTable()">
-                <select id="realisasiFilterJenis" class="form-select form-select-sm sm:w-60 rounded-xl border-slate-200" onchange="renderRealisasiTable()">
-                    <option value="">📁 Filter Jenis Truk: Semua</option>
+                
+                <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-bold text-slate-500 whitespace-nowrap">Tgl:</span>
+                    <input type="date" id="realisasiFilterTglMulai" class="form-control form-control-sm rounded-xl border-slate-200 w-36" onchange="renderRealisasiTable()" title="Dari Tanggal">
+                    <span class="text-slate-400">-</span>
+                    <input type="date" id="realisasiFilterTglSelesai" class="form-control form-control-sm rounded-xl border-slate-200 w-36" onchange="renderRealisasiTable()" title="Sampai Tanggal">
+                </div>
+
+                <select id="realisasiFilterJenis" class="form-select form-select-sm md:w-48 rounded-xl border-slate-200" onchange="renderRealisasiTable()">
+                    <option value="">📁 Semua Jenis</option>
                     <option value="LOKAL">Lokal</option>
                     <option value="EKSPOR">Ekspor</option>
                     <option value="RDC">RDC</option>
@@ -1357,12 +1368,15 @@
 
                         let rawTimeVal = t.created_at ? new Date(t.created_at).getTime() : new Date().getTime();
                         let tanggalKirimStr = '-';
+                        let rawDateStr = t.tanggal || ''; // simpan format YYYY-MM-DD asli jika ada untuk filter
                         if (t.tanggal) {
                             let parts = t.tanggal.split('-');
                             if (parts.length === 3) tanggalKirimStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
                             else tanggalKirimStr = t.tanggal;
                         } else if (t.created_at) {
-                            tanggalKirimStr = new Date(t.created_at).toLocaleDateString('id-ID');
+                            let dObj = new Date(t.created_at);
+                            tanggalKirimStr = dObj.toLocaleDateString('id-ID');
+                            rawDateStr = dObj.toISOString().split('T')[0];
                         }
 
                         let timeInStr = '-';
@@ -1394,6 +1408,7 @@
                             noPol: t.no_polisi_truk,
                             noDoc: docNo,
                             tanggalKirim: tanggalKirimStr,
+                            rawDate: rawDateStr,
                             jenis: jenisVal,
                             tipePengiriman: tipePengirimanVal,
                             container: containerVal,
@@ -2815,32 +2830,49 @@
             if(modalEl) modalEl.classList.add('hidden');
         }
 
-        function renderRealisasiTable() {
-            let tbody = document.getElementById('realisasiTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-
+        function getFilteredRealisasiData() {
             let searchInput = document.getElementById('realisasiSearchInput');
             let filterJenis = document.getElementById('realisasiFilterJenis');
+            let filterTglMulai = document.getElementById('realisasiFilterTglMulai');
+            let filterTglSelesai = document.getElementById('realisasiFilterTglSelesai');
 
             let keyword = searchInput ? searchInput.value.toLowerCase().trim() : '';
             let jenisVal = filterJenis ? filterJenis.value : '';
+            let tglMulai = filterTglMulai ? filterTglMulai.value : ''; // format YYYY-MM-DD
+            let tglSelesai = filterTglSelesai ? filterTglSelesai.value : ''; // format YYYY-MM-DD
 
-            let filteredTrucks = antrianData.filter(t => {
+            return antrianData.filter(t => {
                 let noPol = (t.noPol || '').toLowerCase();
                 let ekspedisi = (t.ekspedisi || '').toLowerCase();
                 let noDoc = (t.noDoc || '').toLowerCase();
                 let tujuan = (t.tujuan || '').toLowerCase();
                 let jenisTruk = (t.jenis || '').toUpperCase();
+                let truckRawDate = t.rawDate || ''; // YYYY-MM-DD
 
                 let matchSearch = !keyword || noPol.includes(keyword) || ekspedisi.includes(keyword) || noDoc.includes(keyword) || tujuan.includes(keyword);
                 let matchJenis = !jenisVal || jenisTruk.includes(jenisVal);
 
-                return matchSearch && matchJenis;
+                let matchDate = true;
+                if (tglMulai && truckRawDate) {
+                    if (truckRawDate < tglMulai) matchDate = false;
+                }
+                if (tglSelesai && truckRawDate) {
+                    if (truckRawDate > tglSelesai) matchDate = false;
+                }
+
+                return matchSearch && matchJenis && matchDate;
             });
+        }
+
+        function renderRealisasiTable() {
+            let tbody = document.getElementById('realisasiTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let filteredTrucks = getFilteredRealisasiData();
 
             if(filteredTrucks.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="14" class="text-muted py-4">Tidak ada data realisasi truk yang sesuai dengan filter/pencarian.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="14" class="text-muted py-4">Tidak ada data realisasi truk yang sesuai dengan filter/pencarian tanggal.</td></tr>';
                 return;
             }
 
@@ -2876,6 +2908,29 @@
                     <td colspan="4"></td>
                 </tr>
             `;
+        }
+
+        function exportRealisasiExcel() {
+            let filteredTrucks = getFilteredRealisasiData();
+            if(filteredTrucks.length === 0) {
+                alert('Tidak ada data realisasi yang dapat diexport berdasarkan filter saat ini.');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,Tanggal,ID Truk,No Polisi,Ekspedisi,No. Doc,Jenis Truk,Tipe Pengiriman,No. Container,Tujuan,Total Qty (Karton),Status Terkini,Jam Masuk,Jam Keluar\n";
+
+            filteredTrucks.forEach(t => {
+                let totalQty = (t.pickingList || []).reduce((sum, i) => sum + (parseFloat(i.jumlah) || 0), 0);
+                csvContent += `"${t.tanggalKirim || ''}","${t.id || ''}","${t.noPol || ''}","${t.ekspedisi || ''}","${t.noDoc || ''}","${t.jenis || ''}","${t.tipePengiriman || ''}","${t.container || ''}","${t.tujuan || ''}","${totalQty}","${t.status || ''}","${t.timeIn || ''}","${t.timeOut || ''}"\n`;
+            });
+
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Realisasi_Muat_Pengiriman_Truk.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         async function processPasteData() {

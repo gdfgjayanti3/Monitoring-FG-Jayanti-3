@@ -14,8 +14,8 @@
     <style>
         body { background-color: #f8fafc; color: #475569; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 11px; margin: 0; }
         
-        /* Header Responsif untuk HP & Komputer */
-        .nav-bar { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border-bottom: 1px solid #f1f5f9; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02); position: sticky; top: 0; z-index: 30; flex-wrap: wrap; gap: 10px; }
+        /* Header Utama (Sticky di paling atas layar) */
+        .nav-bar { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); border-bottom: 1px solid #f1f5f9; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02); position: sticky; top: 0; z-index: 40; flex-wrap: wrap; gap: 10px; }
         .nav-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
         
         /* Penyesuaian khusus saat dibuka di HP agar tidak numpuk */
@@ -30,16 +30,26 @@
         .btn-nav:hover { background: #f1f5f9; color: #4f46e5; border-color: #cbd5e1; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
         
+        /* Area Sticky untuk Filter Tab (Freeze saat discroll tepat di bawah Header Utama) */
+        .sticky-filter-wrapper {
+            position: sticky;
+            top: 57px; /* Menyesuaikan tinggi header utama */
+            background: #f8fafc;
+            z-index: 30;
+            padding-top: 10px;
+            padding-bottom: 6px;
+        }
+
         /* Card UI Modern, Bersih & Terstruktur dengan Padding Kiri Aman untuk Pita */
         .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 20px 16px 24px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; width: 100%; box-sizing: border-box; position: relative; overflow: visible; }
         .card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-color: #cbd5e1; }
         
-        /* Style Pita Menonjol Keluar di Kiri Atas (Dinaikkan agar tidak menutupi teks) */
+        /* Style Pita Menonjol Keluar di Kiri Atas (Dinaikkan pas sejajar kotak oren) */
         .card-ribbon {
             position: absolute;
-            top: 8px;
+            top: 2px;
             left: -8px;
-            padding: 3px 12px 3px 10px;
+            padding: 2px 10px 2px 8px;
             font-size: 9px;
             font-weight: bold;
             border-top-right-radius: 6px;
@@ -52,11 +62,11 @@
         .card-ribbon::before {
             content: '';
             position: absolute;
-            bottom: -5px;
+            bottom: -4px;
             left: 0;
             width: 0;
             height: 0;
-            border-top: 5px solid rgba(0,0,0,0.15);
+            border-top: 4px solid rgba(0,0,0,0.15);
             border-left: 8px solid transparent;
         }
         .ribbon-ekspor { background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3; border-left: none; }
@@ -74,7 +84,7 @@
         .btn-danger { background: #fff1f2; color: #9f1239; border-color: #fecdd3; }
         .btn-danger:hover { background: #ffe4e6; }
         
-        .tabs { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; overflow-x: auto; scrollbar-width: thin; }
+        .tabs { display: flex; gap: 6px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; overflow-x: auto; scrollbar-width: thin; }
         .tab-btn { padding: 7px 14px; cursor: pointer; border-radius: 10px; border: 1px solid #e2e8f0; background: white; font-weight: 600; color: #64748b; font-size: 11px; white-space: nowrap; transition: 0.2s; display: inline-flex; align-items: center; gap: 6px; }
         .tab-btn.active { background: #6366f1; color: white; border-color: #6366f1; box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2); }
         .tab-btn:hover:not(.active) { background: #f8fafc; color: #334155; }
@@ -166,17 +176,19 @@
         </button>
     </div>
 
-    <!-- Tombol Filter Status Terpisah -->
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchMainTab('SemuaTab', this)">Semua (<span id="countSemuaTab">0</span>)</button>
-        <button class="tab-btn" onclick="switchMainTab('AntrianTab', this)">Antrian (<span id="countAntrianTab">0</span>)</button>
-        <button class="tab-btn" onclick="switchMainTab('MenungguDokumenTab', this)">Menunggu Dokumen (<span id="countMenungguTab">0</span>)</button>
-        <button class="tab-btn" onclick="switchMainTab('ProsesMuatTab', this)">Proses Muat (<span id="countProsesTab">0</span>)</button>
-        <button class="tab-btn" onclick="switchMainTab('SelesaiMuatTab', this)">Selesai Muat (<span id="countSelesaiTab">0</span>)</button>
-        <button class="tab-btn" onclick="switchMainTab('TreatmentTab', this)">Treatment ⚠️ (<span id="countTreatmentTab">0</span>)</button>
-        <button class="tab-btn" onclick="switchMainTab('DockTab', this)">Loading Dock (32)</button>
-        <button class="tab-btn" onclick="switchMainTab('AnalisisTab', this)">Analisis 📊</button>
-        <button class="tab-btn" onclick="switchMainTab('KeluarTab', this)">Keluar (<span id="countKeluarTab">0</span>)</button>
+    <!-- Bagian Filter Tab yang di Freeze (Sticky) saat di-scroll -->
+    <div class="sticky-filter-wrapper">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchMainTab('SemuaTab', this)">Semua (<span id="countSemuaTab">0</span>)</button>
+            <button class="tab-btn" onclick="switchMainTab('AntrianTab', this)">Antrian (<span id="countAntrianTab">0</span>)</button>
+            <button class="tab-btn" onclick="switchMainTab('MenungguDokumenTab', this)">Menunggu Dokumen (<span id="countMenungguTab">0</span>)</button>
+            <button class="tab-btn" onclick="switchMainTab('ProsesMuatTab', this)">Proses Muat (<span id="countProsesTab">0</span>)</button>
+            <button class="tab-btn" onclick="switchMainTab('SelesaiMuatTab', this)">Selesai Muat (<span id="countSelesaiTab">0</span>)</button>
+            <button class="tab-btn" onclick="switchMainTab('TreatmentTab', this)">Treatment ⚠️ (<span id="countTreatmentTab">0</span>)</button>
+            <button class="tab-btn" onclick="switchMainTab('DockTab', this)">Loading Dock (32)</button>
+            <button class="tab-btn" onclick="switchMainTab('AnalisisTab', this)">Analisis 📊</button>
+            <button class="tab-btn" onclick="switchMainTab('KeluarTab', this)">Keluar (<span id="countKeluarTab">0</span>)</button>
+        </div>
     </div>
 
     <div id="tabContentArea">
@@ -1655,7 +1667,7 @@ function renderAll() {
         }
 
         html += `<div class="card">
-            <!-- Pita Menonjol di Sisi Kiri (Aman dari Teks) -->
+            <!-- Pita Menonjol di Sisi Kiri (Sejajar Kotak Oren) -->
             <div class="card-ribbon ${ribbonClass}">${ribbonText}</div>
 
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%; flex-wrap: wrap;">

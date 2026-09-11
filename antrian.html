@@ -45,7 +45,7 @@
         .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 20px 16px 24px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; width: 100%; box-sizing: border-box; position: relative; overflow: visible; }
         .card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-color: #cbd5e1; }
         
-        /* Style Pita Menonjol Keluar di Kiri Atas (Dinaikkan sedikit lagi agar pas) */
+        /* Style Pita Menonjol Keluar di Kiri Atas */
         .card-ribbon {
             position: absolute;
             top: -2px;
@@ -154,7 +154,7 @@
     </div>
 </header>
 
-<!-- Bagian yang di-Freeze Bersama (Running Text, Pencarian, & Filter Tab) -->
+<!-- Bagian yang di-Freeze Bersama -->
 <div class="sticky-header-section">
     <div style="background: #eff6ff; color: #1e40af; padding: 8px 16px; margin: 0 16px 10px 16px; border-radius: 10px; overflow: hidden; border: 1px solid #bfdbfe; box-sizing: border-box;">
         <marquee behavior="scroll" direction="left" scrollamount="5" style="font-size: 11px; font-weight: 500;">
@@ -379,30 +379,38 @@
         </div>
 
         <div id="checkerLoadingDiv" class="form-group" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; margin-top:10px;">
-            <strong style="color:#4f46e5; display:block; margin-bottom:8px; font-size: 11px;"><i class="fa-solid fa-user-gear mr-1"></i> Informasi Checker, Tim, Shift & Metode Pemuatan</strong>
-            <div style="display:flex; gap:10px; margin-bottom:10px; flex-wrap: wrap;">
-                <div style="flex:1; min-width: 140px;">
-                    <label style="font-size:10px; color:#64748b;">Nama Checker Loading *</label>
-                    <input type="text" id="inputCheckerName" placeholder="Contoh: Iqbal">
-                </div>
-                <div style="width:110px;">
-                    <label style="font-size:10px; color:#64748b;">Tim Kerja *</label>
-                    <select id="selectCheckerTeam" class="form-select form-select-sm" style="margin-top:4px;">
-                        <option value="Team A">Team A</option>
-                        <option value="Team B">Team B</option>
-                        <option value="Team C">Team C</option>
-                    </select>
-                </div>
-                <div style="width:110px;">
-                    <label style="font-size:10px; color:#64748b;">Shift Kerja *</label>
-                    <select id="selectCheckerShift" class="form-select form-select-sm" style="margin-top:4px;">
-                        <option value="Shift 1">Shift 1</option>
-                        <option value="Shift 2">Shift 2</option>
-                        <option value="Shift 3">Shift 3</option>
-                    </select>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <strong style="color:#4f46e5; font-size: 11px;"><i class="fa-solid fa-user-gear mr-1"></i> Informasi Checker, Tim, Shift & Metode Pemuatan</strong>
+                <button type="button" class="btn" onclick="tambahFormCheckerBaru()" style="font-size: 9px; padding: 2px 8px; background: #e0e7ff; color: #4338ca; border-color: #c7d2fe;">+ Tambah Checker Lain</button>
+            </div>
+            
+            <div id="wrapperCheckerList" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dinamis baris checker -->
+                <div class="checker-row" style="display:flex; gap:8px; align-items: center; flex-wrap: wrap; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div style="flex:1; min-width: 120px;">
+                        <label style="font-size:9px; color:#64748b;">Nama Checker *</label>
+                        <input type="text" class="input-checker-name" placeholder="Contoh: Iqbal">
+                    </div>
+                    <div style="width:100px;">
+                        <label style="font-size:9px; color:#64748b;">Tim *</label>
+                        <select class="select-checker-team" style="margin-top:2px; font-size: 10px; padding: 6px;">
+                            <option value="Team A">Team A</option>
+                            <option value="Team B">Team B</option>
+                            <option value="Team C">Team C</option>
+                        </select>
+                    </div>
+                    <div style="width:100px;">
+                        <label style="font-size:9px; color:#64748b;">Shift *</label>
+                        <select class="select-checker-shift" style="margin-top:2px; font-size: 10px; padding: 6px;">
+                            <option value="Shift 1">Shift 1</option>
+                            <option value="Shift 2">Shift 2</option>
+                            <option value="Shift 3">Shift 3</option>
+                        </select>
+                    </div>
                 </div>
             </div>
-            <div style="display:flex; gap:10px; flex-wrap: wrap;">
+
+            <div style="display:flex; gap:10px; flex-wrap: wrap; margin-top: 10px; border-top: 1px dashed #cbd5e1; padding-top: 8px;">
                 <div style="flex:1; min-width: 150px;">
                     <label style="font-size:10px; color:#64748b;">Metode Pemuatan (Internal / TKBM) *</label>
                     <select id="selectMetodePemuatan" class="form-select form-select-sm" style="margin-top:4px;">
@@ -1391,7 +1399,7 @@ function showDockDetail(dockName) {
 
     if(assignedTruck) {
         let totalQty = (assignedTruck.pickingList || []).reduce((sum, i) => sum + i.jumlah, 0);
-        let cInfo = assignedTruck.checkerName ? `<br><strong>Checker Loading:</strong> ${assignedTruck.checkerName} (${assignedTruck.tim} - ${assignedTruck.shift})` : '';
+        let cInfo = assignedTruck.checkerName ? `<br><strong>Checker Loading:</strong> ${assignedTruck.checkerName}` : '';
         let mInfo = assignedTruck.metodePemuatan ? `<br><strong>Metode Pemuatan:</strong> ${assignedTruck.metodePemuatan} ${assignedTruck.notePemuatan ? '('+assignedTruck.notePemuatan+')' : ''}` : '';
         bodyEl.innerHTML = `
             <p><strong>ID Antrian:</strong> ${assignedTruck.id}</p>
@@ -1565,7 +1573,7 @@ function renderAll() {
         let displayEndLoading = t.timeEndLoading || '-';
         let displayTimeOut = (t.status === 'Keluar' && t.timeOut && t.timeOut !== '-') ? t.timeOut : '-';
         
-        let checkerBadge = t.checkerName ? ` | 👤 Checker: <b>${t.checkerName} (${t.tim} - ${t.shift})</b>` : '';
+        let checkerBadge = t.checkerName ? ` | 👤 Checker: <b>${t.checkerName}</b>` : '';
         let metodeMuatBadge = t.metodePemuatan ? ` | 📦 Muat Oleh: <b style="color:#0284c7;">${t.metodePemuatan}</b>${t.notePemuatan ? ' ('+t.notePemuatan+')' : ''}` : '';
         let treatmentBadge = (t.status === 'Treatment' && t.treatmentNote) ? ` | ⚠️ Alasan: <b style="color:#b91c1c;">${t.treatmentNote}</b>` : '';
         let arsipBadge = (t.lokasiArsip && t.lokasiArsip !== 'Belum Ada Arsip') ? ` | 📁 Arsip: <b>${t.lokasiArsip}</b>` : '';
@@ -1723,9 +1731,27 @@ function openStatusModal(idx) {
     document.getElementById('selectStatus').value = t.status;
     populateDockDropdown(t.dock);
     
-    document.getElementById('inputCheckerName').value = t.checkerName || '';
-    document.getElementById('selectCheckerTeam').value = t.tim || 'Team A';
-    document.getElementById('selectCheckerShift').value = t.shift || getAutomaticShift();
+    // Inisialisasi Checker List di Modal
+    let checkerListWrapper = document.getElementById('wrapperCheckerList');
+    checkerListWrapper.innerHTML = '';
+    
+    let existingCheckers = [];
+    if (t.checkerName) {
+        existingCheckers = t.checkerName.split(' & ');
+    } else {
+        existingCheckers.push(`${t.adminPicking || '-'} (${t.tim || 'Team A'} - ${t.shift || 'Shift 1'})`);
+    }
+
+    existingCheckers.forEach(chStr => {
+        let namePart = chStr.split('(')[0].trim();
+        let restPart = chStr.includes('(') ? chStr.split('(')[1].replace(')', '') : 'Team A - Shift 1';
+        let partsRest = restPart.split('-');
+        let teamPart = partsRest[0] ? partsRest[0].trim() : 'Team A';
+        let shiftPart = partsRest[1] ? partsRest[1].trim() : 'Shift 1';
+
+        tambahFormCheckerBaru(namePart, teamPart, shiftPart);
+    });
+
     document.getElementById('selectMetodePemuatan').value = t.metodePemuatan || 'Internal';
     document.getElementById('inputNotePemuatan').value = t.notePemuatan || '';
     document.getElementById('inputTreatmentNote').value = t.treatmentNote || '';
@@ -1733,6 +1759,37 @@ function openStatusModal(idx) {
     parseExistingArsip(t.lokasiArsip);
     checkStatusChange();
     openModal('modalStatus');
+}
+
+function tambahFormCheckerBaru(name = '', team = 'Team A', shift = getAutomaticShift()) {
+    let wrapper = document.getElementById('wrapperCheckerList');
+    let row = document.createElement('div');
+    row.className = 'checker-row';
+    row.style.cssText = "display:flex; gap:8px; align-items: center; flex-wrap: wrap; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;";
+    row.innerHTML = `
+        <div style="flex:1; min-width: 120px;">
+            <label style="font-size:9px; color:#64748b;">Nama Checker *</label>
+            <input type="text" class="input-checker-name" value="${name}" placeholder="Contoh: Iqbal">
+        </div>
+        <div style="width:100px;">
+            <label style="font-size:9px; color:#64748b;">Tim *</label>
+            <select class="select-checker-team" style="margin-top:2px; font-size: 10px; padding: 6px;">
+                <option value="Team A" ${team==='Team A'?'selected':''}>Team A</option>
+                <option value="Team B" ${team==='Team B'?'selected':''}>Team B</option>
+                <option value="Team C" ${team==='Team C'?'selected':''}>Team C</option>
+            </select>
+        </div>
+        <div style="width:100px;">
+            <label style="font-size:9px; color:#64748b;">Shift *</label>
+            <select class="select-checker-shift" style="margin-top:2px; font-size: 10px; padding: 6px;">
+                <option value="Shift 1" ${shift==='Shift 1'?'selected':''}>Shift 1</option>
+                <option value="Shift 2" ${shift==='Shift 2'?'selected':''}>Shift 2</option>
+                <option value="Shift 3" ${shift==='Shift 3'?'selected':''}>Shift 3</option>
+            </select>
+        </div>
+        <button type="button" class="btn btn-danger" style="padding: 4px 8px; font-size:10px; margin-top:14px;" onclick="this.parentElement.remove()">✕</button>
+    `;
+    wrapper.appendChild(row);
 }
 
 function openArsipModal(idx) {
@@ -1870,9 +1927,30 @@ async function saveStatus() {
         newSt = document.getElementById('selectStatus').value;
     }
     let selectedDock = document.getElementById('selectDock').value;
-    let checkerNameVal = document.getElementById('inputCheckerName').value.trim();
-    let checkerTeamVal = document.getElementById('selectCheckerTeam').value;
-    let checkerShiftVal = document.getElementById('selectCheckerShift').value;
+    
+    // Kumpulkan Semua Checker dari Form Dinamis
+    let checkerRows = document.querySelectorAll('.checker-row');
+    let checkerSummaryArr = [];
+    let firstCheckerName = '';
+    let firstCheckerTeam = 'Team A';
+    let firstCheckerShift = 'Shift 1';
+
+    checkerRows.forEach((row, rIdx) => {
+        let cName = row.querySelector('.input-checker-name').value.trim();
+        let cTeam = row.querySelector('.select-checker-team').value;
+        let cShift = row.querySelector('.select-checker-shift').value;
+        if (cName) {
+            checkerSummaryArr.push(`${cName} (${cTeam} - ${cShift})`);
+            if (rIdx === 0) {
+                firstCheckerName = cName;
+                firstCheckerTeam = cTeam;
+                firstCheckerShift = cShift;
+            }
+        }
+    });
+
+    let combinedCheckerStr = checkerSummaryArr.join(' & ');
+
     let metodePemuatanVal = document.getElementById('selectMetodePemuatan').value;
     let notePemuatanVal = document.getElementById('inputNotePemuatan').value.trim();
     let treatmentNoteVal = document.getElementById('inputTreatmentNote').value.trim();
@@ -1894,10 +1972,10 @@ async function saveStatus() {
 
     targetTruck.status = newSt;
     targetTruck.dock = (newSt === 'Proses Muat') ? (selectedDock || 'Dock 01') : '-';
-    if (checkerNameVal) {
-        targetTruck.checkerName = checkerNameVal;
-        targetTruck.tim = checkerTeamVal;
-        targetTruck.shift = checkerShiftVal;
+    if (combinedCheckerStr) {
+        targetTruck.checkerName = combinedCheckerStr;
+        targetTruck.tim = firstCheckerTeam;
+        targetTruck.shift = firstCheckerShift;
     }
     targetTruck.metodePemuatan = metodePemuatanVal;
     targetTruck.notePemuatan = notePemuatanVal;
@@ -1909,9 +1987,9 @@ async function saveStatus() {
         loading_dock: targetTruck.dock,
         kategori_arsip: kat,
         nomor_map_arsip: detailArsip || '-',
-        checker_name: checkerNameVal || '-',
-        checker_team: checkerTeamVal || 'Team A',
-        checker_shift: checkerShiftVal || 'Shift 1',
+        checker_name: combinedCheckerStr || '-',
+        checker_team: firstCheckerTeam || 'Team A',
+        checker_shift: firstCheckerShift || 'Shift 1',
         metode_pemuatan: metodePemuatanVal,
         note_pemuatan: notePemuatanVal || '-',
         treatment_note: treatmentNoteVal || '-'

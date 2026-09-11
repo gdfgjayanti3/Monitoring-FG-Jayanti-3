@@ -283,7 +283,7 @@
                 </div>
             </div>
 
-            <!-- SUB-SECTION 2: TABEL REKAPITULASI MATRIKS OPERASIONAL HARIAN / BULANAN (DENGAN FILTER BULAN & TAHUN KHUSUS DI DALAMNYA) -->
+            <!-- SUB-SECTION 2: TABEL REKAPITULASI MATRIKS OPERASIONAL HARIAN / BULANAN -->
             <div id="dashSubContent-matriks" class="space-y-6 hidden">
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
@@ -1190,6 +1190,9 @@
                 if (namaEl) namaEl.innerText = userObj.nama_lengkap || userObj.username;
                 if (roleEl) roleEl.innerText = userObj.role;
             }
+            // Otomatis masuk ke Dashboard Utama saat halaman dibuka / direfresh[cite: 3]
+            switchMenu('dashboard-utama');
+            fetchAllDataFromSupabase();
             initHighcharts3D(775713, 326433, 254862, 93142, 67593, 23438, 10245);
         });
 
@@ -2677,7 +2680,9 @@
             if(menuName === 'ekspor') { renderEksporSummaryTable(); }
             if(menuName === 'jalur') { renderStockJalurTable(); }
             if(menuName === 'report') { renderReportData(); }
-            if(window.innerWidth < 768) toggleSidebar();
+            
+            // Otomatis menutup sidebar (pop-up hide) ketika menu diklik di perangkat apa pun
+            toggleSidebar();
         }
 
         function switchKapasitasTab(tab) {
@@ -2816,7 +2821,6 @@
             antrianData.forEach(t => {
                 let totalQty = (t.pickingList || []).reduce((sum, i) => sum + (parseFloat(i.jumlah) || 0), 0);
                 
-                // Pisahkan Kolom Jenis dan Tipe Pengiriman/Container agar tidak tergabung padat
                 let jenisBadge = `<span class="badge bg-indigo-50 text-indigo-700 border border-indigo-100 px-2 py-0.5">${t.jenis || 'LOKAL'}</span>`;
                 if (t.tipePengiriman) {
                     jenisBadge += `<br><span class="text-[10px] text-slate-500">${t.tipePengiriman}</span>`;

@@ -30,10 +30,32 @@
         .btn-nav:hover { background: #f1f5f9; color: #4f46e5; border-color: #cbd5e1; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
         
-        /* Card UI Modern, Bersih & Terstruktur */
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; width: 100%; box-sizing: border-box; }
+        /* Card UI Modern, Bersih & Terstruktur dengan Posisi Relative untuk Pita */
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; width: 100%; box-sizing: border-box; position: relative; overflow: hidden; }
         .card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-color: #cbd5e1; }
         
+        /* Style Pita Estetik di Kiri Atas */
+        .card-ribbon {
+            position: absolute;
+            top: 0;
+            left: 0;
+            padding: 3px 12px 3px 14px;
+            font-size: 9px;
+            font-weight: bold;
+            border-bottom-right-radius: 10px;
+            border-top-left-radius: 15px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            z-index: 2;
+        }
+        .ribbon-ekspor { background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3; border-left: none; border-top: none; }
+        .ribbon-rdc { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; border-left: none; border-top: none; }
+        .ribbon-lokal { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; border-left: none; border-top: none; }
+
         /* Pemisah Tanggal Estetik */
         .date-divider-container { display: flex; align-items: center; text-align: center; margin: 24px 0 14px 0; width: 100%; }
         .date-divider-container::before, .date-divider-container::after { content: ''; flex: 1; border-bottom: 2px solid #e2e8f0; }
@@ -1524,6 +1546,32 @@ function renderAll() {
         let treatmentBadge = (t.status === 'Treatment' && t.treatmentNote) ? ` | ⚠️ Alasan: <b style="color:#b91c1c;">${t.treatmentNote}</b>` : '';
         let arsipBadge = (t.lokasiArsip && t.lokasiArsip !== 'Belum Ada Arsip') ? ` | 📁 Arsip: <b>${t.lokasiArsip}</b>` : '';
 
+        // Tentukan Pita Estetik di Kiri Atas Berdasarkan Kategori
+        let ribbonClass = 'ribbon-lokal';
+        let ribbonText = 'Lokal';
+        let jenisUpper = (t.jenis || '').toUpperCase();
+        if (jenisUpper.includes('EKSPOR')) {
+            ribbonClass = 'ribbon-ekspor';
+            ribbonText = 'Ekspor';
+        } else if (jenisUpper.includes('RDC')) {
+            ribbonClass = 'ribbon-rdc';
+            ribbonText = 'RDC';
+        } else if (jenisUpper.includes('SUBDIST')) {
+            ribbonClass = 'ribbon-lokal';
+            ribbonText = 'Subdist';
+        } else if (jenisUpper.includes('MDC')) {
+            ribbonClass = 'ribbon-lokal';
+            ribbonText = 'MDC';
+        }
+
+        // Tombol Telepon Sopir (memanfaatkan protokol tel:)
+        let phoneBtnHtml = '';
+        if (t.noHp && t.noHp !== '-') {
+            phoneBtnHtml = `<a href="tel:${t.noHp}" style="display:inline-flex; align-items:center; gap:3px; background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; padding:1px 6px; border-radius:6px; font-size:10px; font-weight:bold; text-decoration:none; margin-left:4px;" title="Telepon Sopir: ${t.noHp}"><i class="fa-solid fa-phone"></i> ${t.noHp}</a>`;
+        } else {
+            phoneBtnHtml = `<span style="color:#94a3b8; font-size:10px; margin-left:4px;">(No HP -)</span>`;
+        }
+
         let stayDurationInfo = '';
         if (t.rawTime && (t.status === 'Selesai Muat' || t.status === 'Keluar')) {
             let endRefTime = t.rawTimeOut || t.rawEndLoading || new Date().getTime();
@@ -1596,7 +1644,12 @@ function renderAll() {
         }
 
         html += `<div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%; flex-wrap: wrap;">
+            <!-- Pita Estetik di Kiri Atas -->
+            <div class="card-ribbon ${ribbonClass}">
+                <i class="fa-solid fa-bookmark text-[8px]"></i> ${ribbonText}
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%; flex-wrap: wrap; padding-top: 6px;">
                 <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 6px;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:10px;">${t.id}</span>
@@ -1608,7 +1661,7 @@ function renderAll() {
                     </div>
 
                     <div style="color:#475569; font-size:11px; line-height: 1.4;">
-                        Sopir: <strong>${t.sopir}</strong> | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Qty: <b>${totalQty} krt</b> 
+                        Sopir: <strong>${t.sopir}</strong> ${phoneBtnHtml} | Jenis: ${t.jenis} &rarr; <strong>Tujuan: ${t.tujuan}</strong> | Qty: <b>${totalQty} krt</b> 
                         ${checkerBadge} ${metodeMuatBadge} ${treatmentBadge} ${arsipBadge}
                     </div>
 

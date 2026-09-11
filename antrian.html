@@ -30,21 +30,21 @@
         .btn-nav:hover { background: #f1f5f9; color: #4f46e5; border-color: #cbd5e1; }
         .container { max-width: 1200px; margin: 20px auto; padding: 0 16px; }
         
-        /* Card UI Modern, Bersih & Terstruktur dengan Posisi Relative untuk Pita */
-        .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 20px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; width: 100%; box-sizing: border-box; position: relative; overflow: visible; }
+        /* Card UI Modern, Bersih & Terstruktur dengan Padding Kiri Aman untuk Pita */
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 16px 20px 16px 24px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); display: flex; flex-direction: column; gap: 8px; transition: 0.2s; width: 100%; box-sizing: border-box; position: relative; overflow: visible; }
         .card:hover { box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border-color: #cbd5e1; }
         
-        /* Style Pita Menonjol Keluar di Kiri Atas */
+        /* Style Pita Menonjol Keluar di Kiri Atas (Dinaikkan agar tidak menutupi teks) */
         .card-ribbon {
             position: absolute;
-            top: 10px;
+            top: 8px;
             left: -8px;
-            padding: 4px 14px 4px 12px;
-            font-size: 10px;
+            padding: 3px 12px 3px 10px;
+            font-size: 9px;
             font-weight: bold;
-            border-top-right-radius: 8px;
-            border-bottom-right-radius: 8px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.08);
+            border-top-right-radius: 6px;
+            border-bottom-right-radius: 6px;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.06);
             letter-spacing: 0.05em;
             text-transform: uppercase;
             z-index: 2;
@@ -52,11 +52,11 @@
         .card-ribbon::before {
             content: '';
             position: absolute;
-            bottom: -6px;
+            bottom: -5px;
             left: 0;
             width: 0;
             height: 0;
-            border-top: 6px solid rgba(0,0,0,0.15);
+            border-top: 5px solid rgba(0,0,0,0.15);
             border-left: 8px solid transparent;
         }
         .ribbon-ekspor { background: #ffe4e6; color: #9f1239; border: 1px solid #fecdd3; border-left: none; }
@@ -1655,10 +1655,10 @@ function renderAll() {
         }
 
         html += `<div class="card">
-            <!-- Pita Menonjol di Sisi Kiri -->
+            <!-- Pita Menonjol di Sisi Kiri (Aman dari Teks) -->
             <div class="card-ribbon ${ribbonClass}">${ribbonText}</div>
 
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%; flex-wrap: wrap; padding-left: 6px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 6px;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                         <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:10px;">${t.id}</span>

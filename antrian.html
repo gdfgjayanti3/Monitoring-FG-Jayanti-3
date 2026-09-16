@@ -115,8 +115,24 @@
         }
         #printArea { display: none; }
     </style>
-    <!-- Supabase JS SDK CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Firebase SDK CDN -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyAlxd0ylL1KZNiYAXvosDL8H_M7g8b-naw",
+        authDomain: "portal-whmayora-jayanti3.firebaseapp.com",
+        projectId: "portal-whmayora-jayanti3",
+        storageBucket: "portal-whmayora-jayanti3.firebasestorage.app",
+        messagingSenderId: "805832777917",
+        appId: "1:805832777917:web:5ba4a61448d97189d4d7d4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    window.db = getFirestore(app);
+    window.firebaseCollections = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc };
+</script>
 </head>
 <body>
 
@@ -511,11 +527,6 @@ function prosesLogout() {
         window.location.href = 'login.html';
     }
 }
-
-const SUPABASE_URL = 'https://dmmybcscwxvxztcgjnbe.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_9sAzy4cjko7xheXLmDButQ_gDOEsxfN'; 
-const { createClient } = supabase;
-const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 function getAutomaticShift(dateObj = new Date()) {
     let hours = dateObj.getHours();

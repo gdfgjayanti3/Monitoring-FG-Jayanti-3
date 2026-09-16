@@ -1988,9 +1988,7 @@ async function saveStatus() {
         alert('Gagal memperbarui status: ' + err.message);
     }
 }
-    await _supabase.from('antrian_truk').update({ status_antrian: newSt }).eq('id', targetTruck.dbId);
-
-    targetTruck.lokasiArsip = finalArsipStr;
+       targetTruck.lokasiArsip = finalArsipStr;
     closeModal('modalStatus');
     loadDataFromCloud();
     alert('Status dan jam berhasil diperbarui!');

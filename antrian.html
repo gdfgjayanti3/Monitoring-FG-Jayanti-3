@@ -614,205 +614,191 @@ let binStockData = [];
 let sapStockCache = {}; 
 
 async function loadDataFromCloud() {
+    if (!window.db) return;
     try {
-        let { data: skuMaster, error: errSku } = await _supabase.from('master_sku').select('*');
-        if (!errSku && skuMaster) {
-            masterStock = {};
-            skuMaster.forEach(item => {
-                if (item.sku) {
-                    masterStock[item.sku] = {
-                        sku: item.sku,
-                        name: item.nama_produk || '-',
-                        cartonPerPallet: parseFloat(item.carton_per_pallet) || 70
-                    };
-                }
-            });
-        }
+        const { collection, getDocs } = window.firebaseCollections;
+
+        let skuSnapshot = await getDocs(collection(window.db, 'master_sku'));
+        masterStock = {};
+        skuSnapshot.forEach(docSnap => {
+            let item = docSnap.data();
+            if (item.sku) {
+                masterStock[item.sku] = {
+                    sku: item.sku,
+                    name: item.nama_produk || '-',
+                    cartonPerPallet: parseFloat(item.carton_per_pallet) || 70
+                };
+            }
+        });
 
         sapStockCache = {};
-        let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
-        if (sapRows && sapRows.length > 0) {
-            sapRows.forEach(row => {
-                if (row.data_sap && row.data_sap.items) {
-                    let items = row.data_sap.items;
-                    for (let skuCode in items) {
-                        sapStockCache[skuCode] = {
-                            sku: skuCode,
-                            nama: items[skuCode].nama || masterStock[skuCode]?.name || 'Produk SAP',
-                            karton: parseFloat(items[skuCode].karton) || 0,
-                            lokasi: 'Blok A - Row 01',
-                            prodate: '2026-01-01',
-                            pallet: 'SAP-AUTO',
-                            kategori_stok: 'Lokal'
-                        };
-                    }
-                } else if (row.data_sap && typeof row.data_sap === 'object') {
-                    for (let dateKey in row.data_sap) {
-                        let sessionObj = row.data_sap[dateKey];
-                        if (sessionObj && sessionObj.items) {
-                            let items = sessionObj.items;
-                            for (let skuCode in items) {
-                                sapStockCache[skuCode] = {
-                                    sku: skuCode,
-                                    nama: items[skuCode].nama || masterStock[skuCode]?.name || 'Produk SAP',
-                                    karton: parseFloat(items[skuCode].karton) || 0,
-                                    lokasi: 'Blok A - Row 01',
-                                    prodate: '2026-01-01',
-                                    pallet: 'SAP-AUTO',
-                                    kategori_stok: 'Lokal'
-                                };
-                            }
-                        }
-                    }
+        let sapSnapshot = await getDocs(collection(window.db, 'stock_opname_sap'));
+        sapSnapshot.forEach(docSnap => {
+            let row = docSnap.data();
+            if (row.data_sap && row.data_sap.items) {
+                let items = row.data_sap.items;
+                for (let skuCode in items) {
+                    sapStockCache[skuCode] = {
+                        sku: skuCode,
+                        nama: items[skuCode].nama || masterStock[skuCode]?.name || 'Produk SAP',
+                        karton: parseFloat(items[skuCode].karton) || 0,
+                        lokasi: 'Blok A - Row 01',
+                        prodate: '2026-01-01',
+                        pallet: 'SAP-AUTO',
+                        kategori_stok: 'Lokal'
+                    };
                 }
-            });
-        }
+            }
+        });
 
-        let { data: stokLokal, error: errLokal } = await _supabase.from('stok_lokal').select('*');
-        let { data: stokEkspor, error: errEkspor } = await _supabase.from('stok_ekspor').select('*');
-        let { data: stokSap, error: errSap } = await _supabase.from('stok_sap').select('*');
+        let lokSnapshot = await getDocs(collection(window.db, 'stok_lokal'));
+        let ekspSnapshot = await getDocs(collection(window.db, 'stok_ekspor'));
         
         binStockData = [];
-        if (!errLokal && stokLokal) {
-            stokLokal.forEach(item => binStockData.push({ ...item, kategori_stok: 'Lokal' }));
-        }
-        if (!errEkspor && stokEkspor) {
-            stokEkspor.forEach(item => binStockData.push({ ...item, kategori_stok: 'Ekspor' }));
-        }
-        if (!errSap && stokSap) {
-            stokSap.forEach(item => binStockData.push({ 
-                ...item, 
-                prodate: item.tanggal_tarikan || '2026-09-07',
-                kategori_stok: item.lokasi && item.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
-            }));
-        }
+        lokSnapshot.forEach(d => binStockData.push({ ...d.data(), id: d.id, kategori_stok: 'Lokal' }));
+        ekspSnapshot.forEach(d => binStockData.push({ ...d.data(), id: d.id, kategori_stok: 'Ekspor' }));
 
         if (binStockData.length === 0 && Object.keys(sapStockCache).length > 0) {
-            for (let sKey in sapStockCache) {
-                binStockData.push(sapStockCache[sKey]);
+            for (let sKey in sapStockCache) { binStockData.push(sapStockCache[sKey]); }
+        }
+
+        let truckSnapshot = await getDocs(collection(window.db, 'antrian_truk'));
+        let pickSnapshot = await getDocs(collection(window.db, 'picking_list_truk'));
+        let statusSnapshot = await getDocs(collection(window.db, 'status_truk_log'));
+
+        let trucks = [];
+        truckSnapshot.forEach(d => trucks.push({ ...d.data(), firestoreId: d.id }));
+        
+        let pickLists = [];
+        pickSnapshot.forEach(d => pickLists.push(d.data()));
+
+        let statuses = [];
+        statusSnapshot.forEach(d => statuses.push(d.data()));
+
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        const nowTimeMs = new Date().getTime();
+
+        truckQueue = trucks.map(t => {
+            let docNo = t.no_doc;
+            let statRow = statuses.find(s => s.no_doc === docNo);
+            let plRows = pickLists.filter(p => p.no_doc === docNo);
+            let firstPl = plRows.length > 0 ? plRows[0] : null;
+
+            let jenisFormatted = t.jenis || 'LOKAL';
+            if (t.tipe_pengiriman && t.tipe_pengiriman !== '-') jenisFormatted += ' • ' + t.tipe_pengiriman;
+            if (t.no_container && t.no_container !== '-') jenisFormatted += ' (Container: ' + t.no_container + ')';
+
+            let rawTimeVal = new Date().getTime();
+            let timeInStr = '-';
+            
+            if (statRow && statRow.time_in) {
+                let dIn = new Date(statRow.time_in);
+                rawTimeVal = dIn.getTime();
+                timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            } else if (t.created_at) {
+                let dIn = new Date(t.created_at);
+                rawTimeVal = dIn.getTime();
+                timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
             }
-        }
 
-        let { data: trucks, error: errTrucks } = await _supabase.from('antrian_truk').select('*');
-        let { data: pickLists, error: errPick } = await _supabase.from('picking_list_truk').select('*');
-        let { data: statuses, error: errStat } = await _supabase.from('status_truk_log').select('*');
+            let tanggalKirimStr = t.tanggal || (t.created_at ? t.created_at.split('T')[0] : '2026-09-09');
+            
+            let startLoadingStr = '-';
+            let rawStartLoading = null;
+            if (statRow && statRow.time_start_loading) {
+                let dStart = new Date(statRow.time_start_loading);
+                rawStartLoading = dStart.getTime();
+                startLoadingStr = dStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            }
 
-        if (!errTrucks && trucks) {
-            truckQueue = trucks.map(t => {
-                let docNo = t.no_doc;
-                let statRow = statuses ? statuses.find(s => s.no_doc === docNo) : null;
-                let plRows = pickLists ? pickLists.filter(p => p.no_doc === docNo) : [];
-                
-                let firstPl = plRows.length > 0 ? plRows[0] : null;
+            let endLoadingStr = '-';
+            let rawEndLoading = null;
+            if (statRow && statRow.time_end_loading) {
+                let dEnd = new Date(statRow.time_end_loading);
+                rawEndLoading = dEnd.getTime();
+                endLoadingStr = dEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            }
 
-                let jenisFormatted = t.jenis || 'LOKAL';
-                if (t.tipe_pengiriman && t.tipe_pengiriman !== '-') jenisFormatted += ' • ' + t.tipe_pengiriman;
-                if (t.no_container && t.no_container !== '-') jenisFormatted += ' (Container: ' + t.no_container + ')';
+            let timeoutStr = '-';
+            let rawTimeoutVal = null;
+            if (statRow && statRow.time_out) {
+                let dOut = new Date(statRow.time_out);
+                rawTimeoutVal = dOut.getTime();
+                timeoutStr = dOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            }
+            
+            let currentStatus = t.status_antrian || (statRow ? statRow.status_truk : 'Antrian');
+            let metodeMuatVal = statRow && statRow.metode_pemuatan ? statRow.metode_pemuatan : 'Internal';
+            let noteMuatVal = statRow && statRow.note_pemuatan ? statRow.note_pemuatan : '';
+            let treatmentNoteVal = statRow && statRow.treatment_note ? statRow.treatment_note : '';
 
-                let rawTimeVal = new Date().getTime();
-                let timeInStr = '-';
-                
-                if (statRow && statRow.time_in) {
-                    let dIn = new Date(statRow.time_in);
-                    rawTimeVal = dIn.getTime();
-                    timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                } else if (t.created_at) {
-                    let dIn = new Date(t.created_at);
-                    rawTimeVal = dIn.getTime();
-                    timeInStr = dIn.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+            let adminPickingVal = firstPl ? (firstPl.nama_petugas || '') : '';
+            let checkerNameVal = statRow ? (statRow.checker_name || '') : '';
+            let checkerTeamVal = statRow ? (statRow.checker_team || 'Team A') : (firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A');
+            
+            let determinedShift = getAutomaticShift(statRow && statRow.time_start_loading ? new Date(statRow.time_start_loading) : new Date());
+            let shiftVal = firstPl ? (firstPl.shift_kerja || determinedShift) : determinedShift;
+            if (statRow && statRow.checker_shift) shiftVal = statRow.checker_shift;
+
+            return {
+                id: 'TRK-' + (t.id || t.firestoreId.substring(0, 5)),
+                firestoreId: t.firestoreId,
+                sopir: t.nama_sopir,
+                ekspedisi: t.nama_ekspedisi,
+                noPol: t.no_polisi_truk,
+                noDoc: docNo,
+                jenis: jenisFormatted,
+                tujuan: t.tujuan_pengiriman,
+                noHp: t.no_hp || '-',
+                status: currentStatus,
+                dock: statRow ? (statRow.loading_dock || '-') : '-',
+                timeIn: timeInStr,
+                tanggalKirim: tanggalKirimStr,
+                timeStartLoading: startLoadingStr,
+                timeEndLoading: endLoadingStr,
+                rawTime: rawTimeVal,
+                rawStartLoading: rawStartLoading,
+                rawEndLoading: rawEndLoading,
+                timeOut: timeoutStr,
+                rawTimeOut: rawTimeoutVal,
+                adminPicking: adminPickingVal,
+                checkerName: checkerNameVal,
+                tim: checkerTeamVal,
+                shift: shiftVal,
+                metodePemuatan: metodeMuatVal,
+                notePemuatan: noteMuatVal,
+                treatmentNote: treatmentNoteVal,
+                lokasiArsip: statRow && statRow.kategori_arsip ? `${statRow.kategori_arsip}: ${statRow.nomor_map_arsip || ''}` : 'Belum Ada Arsip',
+                pickingList: plRows.map(p => {
+                    let stdPlt = getCartonPerPallet(p.sku);
+                    let pltVal = Math.floor(p.total_karton / stdPlt);
+                    let rchVal = p.total_karton % stdPlt;
+                    return {
+                        sku: p.sku,
+                        nama: masterStock[p.sku] ? masterStock[p.sku].name : (sapStockCache[p.sku]?.nama || '-'),
+                        prodate: p.prodate || '-',
+                        rak: p.batch_lokasi,
+                        palletSource: '-',
+                        pallet: pltVal,
+                        receh: rchVal,
+                        jumlah: p.total_karton
+                    };
+                })
+            };
+        }).filter(t => {
+            if (t.status === 'Keluar') {
+                let truckDateMs = new Date(t.tanggalKirim || Date.now()).getTime();
+                if ((nowTimeMs - truckDateMs) > SEVEN_DAYS_MS) {
+                    return false; 
                 }
+            }
+            return true;
+        });
 
-                let tanggalKirimStr = t.tanggal || (t.created_at ? t.created_at.split('T')[0] : '2026-09-09');
-                
-                let startLoadingStr = '-';
-                let rawStartLoading = null;
-                if (statRow && statRow.time_start_loading) {
-                    let dStart = new Date(statRow.time_start_loading);
-                    rawStartLoading = dStart.getTime();
-                    startLoadingStr = dStart.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                }
-
-                let endLoadingStr = '-';
-                let rawEndLoading = null;
-                if (statRow && statRow.time_end_loading) {
-                    let dEnd = new Date(statRow.time_end_loading);
-                    rawEndLoading = dEnd.getTime();
-                    endLoadingStr = dEnd.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                }
-
-                let timeoutStr = '-';
-                let rawTimeoutVal = null;
-                if (statRow && statRow.time_out) {
-                    let dOut = new Date(statRow.time_out);
-                    rawTimeoutVal = dOut.getTime();
-                    timeoutStr = dOut.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-                }
-                
-                let currentStatus = t.status_antrian || (statRow ? statRow.status_truk : 'Antrian');
-
-                let metodeMuatVal = statRow && statRow.metode_pemuatan ? statRow.metode_pemuatan : 'Internal';
-                let noteMuatVal = statRow && statRow.note_pemuatan ? statRow.note_pemuatan : '';
-                let treatmentNoteVal = statRow && statRow.treatment_note ? statRow.treatment_note : '';
-
-                let adminPickingVal = firstPl ? (firstPl.nama_petugas || '') : '';
-                let checkerNameVal = statRow ? (statRow.checker_name || '') : '';
-                let checkerTeamVal = statRow ? (statRow.checker_team || 'Team A') : (firstPl ? (firstPl.nama_tim || 'Team A') : 'Team A');
-                
-                let determinedShift = getAutomaticShift(statRow && statRow.time_start_loading ? new Date(statRow.time_start_loading) : new Date());
-                let shiftVal = firstPl ? (firstPl.shift_kerja || determinedShift) : determinedShift;
-                if (statRow && statRow.checker_shift) shiftVal = statRow.checker_shift;
-
-                return {
-                    id: 'TRK-' + t.id,
-                    dbId: t.id,
-                    sopir: t.nama_sopir,
-                    ekspedisi: t.nama_ekspedisi,
-                    noPol: t.no_polisi_truk,
-                    noDoc: docNo,
-                    jenis: jenisFormatted,
-                    tujuan: t.tujuan_pengiriman,
-                    noHp: t.no_hp || '-',
-                    status: currentStatus,
-                    dock: statRow ? (statRow.loading_dock || '-') : '-',
-                    timeIn: timeInStr,
-                    tanggalKirim: tanggalKirimStr,
-                    timeStartLoading: startLoadingStr,
-                    timeEndLoading: endLoadingStr,
-                    rawTime: rawTimeVal,
-                    rawStartLoading: rawStartLoading,
-                    rawEndLoading: rawEndLoading,
-                    timeOut: timeoutStr,
-                    rawTimeOut: rawTimeoutVal,
-                    adminPicking: adminPickingVal,
-                    checkerName: checkerNameVal,
-                    tim: checkerTeamVal,
-                    shift: shiftVal,
-                    metodePemuatan: metodeMuatVal,
-                    notePemuatan: noteMuatVal,
-                    treatmentNote: treatmentNoteVal,
-                    lokasiArsip: statRow && statRow.kategori_arsip ? `${statRow.kategori_arsip}: ${statRow.nomor_map_arsip || ''}` : 'Belum Ada Arsip',
-                    pickingList: plRows.map(p => {
-                        let stdPlt = getCartonPerPallet(p.sku);
-                        let pltVal = Math.floor(p.total_karton / stdPlt);
-                        let rchVal = p.total_karton % stdPlt;
-                        return {
-                            sku: p.sku,
-                            nama: masterStock[p.sku] ? masterStock[p.sku].name : (sapStockCache[p.sku]?.nama || '-'),
-                            prodate: p.prodate || '-',
-                            rak: p.batch_lokasi,
-                            palletSource: '-',
-                            pallet: pltVal,
-                            receh: rchVal,
-                            jumlah: p.total_karton
-                        };
-                    })
-                };
-            });
-            renderAll();
-            updateRunningTextSummary();
-        }
+        renderAll();
+        updateRunningTextSummary();
     } catch (e) {
-        console.error('Error loadDataFromCloud:', e);
+        console.error('Error loadDataFromCloud Firebase:', e);
     }
 }
 
@@ -996,55 +982,46 @@ document.addEventListener('click', function(e) {
 
 async function submitAntrian(e) {
     e.preventDefault();
-    let tanggalVal = document.getElementById('mTanggal').value;
-    let jenisVal = document.getElementById('mJenis').value;
-    let tipeVal = document.getElementById('mTipeLokal').value;
-    let containerVal = document.getElementById('mContainer').value;
+    const { addDoc, collection, setDoc, doc } = window.firebaseCollections;
+
     let noDocVal = document.getElementById('mNoDoc').value;
     let currentIsoTime = new Date().toISOString();
 
     let newTruckRecord = {
-        tanggal: tanggalVal,
+        tanggal: document.getElementById('mTanggal').value,
         nama_sopir: document.getElementById('mSopir').value,
         nama_ekspedisi: document.getElementById('mEkspedisi').value,
         no_polisi_truk: document.getElementById('mNoPol').value.toUpperCase(),
         no_doc: noDocVal,
-        jenis: jenisVal,
-        tipe_pengiriman: tipeVal || '-',
-        no_container: containerVal || '-',
+        jenis: document.getElementById('mJenis').value,
+        tipe_pengiriman: document.getElementById('mTipeLokal').value || '-',
+        no_container: document.getElementById('mContainer').value || '-',
         tujuan_pengiriman: document.getElementById('mTujuan').value.toUpperCase(),
         no_hp: document.getElementById('mNoHp').value || '-',
-        status_antrian: 'Antrian'
+        status_antrian: 'Antrian',
+        created_at: currentIsoTime
     };
 
-    let { error } = await _supabase.from('antrian_truk').insert([newTruckRecord]);
-
-    if (!error) {
-        let { data: existingLog } = await _supabase.from('status_truk_log').select('id').eq('no_doc', noDocVal);
-        let logData = {
+    try {
+        await addDoc(collection(window.db, 'antrian_truk'), newTruckRecord);
+        await setDoc(doc(window.db, 'status_truk_log', noDocVal), {
             no_doc: noDocVal,
             status_truk: 'Antrian',
             loading_dock: '-',
             time_in: currentIsoTime
-        };
-        if (existingLog && existingLog.length > 0) {
-            await _supabase.from('status_truk_log').update(logData).eq('no_doc', noDocVal);
-        } else {
-            await _supabase.from('status_truk_log').insert([logData]);
-        }
+        });
 
-        alert('Truk berhasil didaftarkan dan tersimpan online!');
+        alert('Truk berhasil didaftarkan dan tersimpan di Firebase!');
         closeModal('modalManual');
         e.target.reset();
         document.getElementById('groupTipePengiriman').style.display = 'none';
         document.getElementById('groupContainer').style.display = 'none';
         loadDataFromCloud();
-    } else {
-        console.error('Gagal menyimpan antrian ke Supabase:', error);
-        alert('Gagal menyimpan data ke database cloud: ' + error.message);
+    } catch (err) {
+        alert('Gagal menyimpan ke Database: ' + err.message);
     }
 }
-
+    
 let activePlTruckIdx = null;
 async function openPickingListModal(index) {
     activePlTruckIdx = index;
@@ -1939,10 +1916,8 @@ async function saveStatus() {
     }
     let selectedDock = document.getElementById('selectDock').value;
     
-    // Kumpulkan Semua Checker dari Form Dinamis
     let checkerRows = document.querySelectorAll('.checker-row');
     let checkerSummaryArr = [];
-    let firstCheckerName = '';
     let firstCheckerTeam = 'Team A';
     let firstCheckerShift = 'Shift 1';
 
@@ -1953,7 +1928,6 @@ async function saveStatus() {
         if (cName) {
             checkerSummaryArr.push(`${cName} (${cTeam} - ${cShift})`);
             if (rIdx === 0) {
-                firstCheckerName = cName;
                 firstCheckerTeam = cTeam;
                 firstCheckerShift = cShift;
             }
@@ -1961,51 +1935,26 @@ async function saveStatus() {
     });
 
     let combinedCheckerStr = checkerSummaryArr.join(' & ');
-
     let metodePemuatanVal = document.getElementById('selectMetodePemuatan').value;
     let notePemuatanVal = document.getElementById('inputNotePemuatan').value.trim();
     let treatmentNoteVal = document.getElementById('inputTreatmentNote').value.trim();
     let currentIsoTime = new Date().toISOString();
 
-    if (newSt === 'Proses Muat') {
-        let dockNum = parseInt(selectedDock.replace('Dock ', ''));
-        let styleInfo = getDockStyling(dockNum);
-        if (!styleInfo.usable) {
-            alert('Peringatan: Loading Dock tersebut tidak dapat digunakan!');
-            return;
-        }
-    }
-
-    if (newSt === 'Treatment' && !treatmentNoteVal) {
-        alert('Harap isi catatan / alasan treatment terlebih dahulu!');
-        return;
-    }
-
-    targetTruck.status = newSt;
-    targetTruck.dock = (newSt === 'Proses Muat') ? (selectedDock || 'Dock 01') : '-';
-    if (combinedCheckerStr) {
-        targetTruck.checkerName = combinedCheckerStr;
-        targetTruck.tim = firstCheckerTeam;
-        targetTruck.shift = firstCheckerShift;
-    }
-    targetTruck.metodePemuatan = metodePemuatanVal;
-    targetTruck.notePemuatan = notePemuatanVal;
-    targetTruck.treatmentNote = treatmentNoteVal;
-
     let logRecord = {
         no_doc: targetTruck.noDoc,
         status_truk: newSt,
-        loading_dock: targetTruck.dock,
+        loading_dock: (newSt === 'Proses Muat') ? (selectedDock || 'Dock 01') : '-',
         kategori_arsip: kat,
         nomor_map_arsip: detailArsip || '-',
         checker_name: combinedCheckerStr || '-',
-        checker_team: firstCheckerTeam || 'Team A',
-        checker_shift: firstCheckerShift || 'Shift 1',
+        checker_team: firstCheckerTeam,
+        checker_shift: firstCheckerShift,
         metode_pemuatan: metodePemuatanVal,
         note_pemuatan: notePemuatanVal || '-',
         treatment_note: treatmentNoteVal || '-'
     };
 
+    // PENCATATAN WAKTU LENGKAP SEPERTI KODINGAN ASLIMU
     if (newSt === 'Proses Muat' && targetTruck.timeStartLoading === '-') {
         logRecord.time_start_loading = currentIsoTime;
         targetTruck.timeStartLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -2025,23 +1974,20 @@ async function saveStatus() {
         targetTruck.timeOut = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
-    let { data: existingLog } = await _supabase.from('status_truk_log').select('id').eq('no_doc', targetTruck.noDoc);
+    const { updateDoc, doc, setDoc } = window.firebaseCollections;
+    try {
+        await updateDoc(doc(window.db, 'antrian_truk', targetTruck.firestoreId), { status_antrian: newSt });
+        await setDoc(doc(window.db, 'status_truk_log', targetTruck.noDoc), logRecord, { merge: true });
 
-    let error;
-    if (existingLog && existingLog.length > 0) {
-        let res = await _supabase.from('status_truk_log').update(logRecord).eq('no_doc', targetTruck.noDoc);
-        error = res.error;
-    } else {
-        logRecord.time_in = currentIsoTime;
-        let res = await _supabase.from('status_truk_log').insert([logRecord]);
-        error = res.error;
+        targetTruck.status = newSt;
+        targetTruck.dock = logRecord.loading_dock;
+        closeModal('modalStatus');
+        loadDataFromCloud();
+        alert('Status dan pencatatan waktu berhasil diperbarui!');
+    } catch (err) {
+        alert('Gagal memperbarui status: ' + err.message);
     }
-
-    if (error) {
-        alert('Gagal menyimpan status truk ke database: ' + error.message);
-        return;
-    }
-
+}
     await _supabase.from('antrian_truk').update({ status_antrian: newSt }).eq('id', targetTruck.dbId);
 
     targetTruck.lokasiArsip = finalArsipStr;

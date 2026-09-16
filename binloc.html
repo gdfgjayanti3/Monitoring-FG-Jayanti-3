@@ -2041,76 +2041,94 @@
             renderSapSessionsList();
         }
 
-        async function processSapPaste() {
-            const sessionDate = document.getElementById('sapSessionDate').value;
-            if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
+async function processSapPaste() {
+    const sessionDate = document.getElementById('sapSessionDate').value;
+    if(!sessionDate) { alert('Pilih tanggal sesi SAP terlebih dahulu!'); return; }
 
-            const text = document.getElementById('sapPasteArea').value.trim();
-            if(!text) { alert('Data SAP masih kosong!'); return; }
-            
-            let sapMapAccumulator = {}; 
-            let sessionNamaBarang = {};
-            
-            let lines = text.split('\n');
-            lines.forEach((line) => {
-                let cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
-                let fullLine = line.trim();
-                if (!fullLine || fullLine.toUpperCase().includes("TOTAL") || fullLine.toUpperCase().includes("PLANT")) {
-                    return;
-                }
+    const text = document.getElementById('sapPasteArea').value.trim();
+    if(!text) { alert('Data SAP masih kosong!'); return; }
+    
+    let sapMapAccumulator = {}; 
+    let sessionNamaBarang = {};
+    
+    let lines = text.split('\n');
+    let successCount = 0;
 
-                let skuColIndex = -1;
-                for (let i = 0; i < cols.length; i++) {
-                    if (/^\d{5,7}$/.test(cols[i])) {
-                        skuColIndex = i;
-                        break;
-                    }
-                }
+    lines.forEach((line) => {
+        let fullLine = line.trim();
+        if (!fullLine || fullLine.toUpperCase().includes("TOTAL") || fullLine.toUpperCase().includes("PLANT") || fullLine.toUpperCase().includes("MATERIAL")) {
+            return;
+        }
 
-                if (skuColIndex !== -1) {
-                    let skuVal = cols[skuColIndex];
-                    let namaBarang = cols[skuColIndex + 1] || masterStockData[skuVal]?.name || '-';
-                    let rawEndingBalance = cols[cols.length - 1] || "0";
-                    let qtyVal = parseFloat(rawEndingBalance.replace(/\./g, '').replace(',', '.')) || 0;
+        let cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+        if (cols.length < 2) return;
 
-                    if (skuVal && !isNaN(qtyVal)) {
-                        sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
-                        sessionNamaBarang[skuVal] = namaBarang;
-                    }
-                }
-            });
+        let skuVal = "";
+        let namaBarang = "";
+        let qtyVal = 0;
 
-            let sessionItems = {};
-            for (let sku in sapMapAccumulator) {
-                sessionItems[sku] = {
-                    plant: '-',
-                    nama: sessionNamaBarang[sku] || masterStockData[sku]?.name || '-',
-                    karton: sapMapAccumulator[sku]
-                };
-            }
-
-            if(Object.keys(sessionItems).length === 0) {
-                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan format copy-paste dari SAP sudah benar!');
-                return;
-            }
-
-            sapSessionsData[sessionDate] = sessionItems;
-            document.getElementById('sapPasteArea').value = '';
-
-            const db = window._db;
-            const { collection, addDoc } = window._fsHelpers;
-            try {
-                await addDoc(collection(db, 'stock_opname_sap'), { 
-                    tanggal_sesi: sessionDate,
-                    data_sap: { tanggal_sesi: sessionDate, items: sessionItems } 
-                });
-                alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
-                renderSapSessionsList();
-            } catch (error) {
-                alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
+        // Cari kolom yang berisi kode SKU (format angka 5 sampai 7 digit)
+        let skuColIndex = -1;
+        for (let i = 0; i < cols.length; i++) {
+            let cleanCol = cols[i].replace(/['"]/g, '');
+            if (/^\d{5,7}$/.test(cleanCol)) {
+                skuColIndex = i;
+                break;
             }
         }
 
+        if (skuColIndex !== -1) {
+            skuVal = cols[skuColIndex].replace(/['"]/g, '');
+            // Ambil nama barang dari kolom setelah SKU
+            namaBarang = cols[skuColIndex + 1] || '-';
+            
+            // Ambil angka ending balance dari kolom paling ujung kanan yang berupa angka
+            for (let j = cols.length - 1; j > skuColIndex; j--) {
+                let cleanVal = cols[j].replace(/\./g, '').replace(',', '.');
+                if (!isNaN(cleanVal) && cleanVal !== '' && cols[j] !== 'CAR' && cols[j] !== 'PCN') {
+                    qtyVal = parseFloat(cleanVal) || 0;
+                    break;
+                }
+            }
+
+            if (skuVal && !isNaN(qtyVal)) {
+                sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
+                sessionNamaBarang[skuVal] = namaBarang;
+                successCount++;
+            }
+        }
+    });
+
+    let sessionItems = {};
+    for (let sku in sapMapAccumulator) {
+        sessionItems[sku] = {
+            plant: '-',
+            nama: sessionNamaBarang[sku] || masterStockData[sku]?.name || '-',
+            karton: sapMapAccumulator[sku]
+        };
+    }
+
+    if(Object.keys(sessionItems).length === 0) {
+        alert('Tidak ada data SKU yang berhasil dibaca. Pastikan Anda meng-copy langsung dari tabel Excel SAP!');
+        return;
+    }
+
+    sapSessionsData[sessionDate] = sessionItems;
+    document.getElementById('sapPasteArea').value = '';
+
+    const db = window._db;
+    const { collection, addDoc } = window._fsHelpers;
+    try {
+        await addDoc(collection(db, 'stock_opname_sap'), { 
+            tanggal_sesi: sessionDate,
+            data_sap: { tanggal_sesi: sessionDate, items: sessionItems } 
+        });
+        alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
+        renderSapSessionsList();
+    } catch (error) {
+        alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
+    }
+}
         async function deleteSapSession(dateStr) {
             if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
                 delete sapSessionsData[dateStr];

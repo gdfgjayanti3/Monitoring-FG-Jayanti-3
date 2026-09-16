@@ -1150,12 +1150,13 @@
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
-            apiKey: "YOUR_FIREBASE_API_KEY",
-            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-            projectId: "YOUR_PROJECT_ID",
-            storageBucket: "YOUR_PROJECT_ID.appspot.com",
-            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-            appId: "YOUR_APP_ID"
+            apiKey: "AIzaSyAlxd0ylL1KZniYAxvoSDL8H_M7g8b-naw",
+            authDomain: "portal-whmayora-jayanti3.firebaseapp.com",
+            projectId: "portal-whmayora-jayanti3",
+            storageBucket: "portal-whmayora-jayanti3.appspot.com",
+            messagingSenderId: "805832777917",
+            appId: "1:805832777917:web:5ba4a61448d97189d4d7d4",
+            measurementId: "G-W26RQWSTMR"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -1163,7 +1164,6 @@
         window._db = db;
         window._fsHelpers = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where };
         
-        // Panggil inisialisasi data setelah Firebase siap
         if (typeof initAppFromFirebase === 'function') {
             initAppFromFirebase();
         }

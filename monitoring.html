@@ -1477,6 +1477,51 @@
             }
         }
 
+        // FUNGSI PROCESS PASTE DATA MASTER SKU YANG DITAMBAHKAN
+        async function processPasteData() {
+            let textarea = document.getElementById('pasteArea');
+            if (!textarea) return;
+            let text = textarea.value.trim();
+            if (!text) {
+                alert('Area teks masih kosong!');
+                return;
+            }
+
+            let lines = text.split('\n');
+            let count = 0;
+            const { doc, setDoc } = window.firebaseCollections;
+
+            for (let line of lines) {
+                let cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+                if (cols.length >= 2) {
+                    let sku = cols[0];
+                    let nama = cols[1];
+                    let carton = parseFloat(cols[4]) || 70;
+
+                    if (sku) {
+                        try {
+                            await setDoc(doc(window.db, 'master_sku', sku), {
+                                sku: sku,
+                                nama_produk: nama,
+                                carton_per_pallet: carton
+                            });
+                            count++;
+                        } catch (err) {
+                            console.error("Gagal menyimpan SKU:", sku, err);
+                        }
+                    }
+                }
+            }
+
+            if (count > 0) {
+                alert(`Berhasil menyimpan ${count} data Master SKU ke database!`);
+                textarea.value = '';
+                fetchAllDataFromSupabase();
+            } else {
+                alert('Gagal membaca format teks. Pastikan data yang di-paste sesuai dengan format tabel Master SKU.');
+            }
+        }
+
         function switchDashboardSubTab(subTab) {
             let overviewContent = document.getElementById('dashSubContent-overview');
             let matriksContent = document.getElementById('dashSubContent-matriks');

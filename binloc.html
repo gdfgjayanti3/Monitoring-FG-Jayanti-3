@@ -53,8 +53,6 @@
         .table-custom-responsive th { font-size: 10px !important; padding: 6px 4px !important; white-space: nowrap; }
         .table-custom-responsive td { padding: 6px 4px !important; vertical-align: middle; }
     </style>
-    <!-- Supabase JS SDK CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- SheetJS for Excel Export -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -1145,6 +1143,32 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Firebase SDK v10 (Modular CDN) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "YOUR_FIREBASE_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        window._db = db;
+        window._fsHelpers = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where };
+        
+        // Panggil inisialisasi data setelah Firebase siap
+        if (typeof initAppFromFirebase === 'function') {
+            initAppFromFirebase();
+        }
+    </script>
+
     <script>
         let sessionUser = localStorage.getItem('loggedUser');
         if (!sessionUser) {
@@ -1160,7 +1184,6 @@
                 if (namaEl) namaEl.innerText = userObj.nama_lengkap || userObj.username;
                 if (roleEl) roleEl.innerText = userObj.role;
             }
-            loadPlottingDataFromCloud();
         });
 
         function prosesLogout() {
@@ -1169,11 +1192,6 @@
                 window.location.href = 'login.html';
             }
         }
-
-        const SUPABASE_URL = 'https://dmmybcscwxvxztcgjnbe.supabase.co';
-        const SUPABASE_KEY = 'sb_publishable_9sAzy4cjko7xheXLmDButQ_gDOEsxfN'; 
-        const { createClient } = supabase;
-        const _supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
         function updateClock() {
             const now = new Date();
@@ -1207,55 +1225,63 @@
             return 0;
         }
 
-        async function loadDataFromCloud() {
-            try {
-                let { data: skuMaster, error: errSku } = await _supabase.from('master_sku').select('*');
-                if (!errSku && skuMaster) {
-                    masterStockData = {};
-                    skuMaster.forEach(item => {
-                        let skuKey = item.sku;
-                        let namaVal = item.nama_produk;
-                        let cartonVal = item.carton_per_pallet;
-                        if (skuKey) {
-                            masterStockData[skuKey] = {
-                                sku: skuKey,
-                                name: namaVal || '-',
-                                cartonPerPallet: parseFloat(cartonVal) || 70,
-                                kodefikasi: item.kodefikasi || '-'
-                            };
-                        }
-                    });
-                }
+        async function initAppFromFirebase() {
+            await loadDataFromCloud();
+        }
 
-                let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
-                let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
+        async function loadDataFromCloud() {
+            if (!window._db) return;
+            const db = window._db;
+            const { collection, getDocs } = window._fsHelpers;
+
+            try {
+                let skuSnapshot = await getDocs(collection(db, 'master_sku'));
+                masterStockData = {};
+                skuSnapshot.forEach(docSnap => {
+                    let item = docSnap.data();
+                    let skuKey = item.sku;
+                    let namaVal = item.nama_produk;
+                    let cartonVal = item.carton_per_pallet;
+                    if (skuKey) {
+                        masterStockData[skuKey] = {
+                            sku: skuKey,
+                            name: namaVal || '-',
+                            cartonPerPallet: parseFloat(cartonVal) || 70,
+                            kodefikasi: item.kodefikasi || '-'
+                        };
+                    }
+                });
+
+                let stokLokalSnap = await getDocs(collection(db, 'stok_lokal'));
+                let stokEksporSnap = await getDocs(collection(db, 'stok_ekspor'));
                 
                 binData = [];
-                if (stokLokal) stokLokal.forEach(i => binData.push({ ...i, category: 'Lokal' }));
-                if (stokEkspor) stokEkspor.forEach(i => binData.push({ ...i, category: 'Ekspor' }));
+                stokLokalSnap.forEach(docSnap => binData.push({ id: docSnap.id, ...docSnap.data(), category: 'Lokal' }));
+                stokEksporSnap.forEach(docSnap => binData.push({ id: docSnap.id, ...docSnap.data(), category: 'Ekspor' }));
 
                 sapSessionsData = {};
                 sapNamaBarangMap = {};
 
-                let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
-                if(sapRows && sapRows.length > 0) {
-                    sapRows.forEach(row => {
-                        if(row.data_sap && row.data_sap.tanggal_sesi && row.data_sap.items) {
-                            sapSessionsData[row.data_sap.tanggal_sesi] = row.data_sap.items;
-                        } else if(row.data_sap && typeof row.data_sap === 'object') {
-                            if(!row.data_sap['Default_Session'] && !row.data_sap.tanggal_sesi) {
-                                sapSessionsData = { ...sapSessionsData, ...row.data_sap };
-                            } else if(row.data_sap['Default_Session']) {
-                                sapSessionsData['Default_Session'] = row.data_sap['Default_Session'];
-                            }
+                let sapSnap = await getDocs(collection(db, 'stock_opname_sap'));
+                sapSnap.forEach(docSnap => {
+                    let row = docSnap.data();
+                    if(row.data_sap && row.data_sap.tanggal_sesi && row.data_sap.items) {
+                        sapSessionsData[row.data_sap.tanggal_sesi] = row.data_sap.items;
+                    } else if(row.data_sap && typeof row.data_sap === 'object') {
+                        if(!row.data_sap['Default_Session'] && !row.data_sap.tanggal_sesi) {
+                            sapSessionsData = { ...sapSessionsData, ...row.data_sap };
+                        } else if(row.data_sap['Default_Session']) {
+                            sapSessionsData['Default_Session'] = row.data_sap['Default_Session'];
                         }
-                    });
-                }
+                    }
+                });
 
-                let { data: qc } = await _supabase.from('karantina_qc').select('*');
-                if(qc) {
-                    qcHistoryData = qc.map(q => ({
-                        id: q.id,
+                let qcSnap = await getDocs(collection(db, 'karantina_qc'));
+                qcHistoryData = [];
+                qcSnap.forEach(docSnap => {
+                    let q = docSnap.data();
+                    qcHistoryData.push({
+                        id: docSnap.id,
                         status: q.status_aktif || 'HOLD',
                         plantline: q.plant_line,
                         prodate: q.tanggal_prodate,
@@ -1267,33 +1293,33 @@
                         karton: q.jumlah_karton,
                         reason: q.alasan_hold,
                         releaseNote: q.tindak_lanjut || '-'
-                    }));
-                }
+                    });
+                });
 
-                let { data: relok } = await _supabase.from('relokasi__barang').select('*');
-                if(relok) {
-                    relokasiLogData = relok.map(r => ({
-                        id: r.id,
+                let relokSnap = await getDocs(collection(db, 'relokasi__barang'));
+                relokasiLogData = [];
+                relokSnap.forEach(docSnap => {
+                    let r = docSnap.data();
+                    relokasiLogData.push({
+                        id: docSnap.id,
                         waktu: r.tanggal_relokasi,
                         petugas: r.nama_petugas,
                         sku: r.sku,
                         asal: r.lokasi_asal,
                         tujuan: `${r.tujuan_gudang} (${r.blok_tujuan} - ${r.lorong_tujuan})`
-                    }));
-                }
+                    });
+                });
 
-                loadPlottingDataFromCloud();
+                await loadPlottingDataFromCloud();
                 renderBinMap();
                 renderActiveHoldTable();
                 renderReportTable();
                 renderSapSessionsList();
                 renderOpnameSessionsList();
             } catch (e) {
-                console.error('Gagal mengambil data dari cloud:', e);
+                console.error('Gagal mengambil data dari Firebase:', e);
             }
         }
-
-        loadDataFromCloud();
 
         function switchQcMode(mode) {
             let btnLive = document.getElementById('btnModeLive');
@@ -1329,11 +1355,19 @@
         }
 
         async function loadPlottingDataFromCloud() {
-            let { data, error } = await _supabase.from('master_plotting_opname').select('*');
-            if (!error && data) {
-                globalPlottingData = data;
+            if (!window._db) return;
+            const db = window._db;
+            const { collection, getDocs } = window._fsHelpers;
+            try {
+                let snap = await getDocs(collection(db, 'master_plotting_opname'));
+                globalPlottingData = [];
+                snap.forEach(docSnap => {
+                    globalPlottingData.push({ id: docSnap.id, ...docSnap.data() });
+                });
                 renderPlottingTable();
                 updateManpowerDropdownOptions();
+            } catch(e) {
+                console.error('Gagal memuat plotting:', e);
             }
         }
 
@@ -1665,13 +1699,15 @@
             let manpower = document.getElementById('editPlotName').value.trim().toUpperCase();
             let skuFull = document.getElementById('editPlotSku').value.trim();
 
-            let { error } = await _supabase.from('master_plotting_opname').update({ nama_manpower: manpower, sku: skuFull }).eq('id', id);
-            if(error) {
-                alert('Gagal mengupdate plotting: ' + error.message);
-            } else {
+            const db = window._db;
+            const { doc, updateDoc } = window._fsHelpers;
+            try {
+                await updateDoc(doc(db, 'master_plotting_opname', id), { nama_manpower: manpower, sku: skuFull });
                 alert('Berhasil memperbarui data plotting!');
                 closeModal('modalEditPlotting');
                 loadDataFromCloud();
+            } catch(error) {
+                alert('Gagal mengupdate plotting: ' + error.message);
             }
         }
 
@@ -1685,21 +1721,28 @@
                 return;
             }
 
-            let { error } = await _supabase.from('master_plotting_opname').insert([{ nama_manpower: manpower, sku: skuFull }]);
-            if(error) {
-                alert('Gagal menyimpan plotting ke database: ' + error.message);
-            } else {
+            const db = window._db;
+            const { collection, addDoc } = window._fsHelpers;
+            try {
+                await addDoc(collection(db, 'master_plotting_opname'), { nama_manpower: manpower, sku: skuFull });
                 alert('Berhasil menambahkan penugasan SKU untuk ' + manpower);
                 document.getElementById('plotSkuInput').value = '';
                 loadDataFromCloud();
+            } catch(error) {
+                alert('Gagal menyimpan plotting ke database: ' + error.message);
             }
         }
 
         async function deletePlottingItem(id) {
             if(confirm('Hapus penugasan SKU ini dari manpower?')) {
-                let { error } = await _supabase.from('master_plotting_opname').delete().eq('id', id);
-                if(error) alert('Gagal menghapus data!');
-                else loadDataFromCloud();
+                const db = window._db;
+                const { doc, deleteDoc } = window._fsHelpers;
+                try {
+                    await deleteDoc(doc(db, 'master_plotting_opname', id));
+                    loadDataFromCloud();
+                } catch(error) {
+                    alert('Gagal menghapus data!');
+                }
             }
         }
 
@@ -2054,29 +2097,32 @@
             sapSessionsData[sessionDate] = sessionItems;
             document.getElementById('sapPasteArea').value = '';
 
-            const { error } = await _supabase.from('stock_opname_sap').insert([{ 
-                id: Date.now(),
-                data_sap: { tanggal_sesi: sessionDate, items: sessionItems } 
-            }]);
-
-            if (error) {
-                alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
-            } else {
+            const db = window._db;
+            const { collection, addDoc } = window._fsHelpers;
+            try {
+                await addDoc(collection(db, 'stock_opname_sap'), { 
+                    tanggal_sesi: sessionDate,
+                    data_sap: { tanggal_sesi: sessionDate, items: sessionItems } 
+                });
                 alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
                 renderSapSessionsList();
+            } catch (error) {
+                alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
             }
         }
 
         async function deleteSapSession(dateStr) {
             if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
                 delete sapSessionsData[dateStr];
-                let { data: sapRows } = await _supabase.from('stock_opname_sap').select('*');
-                if(sapRows) {
-                    for(let r of sapRows) {
-                        if(r.data_sap && r.data_sap.tanggal_sesi === dateStr) {
-                            await _supabase.from('stock_opname_sap').delete().eq('id', r.id);
-                        }
-                    }
+                const db = window._db;
+                const { collection, getDocs, deleteDoc, doc, query, where } = window._fsHelpers;
+                try {
+                    let qSnap = await getDocs(query(collection(db, 'stock_opname_sap'), where('tanggal_sesi', '==', dateStr)));
+                    qSnap.forEach(async (dSnap) => {
+                        await deleteDoc(doc(db, 'stock_opname_sap', dSnap.id));
+                    });
+                } catch(e) {
+                    console.error(e);
                 }
                 renderSapSessionsList();
             }
@@ -2085,7 +2131,16 @@
         async function deleteAllSapSessions() {
             if(confirm('Yakin ingin menghapus seluruh sesi SAP?')) {
                 sapSessionsData = {};
-                await _supabase.from('stock_opname_sap').delete().neq('id', 0);
+                const db = window._db;
+                const { collection, getDocs, deleteDoc, doc } = window._fsHelpers;
+                try {
+                    let snap = await getDocs(collection(db, 'stock_opname_sap'));
+                    snap.forEach(async (dSnap) => {
+                        await deleteDoc(doc(db, 'stock_opname_sap', dSnap.id));
+                    });
+                } catch(e) {
+                    console.error(e);
+                }
                 renderSapSessionsList();
             }
         }
@@ -2253,30 +2308,49 @@
             let karton = parseFloat(document.getElementById('editOpKarton').value) || 0;
 
             if(id && id !== 'undefined' && id !== 'null') {
-                let { error } = await _supabase.from('stok_lokal').update({ lokasi: lokasi, karton: karton }).eq('id', id);
-                if(error) alert('Gagal memperbarui data: ' + error.message);
-                else {
+                const db = window._db;
+                const { doc, updateDoc } = window._fsHelpers;
+                try {
+                    await updateDoc(doc(db, 'stok_lokal', id), { lokasi: lokasi, karton: karton });
                     alert('Berhasil mengupdate hasil opname!');
                     closeModal('modalEditOpname');
                     loadDataFromCloud();
                     setTimeout(() => openOpnameDetailModal(activeOpnameDate), 300);
+                } catch(error) {
+                    alert('Gagal memperbarui data: ' + error.message);
                 }
             }
         }
 
         async function deleteOpnameSessionDate(dateStr) {
             if(confirm(`Yakin ingin menghapus seluruh hasil opname tanggal ${dateStr}?`)) {
-                let { error } = await _supabase.from('stok_lokal').delete().eq('gudang', 'Stock Opname').eq('tanggal_masuk', dateStr);
-                if(error) alert('Gagal menghapus data!');
-                else loadDataFromCloud();
+                const db = window._db;
+                const { collection, getDocs, deleteDoc, doc, query, where } = window._fsHelpers;
+                try {
+                    let qSnap = await getDocs(query(collection(db, 'stok_lokal'), where('gudang', '==', 'Stock Opname'), where('tanggal_masuk', '==', dateStr)));
+                    qSnap.forEach(async (dSnap) => {
+                        await deleteDoc(doc(db, 'stok_lokal', dSnap.id));
+                    });
+                    loadDataFromCloud();
+                } catch(e) {
+                    alert('Gagal menghapus data!');
+                }
             }
         }
 
         async function deleteAllOpnameLogs() {
             if(confirm('Yakin ingin menghapus seluruh log riwayat stock opname?')) {
-                let { error } = await _supabase.from('stok_lokal').delete().eq('gudang', 'Stock Opname');
-                if(error) alert('Gagal menghapus data!');
-                else loadDataFromCloud();
+                const db = window._db;
+                const { collection, getDocs, deleteDoc, doc, query, where } = window._fsHelpers;
+                try {
+                    let qSnap = await getDocs(query(collection(db, 'stok_lokal'), where('gudang', '==', 'Stock Opname')));
+                    qSnap.forEach(async (dSnap) => {
+                        await deleteDoc(doc(db, 'stok_lokal', dSnap.id));
+                    });
+                    loadDataFromCloud();
+                } catch(e) {
+                    alert('Gagal menghapus data!');
+                }
             }
         }
 
@@ -2450,21 +2524,28 @@
                 tindak_lanjut: '-'
             };
 
-            let { error } = await _supabase.from('karantina_qc').insert([qcRecord]);
-            if (error) {
-                alert('Gagal menyimpan QC: ' + error.message);
-            } else {
+            const db = window._db;
+            const { collection, addDoc } = window._fsHelpers;
+            try {
+                await addDoc(collection(db, 'karantina_qc'), qcRecord);
                 alert('Data Karantina QC berhasil disimpan!');
                 e.target.reset();
                 updateQcPlantLineText();
                 loadDataFromCloud();
+            } catch (error) {
+                alert('Gagal menyimpan QC: ' + error.message);
             }
         }
 
         async function updateQcStatus(id, newStatus) {
-            let { error } = await _supabase.from('karantina_qc').update({ status_aktif: newStatus }).eq('id', id);
-            if (error) alert('Gagal update status!');
-            else loadDataFromCloud();
+            const db = window._db;
+            const { doc, updateDoc } = window._fsHelpers;
+            try {
+                await updateDoc(doc(db, 'karantina_qc', id), { status_aktif: newStatus });
+                loadDataFromCloud();
+            } catch (error) {
+                alert('Gagal update status!');
+            }
         }
 
         function openReleaseCustomModal(id) {
@@ -2478,13 +2559,15 @@
             let id = document.getElementById('releaseQcId').value;
             let note = document.getElementById('releaseCustomNote').value.trim();
 
-            let { error } = await _supabase.from('karantina_qc').update({ status_aktif: 'RELEASED', tindak_lanjut: note }).eq('id', id);
-            if(error) {
-                alert('Gagal menyimpan release: ' + error.message);
-            } else {
+            const db = window._db;
+            const { doc, updateDoc } = window._fsHelpers;
+            try {
+                await updateDoc(doc(db, 'karantina_qc', id), { status_aktif: 'RELEASED', tindak_lanjut: note });
                 alert('Berhasil merilis sebagian/custom karantina QC!');
                 closeModal('modalReleaseCustom');
                 loadDataFromCloud();
+            } catch(error) {
+                alert('Gagal menyimpan release: ' + error.message);
             }
         }
 
@@ -2502,19 +2585,28 @@
             let reason = document.getElementById('editQcReason').value.trim();
             let karton = parseFloat(document.getElementById('editQcKarton').value) || 0;
 
-            let { error } = await _supabase.from('karantina_qc').update({ alasan_hold: reason, jumlah_karton: karton }).eq('id', id);
-            if(error) alert('Gagal update QC: ' + error.message);
-            else {
+            const db = window._db;
+            const { doc, updateDoc } = window._fsHelpers;
+            try {
+                await updateDoc(doc(db, 'karantina_qc', id), { alasan_hold: reason, jumlah_karton: karton });
                 alert('Berhasil memperbarui data karantina QC!');
                 closeModal('modalEditQc');
                 loadDataFromCloud();
+            } catch(error) {
+                alert('Gagal update QC: ' + error.message);
             }
         }
 
         async function deleteQcItem(id) {
             if(confirm('Hapus data karantina ini?')) {
-                await _supabase.from('karantina_qc').delete().eq('id', id);
-                loadDataFromCloud();
+                const db = window._db;
+                const { doc, deleteDoc } = window._fsHelpers;
+                try {
+                    await deleteDoc(doc(db, 'karantina_qc', id));
+                    loadDataFromCloud();
+                } catch(e) {
+                    console.error(e);
+                }
             }
         }
 
@@ -2568,50 +2660,63 @@
             let rowTrs = document.getElementById('penerimaanRowsBody').children;
             if(rowTrs.length === 0) { alert('Harap tambahkan minimal 1 baris lokasi rak!'); return; }
 
-            for(let tr of rowTrs) {
-                let idx = tr.id.split('_')[1];
-                let blockVal = document.getElementById('pBlock_' + idx).value;
-                let rowVal = document.getElementById('pRowSelect_' + idx).value;
-                let krtVal = parseFloat(document.getElementById('pCarton_' + idx).value) || 0;
+            const db = window._db;
+            const { collection, addDoc } = window._fsHelpers;
 
-                let newItem = {
-                    sku: skuInputFull,
-                    tujuan_gudang: gudang,
-                    plant: plant,
-                    line_produksi: line,
-                    tanggal_masuk: formattedDateStr,
-                    shift_kerja: shift,
-                    kodefikasi: kodefikasiVal,
-                    pallet: palletRange,
-                    karton: krtVal,
-                    lokasi: `${blockVal} - ${rowVal}`,
-                    prodate: category === 'Ekspor' ? document.getElementById('pProdate').value : formattedDateStr,
-                    exp_date: category === 'Ekspor' ? document.getElementById('pExpDate').value : '-',
-                    nomor_qt: category === 'Ekspor' ? document.getElementById('pQt').value : '-',
-                    buyer_negara: category === 'Ekspor' ? document.getElementById('pBuyerText').value : 'Lokal'
-                };
+            try {
+                for(let tr of rowTrs) {
+                    let idx = tr.id.split('_')[1];
+                    let blockVal = document.getElementById('pBlock_' + idx).value;
+                    let rowVal = document.getElementById('pRowSelect_' + idx).value;
+                    let krtVal = parseFloat(document.getElementById('pCarton_' + idx).value) || 0;
 
-                let { error } = await _supabase.from(targetTable).insert([newItem]);
-                if (error) { alert('Gagal menyimpan penerimaan!'); return; }
+                    let newItem = {
+                        sku: skuInputFull,
+                        tujuan_gudang: gudang,
+                        plant: plant,
+                        line_produksi: line,
+                        tanggal_masuk: formattedDateStr,
+                        shift_kerja: shift,
+                        kodefikasi: kodefikasiVal,
+                        pallet: palletRange,
+                        karton: krtVal,
+                        lokasi: `${blockVal} - ${rowVal}`,
+                        prodate: category === 'Ekspor' ? document.getElementById('pProdate').value : formattedDateStr,
+                        exp_date: category === 'Ekspor' ? document.getElementById('pExpDate').value : '-',
+                        nomor_qt: category === 'Ekspor' ? document.getElementById('pQt').value : '-',
+                        buyer_negara: category === 'Ekspor' ? document.getElementById('pBuyerText').value : 'Lokal'
+                    };
+
+                    await addDoc(collection(db, targetTable), newItem);
+                }
+
+                alert('Penerimaan barang berhasil disimpan!');
+                closeModal('modalPenerimaan');
+                e.target.reset();
+                loadDataFromCloud();
+            } catch (error) {
+                alert('Gagal menyimpan penerimaan: ' + error.message);
             }
-
-            alert('Penerimaan barang berhasil disimpan!');
-            closeModal('modalPenerimaan');
-            e.target.reset();
-            loadDataFromCloud();
         }
 
         async function deleteReportItem(id, isEkspor, skuVal = '', tglVal = '', shiftVal = '') {
             if(confirm('Hapus log ini dari database?')) {
                 let tableName = isEkspor ? 'stok_ekspor' : 'stok_lokal';
-                if(id && id !== 'undefined' && id !== 'null') {
-                    await _supabase.from(tableName).delete().eq('id', id);
-                } else {
-                    let query = _supabase.from(tableName).delete().eq('gudang', 'Stock Opname').eq('sku', skuVal).eq('tanggal_masuk', tglVal);
-                    if(shiftVal) query = query.eq('shift_kerja', shiftVal);
-                    await query;
+                const db = window._db;
+                const { doc, deleteDoc, collection, getDocs, query, where } = window._fsHelpers;
+                try {
+                    if(id && id !== 'undefined' && id !== 'null') {
+                        await deleteDoc(doc(db, tableName, id));
+                    } else {
+                        let qSnap = await getDocs(query(collection(db, tableName), where('gudang', '==', 'Stock Opname'), where('sku', '==', skuVal), where('tanggal_masuk', '==', tglVal)));
+                        qSnap.forEach(async (dSnap) => {
+                            await deleteDoc(doc(db, tableName, dSnap.id));
+                        });
+                    }
+                    loadDataFromCloud();
+                } catch(e) {
+                    alert('Gagal menghapus data!');
                 }
-                loadDataFromCloud();
             }
         }
 
@@ -2634,13 +2739,15 @@
             let karton = parseFloat(document.getElementById('editRepKarton').value) || 0;
 
             let tableName = category === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
-            let { error } = await _supabase.from(tableName).update({ lokasi: lokasi, pallet: pallet, karton: karton }).eq('id', id);
-            
-            if(error) alert('Gagal mengupdate data: ' + error.message);
-            else {
+            const db = window._db;
+            const { doc, updateDoc } = window._fsHelpers;
+            try {
+                await updateDoc(doc(db, tableName, id), { lokasi: lokasi, pallet: pallet, karton: karton });
                 alert('Berhasil memperbarui data penerimaan!');
                 closeModal('modalEditReport');
                 loadDataFromCloud();
+            } catch(error) {
+                alert('Gagal mengupdate data: ' + error.message);
             }
         }
 
@@ -2742,32 +2849,38 @@
             if(rows.length === 0) { alert('Tabel opname kosong!'); return; }
 
             let manpowerName = document.getElementById('opStockKeeper').value.trim();
+            const db = window._db;
+            const { collection, addDoc } = window._fsHelpers;
 
-            for(let i = 0; i < rows.length; i++) {
-                let idx = rows[i].id.split('_')[1];
-                let blockVal = document.getElementById('opRackBlock_' + idx).value;
-                let rowVal = document.getElementById('opRow_' + idx).value;
-                let skuVal = document.getElementById('opSku_' + idx).value;
-                let cartonVal = parseFloat(document.getElementById('opCarton_' + idx).value) || 0;
+            try {
+                for(let i = 0; i < rows.length; i++) {
+                    let idx = rows[i].id.split('_')[1];
+                    let blockVal = document.getElementById('opRackBlock_' + idx).value;
+                    let rowVal = document.getElementById('opRow_' + idx).value;
+                    let skuVal = document.getElementById('opSku_' + idx).value;
+                    let cartonVal = parseFloat(document.getElementById('opCarton_' + idx).value) || 0;
 
-                let locString = blockVal + (rowVal ? ' - ' + rowVal : '');
+                    let locString = blockVal + (rowVal ? ' - ' + rowVal : '');
 
-                let newItem = {
-                    gudang: 'Stock Opname',
-                    tujuan_gudang: document.getElementById('opDestWarehouse').value,
-                    tanggal_masuk: document.getElementById('opGlobalDate').value,
-                    shift_kerja: manpowerName,
-                    sku: skuVal,
-                    lokasi: locString,
-                    pallet: 'OPNAME-AUDIT',
-                    karton: cartonVal
-                };
-                await _supabase.from('stok_lokal').insert([newItem]);
+                    let newItem = {
+                        gudang: 'Stock Opname',
+                        tujuan_gudang: document.getElementById('opDestWarehouse').value,
+                        tanggal_masuk: document.getElementById('opGlobalDate').value,
+                        shift_kerja: manpowerName,
+                        sku: skuVal,
+                        lokasi: locString,
+                        pallet: 'OPNAME-AUDIT',
+                        karton: cartonVal
+                    };
+                    await addDoc(collection(db, 'stok_lokal'), newItem);
+                }
+
+                alert('Hasil Stock Opname berhasil disimpan!');
+                clearOpnameRows();
+                loadDataFromCloud();
+            } catch(error) {
+                alert('Gagal menyimpan opname: ' + error.message);
             }
-
-            alert('Hasil Stock Opname berhasil disimpan!');
-            clearOpnameRows();
-            loadDataFromCloud();
         }
 
         function executeSearch() {
@@ -2883,15 +2996,22 @@
                 lorong_tujuan: document.getElementById('relocDestRow').value
             };
 
-            await _supabase.from('relokasi__barang').insert([logItem]);
-            let targetTable = item.category === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
-            if(item.id) {
-                await _supabase.from(targetTable).update({ lokasi: `${logItem.blok_tujuan} - ${logItem.lorong_tujuan}`, tujuan_gudang: logItem.tujuan_gudang }).eq('id', item.id);
-            }
+            const db = window._db;
+            const { collection, addDoc, doc, updateDoc } = window._fsHelpers;
 
-            alert('Berhasil memindahkan barang!');
-            closeModal('modalRelokasiForm');
-            loadDataFromCloud();
+            try {
+                await addDoc(collection(db, 'relokasi__barang'), logItem);
+                let targetTable = item.category === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
+                if(item.id) {
+                    await updateDoc(doc(db, targetTable, item.id), { lokasi: `${logItem.blok_tujuan} - ${logItem.lorong_tujuan}`, tujuan_gudang: logItem.tujuan_gudang });
+                }
+
+                alert('Berhasil memindahkan barang!');
+                closeModal('modalRelokasiForm');
+                loadDataFromCloud();
+            } catch(error) {
+                alert('Gagal relokasi: ' + error.message);
+            }
         }
 
         function toggleRelokasiLogModal() {
@@ -2916,9 +3036,15 @@
 
         async function deleteRelokasiLog(id) {
             if(confirm('Hapus log relokasi ini?')) {
-                await _supabase.from('relokasi__barang').delete().eq('id', id);
-                loadDataFromCloud();
-                closeModal('modalRelokasiLog');
+                const db = window._db;
+                const { doc, deleteDoc } = window._fsHelpers;
+                try {
+                    await deleteDoc(doc(db, 'relokasi__barang', id));
+                    loadDataFromCloud();
+                    closeModal('modalRelokasiLog');
+                } catch(e) {
+                    alert('Gagal menghapus log!');
+                }
             }
         }
 

@@ -655,8 +655,8 @@ async function loadDataFromCloud() {
         let ekspSnapshot = await getDocs(collection(window.db, 'stok_ekspor'));
         
         binStockData = [];
-        lokSnapshot.forEach(d => binStockData.push({ ...d.data(), id: d.id, kategori_stok: 'Lokal' }));
-        ekspSnapshot.forEach(d => binStockData.push({ ...d.data(), id: d.id, kategori_stok: 'Ekspor' }));
+        lokSnapshot.forEach(d => binStockData.push({ ...d.data(), firestoreId: d.id, kategori_stok: 'Lokal' }));
+        ekspSnapshot.forEach(d => binStockData.push({ ...d.data(), firestoreId: d.id, kategori_stok: 'Ekspor' }));
 
         if (binStockData.length === 0 && Object.keys(sapStockCache).length > 0) {
             for (let sKey in sapStockCache) { binStockData.push(sapStockCache[sKey]); }
@@ -670,10 +670,10 @@ async function loadDataFromCloud() {
         truckSnapshot.forEach(d => trucks.push({ ...d.data(), firestoreId: d.id }));
         
         let pickLists = [];
-        pickSnapshot.forEach(d => pickLists.push(d.data()));
+        pickSnapshot.forEach(d => pickLists.push({ ...d.data(), firestoreId: d.id }));
 
         let statuses = [];
-        statusSnapshot.forEach(d => statuses.push(d.data()));
+        statusSnapshot.forEach(d => statuses.push({ ...d.data(), firestoreId: d.id }));
 
         const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
         const nowTimeMs = new Date().getTime();
@@ -774,6 +774,7 @@ async function loadDataFromCloud() {
                     let pltVal = Math.floor(p.total_karton / stdPlt);
                     let rchVal = p.total_karton % stdPlt;
                     return {
+                        firestoreId: p.firestoreId,
                         sku: p.sku,
                         nama: masterStock[p.sku] ? masterStock[p.sku].name : (sapStockCache[p.sku]?.nama || '-'),
                         prodate: p.prodate || '-',
@@ -872,17 +873,31 @@ async function loadAvailableBatchesForSku(skuCode) {
     let select = document.getElementById('itemBatchSelect');
     select.innerHTML = '<option value="">— Pilih Lokasi Rak / Batch (FIFO) —</option>';
     
-    let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
-    let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
-    let { data: stokSap } = await _supabase.from('stok_sap').select('*');
+    const { collection, getDocs } = window.firebaseCollections;
+    let lokSnapshot = await getDocs(collection(window.db, 'stok_lokal'));
+    let ekspSnapshot = await getDocs(collection(window.db, 'stok_ekspor'));
+    let sapSnapshot = await getDocs(collection(window.db, 'stock_opname_sap'));
+
     binStockData = [];
-    if (stokLokal) stokLokal.forEach(i => binStockData.push({ ...i, kategori_stok: 'Lokal' }));
-    if (stokEkspor) stokEkspor.forEach(i => binStockData.push({ ...i, kategori_stok: 'Ekspor' }));
-    if (stokSap) stokSap.forEach(i => binStockData.push({ 
-        ...i, 
-        prodate: i.tanggal_tarikan || '2026-09-07',
-        kategori_stok: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
-    }));
+    lokSnapshot.forEach(d => binStockData.push({ ...d.data(), firestoreId: d.id, kategori_stok: 'Lokal' }));
+    ekspSnapshot.forEach(d => binStockData.push({ ...d.data(), firestoreId: d.id, kategori_stok: 'Ekspor' }));
+    sapSnapshot.forEach(d => {
+        let row = d.data();
+        if (row.data_sap && row.data_sap.items) {
+            let items = row.data_sap.items;
+            for (let sc in items) {
+                binStockData.push({
+                    firestoreId: d.id,
+                    sku: sc,
+                    nama: items[sc].nama,
+                    karton: items[sc].karton,
+                    lokasi: 'Blok A - Row 01',
+                    prodate: '2026-01-01',
+                    kategori_stok: 'Lokal'
+                });
+            }
+        }
+    });
 
     let matches = binStockData.filter(b => b.sku && b.sku.toLowerCase().includes(skuCode.toLowerCase()));
     if (matches.length === 0 && sapStockCache[skuCode]) {
@@ -1037,20 +1052,31 @@ async function openPickingListModal(index) {
     document.getElementById('lockedNotice').style.display = isLocked ? 'block' : 'none';
     document.getElementById('thAksiHead').style.display = isLocked ? 'none' : '';
 
-    let { data: stokLokal } = await _supabase.from('stok_lokal').select('*');
-    let { data: stokEkspor } = await _supabase.from('stok_ekspor').select('*');
-    let { data: stokSap } = await _supabase.from('stok_sap').select('*');
+    const { collection, getDocs } = window.firebaseCollections;
+    let lokSnapshot = await getDocs(collection(window.db, 'stok_lokal'));
+    let ekspSnapshot = await getDocs(collection(window.db, 'stok_ekspor'));
+    let sapSnapshot = await getDocs(collection(window.db, 'stock_opname_sap'));
+
     binStockData = [];
-    if (stokLokal) stokLokal.forEach(i => binStockData.push({ ...i, kategori_stok: 'Lokal' }));
-    if (stokEkspor) stokEkspor.forEach(i => binStockData.push({ ...i, kategori_stok: 'Ekspor' }));
-    if (stokSap) stokSap.forEach(i => binStockData.push({ 
-        ...i, 
-        prodate: i.tanggal_tarikan || '2026-09-07',
-        kategori_stok: i.lokasi && i.lokasi.toLowerCase().includes('exp') ? 'Ekspor' : 'Lokal' 
-    }));
-    if (binStockData.length === 0 && Object.keys(sapStockCache).length > 0) {
-        for (let sKey in sapStockCache) { binStockData.push(sapStockCache[sKey]); }
-    }
+    lokSnapshot.forEach(d => binStockData.push({ ...d.data(), firestoreId: d.id, kategori_stok: 'Lokal' }));
+    ekspSnapshot.forEach(d => binStockData.push({ ...d.data(), firestoreId: d.id, kategori_stok: 'Ekspor' }));
+    sapSnapshot.forEach(d => {
+        let row = d.data();
+        if (row.data_sap && row.data_sap.items) {
+            let items = row.data_sap.items;
+            for (let sc in items) {
+                binStockData.push({
+                    firestoreId: d.id,
+                    sku: sc,
+                    nama: items[sc].nama,
+                    karton: items[sc].karton,
+                    lokasi: 'Blok A - Row 01',
+                    prodate: '2026-01-01',
+                    kategori_stok: 'Lokal'
+                });
+            }
+        }
+    });
 
     renderPlTable();
     openModal('modalPickingList');
@@ -1095,11 +1121,18 @@ async function savePetugasShift() {
     t.tim = document.getElementById('plTim').value;
     t.shift = document.getElementById('plShift').value;
 
-    await _supabase.from('picking_list_truk').update({
-        nama_petugas: newAdmin,
-        nama_tim: t.tim,
-        shift_kerja: t.shift
-    }).eq('no_doc', t.noDoc);
+    const { collection, getDocs, updateDoc, doc } = window.firebaseCollections;
+    let snap = await getDocs(collection(window.db, 'picking_list_truk'));
+    snap.forEach(async (d) => {
+        let row = d.data();
+        if (row.no_doc === t.noDoc) {
+            await updateDoc(doc(window.db, 'picking_list_truk', d.id), {
+                nama_petugas: newAdmin,
+                nama_tim: t.tim,
+                shift_kerja: t.shift
+            });
+        }
+    });
 }
 
 async function addItemToTruckPickingList() {
@@ -1144,9 +1177,11 @@ async function addItemToTruckPickingList() {
         prodate: exactProdate
     };
 
-    let { error } = await _supabase.from('picking_list_truk').insert([pickRecord]);
-    if (error) {
-        alert('Gagal menyimpan picking list ke database: ' + error.message);
+    const { addDoc, collection, updateDoc, deleteDoc, doc, getDocs } = window.firebaseCollections;
+    try {
+        await addDoc(collection(window.db, 'picking_list_truk'), pickRecord);
+    } catch (err) {
+        alert('Gagal menyimpan picking list ke database: ' + err.message);
         return;
     }
 
@@ -1164,33 +1199,19 @@ async function addItemToTruckPickingList() {
     if(!truckQueue[activePlTruckIdx].pickingList) truckQueue[activePlTruckIdx].pickingList = [];
     truckQueue[activePlTruckIdx].pickingList.push(item);
 
-    let targetTable = selectedBatchData.kategori_stok === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
-    let { data: currentDbStock } = await _supabase.from(targetTable).select('*').eq('sku', selectedBatchData.sku).eq('lokasi', lokasiRak);
-
-    if (!currentDbStock || currentDbStock.length === 0) {
-        targetTable = 'stock_opname_sap';
-        if (sapStockCache[skuCode]) {
-            sapStockCache[skuCode].karton -= totalKrt;
-        }
-    }
-
-    if (currentDbStock && currentDbStock.length > 0) {
-        let dbItem = currentDbStock[0];
-        let newKarton = parseInt(dbItem.karton) - totalKrt;
+    let targetCollection = selectedBatchData.kategori_stok === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
+    if (selectedBatchData.firestoreId) {
+        let docRef = doc(window.db, targetCollection, selectedBatchData.firestoreId);
+        let newKarton = maxKarton - totalKrt;
         if (newKarton <= 0) {
-            await _supabase.from(targetTable).delete().eq('id', dbItem.id);
+            await deleteDoc(docRef);
         } else {
             let stdPlt = getCartonPerPallet(skuCode);
             let pltVal = Math.floor(newKarton / stdPlt);
             let rchVal = newKarton % stdPlt;
             let konvStr = `${pltVal} Plt (${newKarton} krt)`;
             if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
-            
-            let updatePayload = { karton: newKarton };
-            if (targetTable !== 'stock_opname_sap') {
-                updatePayload.konversi = konvStr;
-            }
-            await _supabase.from(targetTable).update(updatePayload).eq('id', dbItem.id);
+            await updateDoc(docRef, { karton: newKarton, konversi: konvStr });
         }
     }
     
@@ -1212,33 +1233,54 @@ async function removePlItem(idx) {
     }
 
     let removedItem = t.pickingList[idx];
-    
-    await _supabase.from('picking_list_truk').delete().eq('no_doc', t.noDoc).eq('sku', removedItem.sku);
+    const { collection, getDocs, deleteDoc, updateDoc, addDoc, doc } = window.firebaseCollections;
+
+    let pickSnap = await getDocs(collection(window.db, 'picking_list_truk'));
+    pickSnap.forEach(async (d) => {
+        let row = d.data();
+        if (row.no_doc === t.noDoc && row.sku === removedItem.sku) {
+            await deleteDoc(doc(window.db, 'picking_list_truk', d.id));
+        }
+    });
 
     if(removedItem) {
-        let targetTable = 'stok_lokal';
-        let { data: existingRow } = await _supabase.from('stok_lokal').select('*').eq('sku', removedItem.sku).eq('lokasi', removedItem.rak);
-        if (!existingRow || existingRow.length === 0) {
-            let { data: existingEkspor } = await _supabase.from('stok_ekspor').select('*').eq('sku', removedItem.sku).eq('lokasi', removedItem.rak);
-            if (existingEkspor && existingEkspor.length > 0) {
-                targetTable = 'stok_ekspor';
-                existingRow = existingEkspor;
+        let lokSnap = await getDocs(collection(window.db, 'stok_lokal'));
+        let foundDocId = null;
+        let foundData = null;
+        let targetColl = 'stok_lokal';
+
+        lokSnap.forEach(d => {
+            let dat = d.data();
+            if (dat.sku === removedItem.sku && dat.lokasi === removedItem.rak) {
+                foundDocId = d.id;
+                foundData = dat;
             }
+        });
+
+        if (!foundDocId) {
+            let ekspSnap = await getDocs(collection(window.db, 'stok_ekspor'));
+            ekspSnap.forEach(d => {
+                let dat = d.data();
+                if (dat.sku === removedItem.sku && dat.lokasi === removedItem.rak) {
+                    foundDocId = d.id;
+                    foundData = dat;
+                    targetColl = 'stok_ekspor';
+                }
+            });
         }
 
-        if(existingRow && existingRow.length > 0) {
-            let target = existingRow[0];
-            let updatedKarton = parseInt(target.karton || 0) + parseInt(removedItem.jumlah || 0);
+        if(foundDocId && foundData) {
+            let updatedKarton = parseInt(foundData.karton || 0) + parseInt(removedItem.jumlah || 0);
             let stdPlt = getCartonPerPallet(removedItem.sku);
             let pltVal = Math.floor(updatedKarton / stdPlt);
             let rchVal = updatedKarton % stdPlt;
             let konvStr = `${pltVal} Plt (${updatedKarton} krt)`;
             if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
 
-            await _supabase.from(targetTable).update({
+            await updateDoc(doc(window.db, targetColl, foundDocId), {
                 karton: updatedKarton,
                 konversi: konvStr
-            }).eq('id', target.id);
+            });
         } else {
             let stdPlt = getCartonPerPallet(removedItem.sku);
             let pltVal = Math.floor(removedItem.jumlah / stdPlt);
@@ -1246,14 +1288,14 @@ async function removePlItem(idx) {
             let konvStr = `${pltVal} Plt (${removedItem.jumlah} krt)`;
             if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
 
-            await _supabase.from('stok_lokal').insert([{
+            await addDoc(collection(window.db, 'stok_lokal'), {
                 sku: removedItem.sku,
                 lokasi: removedItem.rak,
                 pallet: removedItem.palletSource || '-',
                 prodate: removedItem.prodate,
                 karton: removedItem.jumlah,
                 konversi: konvStr
-            }]);
+            });
         }
     }
 
@@ -1566,7 +1608,6 @@ function renderAll() {
         let treatmentBadge = (t.status === 'Treatment' && t.treatmentNote) ? ` | ⚠️ Alasan: <b style="color:#b91c1c;">${t.treatmentNote}</b>` : '';
         let arsipBadge = (t.lokasiArsip && t.lokasiArsip !== 'Belum Ada Arsip') ? ` | 📁 Arsip: <b>${t.lokasiArsip}</b>` : '';
 
-        // Tentukan Pita Menonjol di Kiri Berdasarkan Kategori
         let ribbonClass = 'ribbon-lokal';
         let ribbonText = 'Lokal';
         let jenisUpper = (t.jenis || '').toUpperCase();
@@ -1584,7 +1625,6 @@ function renderAll() {
             ribbonText = 'MDC';
         }
 
-        // Tombol Telepon & WhatsApp
         let phoneContactHtml = '';
         if (t.noHp && t.noHp !== '-') {
             let cleanPhone = t.noHp.replace(/^0/, '62').replace(/[^0-9]/g, '');
@@ -1719,7 +1759,6 @@ function openStatusModal(idx) {
     document.getElementById('selectStatus').value = t.status;
     populateDockDropdown(t.dock);
     
-    // Inisialisasi Checker List di Modal
     let checkerListWrapper = document.getElementById('wrapperCheckerList');
     checkerListWrapper.innerHTML = '';
     
@@ -1954,7 +1993,6 @@ async function saveStatus() {
         treatment_note: treatmentNoteVal || '-'
     };
 
-    // PENCATATAN WAKTU LENGKAP SEPERTI KODINGAN ASLIMU
     if (newSt === 'Proses Muat' && targetTruck.timeStartLoading === '-') {
         logRecord.time_start_loading = currentIsoTime;
         targetTruck.timeStartLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -1981,6 +2019,7 @@ async function saveStatus() {
 
         targetTruck.status = newSt;
         targetTruck.dock = logRecord.loading_dock;
+        targetTruck.lokasiArsip = finalArsipStr;
         closeModal('modalStatus');
         loadDataFromCloud();
         alert('Status dan pencatatan waktu berhasil diperbarui!');
@@ -1988,39 +2027,51 @@ async function saveStatus() {
         alert('Gagal memperbarui status: ' + err.message);
     }
 }
-       targetTruck.lokasiArsip = finalArsipStr;
-    closeModal('modalStatus');
-    loadDataFromCloud();
-    alert('Status dan jam berhasil diperbarui!');
 
 async function deleteTruck(idx) {
     let t = truckQueue[idx];
     if(confirm('Yakin ingin menghapus data truk ' + t.noPol + ' dari sistem?')) {
+        const { getDocs, collection, deleteDoc, doc, addDoc, updateDoc } = window.firebaseCollections;
+
         if(t && t.pickingList && t.pickingList.length > 0) {
             for (let removedItem of t.pickingList) {
-                let targetTable = 'stok_lokal';
-                let { data: existingRow } = await _supabase.from('stok_lokal').select('*').eq('sku', removedItem.sku).eq('lokasi', removedItem.rak);
-                if (!existingRow || existingRow.length === 0) {
-                    let { data: existingEkspor } = await _supabase.from('stok_ekspor').select('*').eq('sku', removedItem.sku).eq('lokasi', removedItem.rak);
-                    if (existingEkspor && existingEkspor.length > 0) {
-                        targetTable = 'stok_ekspor';
-                        existingRow = existingEkspor;
+                let lokSnap = await getDocs(collection(window.db, 'stok_lokal'));
+                let foundDocId = null;
+                let foundData = null;
+                let targetColl = 'stok_lokal';
+
+                lokSnap.forEach(d => {
+                    let dat = d.data();
+                    if (dat.sku === removedItem.sku && dat.lokasi === removedItem.rak) {
+                        foundDocId = d.id;
+                        foundData = dat;
                     }
+                });
+
+                if (!foundDocId) {
+                    let ekspSnap = await getDocs(collection(window.db, 'stok_ekspor'));
+                    ekspSnap.forEach(d => {
+                        let dat = d.data();
+                        if (dat.sku === removedItem.sku && dat.lokasi === removedItem.rak) {
+                            foundDocId = d.id;
+                            foundData = dat;
+                            targetColl = 'stok_ekspor';
+                        }
+                    });
                 }
 
-                if(existingRow && existingRow.length > 0) {
-                    let target = existingRow[0];
-                    let updatedKarton = parseInt(target.karton || 0) + parseInt(removedItem.jumlah || 0);
+                if(foundDocId && foundData) {
+                    let updatedKarton = parseInt(foundData.karton || 0) + parseInt(removedItem.jumlah || 0);
                     let stdPlt = getCartonPerPallet(removedItem.sku);
                     let pltVal = Math.floor(updatedKarton / stdPlt);
                     let rchVal = updatedKarton % stdPlt;
                     let konvStr = `${pltVal} Plt (${updatedKarton} krt)`;
                     if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
 
-                    await _supabase.from(targetTable).update({
+                    await updateDoc(doc(window.db, targetColl, foundDocId), {
                         karton: updatedKarton,
                         konversi: konvStr
-                    }).eq('id', target.id);
+                    });
                 } else {
                     let stdPlt = getCartonPerPallet(removedItem.sku);
                     let pltVal = Math.floor(removedItem.jumlah / stdPlt);
@@ -2028,32 +2079,42 @@ async function deleteTruck(idx) {
                     let konvStr = `${pltVal} Plt (${removedItem.jumlah} krt)`;
                     if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
 
-                    await _supabase.from('stok_lokal').insert([{
+                    await addDoc(collection(window.db, 'stok_lokal'), {
                         sku: removedItem.sku,
                         lokasi: removedItem.rak,
                         pallet: removedItem.palletSource || '-',
                         prodate: removedItem.prodate,
                         karton: removedItem.jumlah,
                         konversi: konvStr
-                    }]);
+                    });
                 }
             }
         }
 
-        await _supabase.from('picking_list_truk').delete().eq('no_doc', t.noDoc);
-        await _supabase.from('status_truk_log').delete().eq('no_doc', t.noDoc);
-        await _supabase.from('antrian_truk').delete().eq('id', t.dbId);
+        let pickSnap = await getDocs(collection(window.db, 'picking_list_truk'));
+        pickSnap.forEach(async (d) => {
+            if (d.data().no_doc === t.noDoc) await deleteDoc(doc(window.db, 'picking_list_truk', d.id));
+        });
 
+        try {
+            await deleteDoc(doc(window.db, 'status_truk_log', t.noDoc));
+        } catch(e) {}
+
+        await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
         loadDataFromCloud();
     }
 }
 
 async function resetData() {
     if(confirm('Yakin ingin mereset seluruh data antrian truk?')) {
+        const { getDocs, collection, deleteDoc, doc } = window.firebaseCollections;
         for (let t of truckQueue) {
-            await _supabase.from('picking_list_truk').delete().eq('no_doc', t.noDoc);
-            await _supabase.from('status_truk_log').delete().eq('no_doc', t.noDoc);
-            await _supabase.from('antrian_truk').delete().eq('id', t.dbId);
+            let pickSnap = await getDocs(collection(window.db, 'picking_list_truk'));
+            pickSnap.forEach(async (d) => {
+                if (d.data().no_doc === t.noDoc) await deleteDoc(doc(window.db, 'picking_list_truk', d.id));
+            });
+            try { await deleteDoc(doc(window.db, 'status_truk_log', t.noDoc)); } catch(e){}
+            await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
         }
         truckQueue = [];
         loadDataFromCloud();

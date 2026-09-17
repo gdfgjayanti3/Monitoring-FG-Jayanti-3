@@ -115,7 +115,7 @@
         }
         #printArea { display: none; }
     </style>
-    <!-- Firebase SDK CDN -->
+   <!-- Firebase SDK CDN -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
     import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
@@ -132,6 +132,11 @@
     const app = initializeApp(firebaseConfig);
     window.db = getFirestore(app);
     window.firebaseCollections = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc };
+
+    // Langsung panggil fungsi load data begitu Firebase siap
+    if (typeof loadDataFromCloud === 'function') {
+        loadDataFromCloud();
+    }
 </script>
 </head>
 <body>
@@ -2122,10 +2127,18 @@ async function deleteTruck(idx) {
             await deleteDoc(doc(window.db, 'status_truk_log', t.noDoc));
         } catch(e) {}
 
-        await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
+       await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
         loadDataFromCloud();
     }
 }
+
+// Pengecekan otomatis agar data langsung tampil saat pertama buka halaman
+let checkDbInterval = setInterval(() => {
+    if (window.db) {
+        loadDataFromCloud();
+        clearInterval(checkDbInterval);
+    }
+}, 300);
 
 async function resetData() {
     if(confirm('Yakin ingin mereset seluruh data antrian truk?')) {

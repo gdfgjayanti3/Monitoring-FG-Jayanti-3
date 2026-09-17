@@ -1199,16 +1199,27 @@ async function addItemToTruckPickingList() {
     if(!truckQueue[activePlTruckIdx].pickingList) truckQueue[activePlTruckIdx].pickingList = [];
     truckQueue[activePlTruckIdx].pickingList.push(item);
 
-    let targetCollection = selectedBatchData.kategori_stok === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
-    if (selectedBatchData.firestoreId) {
-        let docRef = doc(window.db, targetCollection, selectedBatchData.firestoreId);
+    // Cari dokumen stok yang cocok berdasarkan SKU dan Lokasi di Firestore untuk dipotong
+    let targetColl = selectedBatchData.kategori_stok === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
+    let lokSnap = await getDocs(collection(window.db, targetColl));
+    let matchedDocId = null;
+
+    lokSnap.forEach(d => {
+        let dat = d.data();
+        if (dat.sku === skuCode && String(dat.lokasi || '').trim().toLowerCase() === String(lokasiRak).trim().toLowerCase()) {
+            matchedDocId = d.id;
+        }
+    });
+
+    if (matchedDocId) {
+        let docRef = doc(window.db, targetColl, matchedDocId);
         let newKarton = maxKarton - totalKrt;
         if (newKarton <= 0) {
             await deleteDoc(docRef);
         } else {
             let stdPlt = getCartonPerPallet(skuCode);
             let pltVal = Math.floor(newKarton / stdPlt);
-            let rchVal = newKarton % stdPlt;
+            let rchVal = newKarton % stdPls;
             let konvStr = `${pltVal} Plt (${newKarton} krt)`;
             if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
             await updateDoc(docRef, { karton: newKarton, konversi: konvStr });
@@ -1223,7 +1234,6 @@ async function addItemToTruckPickingList() {
     selectedBatchData = null;
     renderPlTable();
 }
-
 async function removePlItem(idx) {
     if(activePlTruckIdx === null) return;
     let t = truckQueue[activePlTruckIdx];

@@ -124,7 +124,7 @@
             </a>
             <a href="#" onclick="switchMenu('realisasi')" class="menu-btn flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition" id="menu-realisasi">
                 <div class="bg-slate-50 p-2 rounded-xl text-emerald-400 border border-slate-100"><i class="fa-solid fa-truck-ramp-box w-4 text-center"></i></div>
-                <span>Realisasi</span>
+                <span>Realisasi & Kendali Truk</span>
             </a>
             <a href="#" onclick="switchMenu('opname')" class="menu-btn flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition" id="menu-opname">
                 <div class="bg-slate-50 p-2 rounded-xl text-purple-400 border border-slate-100"><i class="fa-solid fa-file-invoice w-4 text-center"></i></div>
@@ -415,14 +415,14 @@
             </div>
         </div>
 
-        <!-- SECTION REALISASI -->
+        <!-- SECTION REALISASI & KENDALI TRUK -->
         <div id="section-realisasi" class="app-page space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
                 <div>
                     <h2 class="font-bold text-slate-700 text-xs flex items-center gap-2">
-                        <i class="fa-solid fa-truck-ramp-box text-emerald-500"></i> Realisasi Muat & Pengiriman Truk
+                        <i class="fa-solid fa-truck-ramp-box text-emerald-500"></i> Realisasi Muat & Kendali Status Truk
                     </h2>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Daftar realisasi operasional harian truk.</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Kelola, ubah status, dan pantau realisasi operasional harian truk secara langsung.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button onclick="exportRealisasiExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 text-xs px-3.5 py-2 rounded-xl font-bold transition shadow-2xs flex items-center gap-1.5">
@@ -466,10 +466,10 @@
                                 <th>No. Container</th>
                                 <th>Tujuan</th>
                                 <th>Total Qty</th>
-                                <th>Status Terkini</th>
+                                <th>Kendali Status</th>
                                 <th>Jam Masuk</th>
                                 <th>Jam Keluar</th>
-                                <th>Durasi Stay</th>
+                                <th>Aksi Kendali</th>
                             </tr>
                         </thead>
                         <tbody id="realisasiTableBody"><tr><td colspan="14" class="text-muted">Memuat data realisasi...</td></tr></tbody>
@@ -1477,7 +1477,6 @@
             }
         }
 
-        // FUNGSI PROCESS PASTE DATA MASTER SKU YANG DITAMBAHKAN
         async function processPasteData() {
             let textarea = document.getElementById('pasteArea');
             if (!textarea) return;
@@ -2714,6 +2713,30 @@
             }
         }
 
+        async function updateTrukStatus(dbId, newStatus) {
+            try {
+                const { updateDoc, doc, setDoc } = window.firebaseCollections;
+                let targetTruk = antrianData.find(t => t.dbId === dbId);
+                if (!targetTruk) return;
+
+                targetTruk.status = newStatus;
+                
+                // Simpan perubahan ke koleksi status_truk_log di Firestore
+                let logRef = doc(window.db, 'status_truk_log', targetTruk.noDoc || dbId);
+                await setDoc(logRef, {
+                    no_doc: targetTruk.noDoc || '',
+                    status_truk: newStatus,
+                    updated_at: new Date().toISOString()
+                }, { merge: true });
+
+                alert(`Status truk ${targetTruk.noPol} berhasil diubah menjadi: ${newStatus}`);
+                renderRealisasiTable();
+            } catch (err) {
+                console.error("Gagal memperbarui status truk:", err);
+                alert("Gagal memperbarui status truk.");
+            }
+        }
+
         function downloadStockJalurExcel() {
             if(antrianData.length === 0) {
                 alert('Tidak ada data stock jalur untuk diunduh.');
@@ -2950,10 +2973,21 @@
                     <td><span class="text-amber-700 font-semibold">${t.container || '-'}</span></td>
                     <td class="fw-semibold text-slate-700">${t.tujuan || '-'}</td>
                     <td class="fw-bold text-emerald-600">${totalQty.toLocaleString('id-ID')} krt</td>
-                    <td><span class="badge bg-slate-50 text-slate-700 border border-slate-100">${t.status || '-'}</span></td>
+                    <td>
+                        <select onchange="updateTrukStatus('${t.dbId}', this.value)" class="form-select form-select-sm text-xs rounded-xl font-semibold border-slate-200">
+                            <option value="Antrian" ${t.status === 'Antrian' ? 'selected' : ''}>Antrian</option>
+                            <option value="Proses Muat" ${t.status === 'Proses Muat' ? 'selected' : ''}>Proses Muat</option>
+                            <option value="Selesai Muat" ${t.status === 'Selesai Muat' ? 'selected' : ''}>Selesai Muat</option>
+                            <option value="Keluar" ${t.status === 'Keluar' ? 'selected' : ''}>Keluar</option>
+                        </select>
+                    </td>
                     <td><span class="text-indigo-600 font-bold">${t.timeIn || '-'}</span></td>
                     <td><span class="text-rose-600 font-bold">${t.timeOut || '-'}</span></td>
-                    <td>-</td>
+                    <td>
+                        <button onclick="openStockJalurDetail(${antrianData.indexOf(t)})" class="btn btn-sm btn-outline-primary px-2.5 py-1 text-xs rounded-xl">
+                            <i class="fa-solid fa-gear"></i> Kelola
+                        </button>
+                    </td>
                 </tr>`;
             });
 

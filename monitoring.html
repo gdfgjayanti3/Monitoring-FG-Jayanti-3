@@ -55,8 +55,8 @@
 
         .bin-empty { background-color: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
         
-        table th { padding-top: 12px !important; padding-bottom: 12px !important; font-size: 11px !important; white-space: nowrap; vertical-align: middle !important; }
-        table td { padding-top: 10px !important; padding-bottom: 10px !important; font-size: 11px !important; white-space: nowrap; vertical-align: middle !important; }
+        table th { padding-top: 10px !important; padding-bottom: 10px !important; font-size: 10px !important; white-space: nowrap; vertical-align: middle !important; }
+        table td { padding-top: 8px !important; padding-bottom: 8px !important; font-size: 10px !important; white-space: nowrap; vertical-align: middle !important; }
 
         @media print {
             body * { visibility: hidden; }
@@ -860,7 +860,7 @@
                             </div>
                             <div class="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-2xs text-right w-full sm:w-auto">
                                 <span class="text-[10px] text-slate-400 uppercase font-bold block">Total Saldo Sisa Karton (FIFO)</span>
-                                <span id="fifoTotalSaldo" class="text-base font-bold text-indigo-600">203.771 Karton</span>
+                                <span id="fifoTotalSaldo" class="text-base font-bold text-indigo-600">0 Karton</span>
                             </div>
                         </div>
 
@@ -871,27 +871,39 @@
                     </div>
                 </div>
 
-                <!-- Bagian 1: Rekapitulasi Harian 3 Shift & Tujuan Pengiriman -->
+                <!-- Bagian 1: Rekapitulasi Harian 3 Shift & Tujuan Pengiriman (Sesuai Format Gambar 2, Di-Nol-kan) -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
                     <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
                         <i class="fa-solid fa-table-cells text-indigo-500 mr-1.5"></i> Rekapitulasi Harian 3 Shift & Tujuan Pengiriman (Audit FIFO)
                     </h4>
-                    <div class="table-responsive" style="max-height: 400px;">
-                        <table class="table table-bordered align-middle text-center text-xs">
+                    <div class="table-responsive" style="max-height: 450px;">
+                        <table class="table table-bordered align-middle text-center text-[10px]">
                             <thead class="table-light sticky top-0 bg-slate-100">
                                 <tr>
-                                    <th>Tanggal</th>
-                                    <th>Shift 1</th>
-                                    <th>Shift 2</th>
-                                    <th>Shift 3</th>
-                                    <th>Total Masuk</th>
-                                    <th>Bandung</th>
-                                    <th>Medan</th>
-                                    <th>Balaraja</th>
+                                    <th rowspan="2" class="align-middle">Tanggal</th>
+                                    <th colspan="4" class="bg-indigo-50 text-indigo-900">HASIL PRODUKSI</th>
+                                    <th colspan="13" class="bg-amber-50 text-amber-900">PENGIRIMAN</th>
+                                    <th rowspan="2" class="align-middle">TOTAL</th>
+                                    <th rowspan="2" class="align-middle">SISA STOCK</th>
+                                </tr>
+                                <tr>
+                                    <th>Shift 1</th><th>Shift 2</th><th>Shift 3</th><th>Total Masuk</th>
+                                    <th>MDC Balaraja</th>
+                                    <th>MT Tambun</th>
+                                    <th>MT Cikupa</th>
+                                    <th>MT Balaraja</th>
+                                    <th>RDC SBY</th>
+                                    <th>RDC Bandung</th>
+                                    <th>RDC Makassar</th>
+                                    <th>RDC Osowilangun</th>
+                                    <th>RDC Medan</th>
+                                    <th>RDC Purwosari</th>
+                                    <th>RDC Kalianak</th>
+                                    <th>Subdist / Direct</th>
                                 </tr>
                             </thead>
                             <tbody id="fifoRekapTableBody">
-                                <tr><td colspan="8" class="text-muted py-3">Memuat rekapitulasi harian...</td></tr>
+                                <tr><td colspan="20" class="text-muted py-3">Memuat rekapitulasi harian...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -917,7 +929,7 @@
                                 </tr>
                             </thead>
                             <tbody id="fifoLogTableBody">
-                                <tr><td colspan="8" class="text-muted py-3">Memuat log kartu kendali FIFO...</td></tr>
+                                <tr><td colspan="8" class="text-muted py-3">Belum ada data log pengeluaran (sistem belum berjalan).</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -2064,97 +2076,39 @@
 
             let skuObj = stockData[selectedSku] || { name: rawVal.includes(' - ') ? rawVal.split(' - ')[1] : 'BENG BENG REG COSMO BBGB 8GBX17PCX22G' };
 
-            // Hitung total saldo sisa karton secara otomatis dari binData
-            let calculatedSaldo = 0;
-            binData.forEach(item => {
-                if (item && item.sku && item.sku.includes(selectedSku)) {
-                    calculatedSaldo += parseFloat(item.karton || 0);
-                }
-            });
-            if (calculatedSaldo === 0) calculatedSaldo = (selectedSku === '411015' ? 203771 : 54780);
-
             if(infoKode) infoKode.innerText = selectedSku;
             if(infoNama) infoNama.innerText = skuObj.name;
-            if(totalSaldoEl) totalSaldoEl.innerText = calculatedSaldo.toLocaleString('id-ID') + ' Karton';
+            if(totalSaldoEl) totalSaldoEl.innerText = '0 Karton'; // Di-nol-kan karena sistem belum berjalan
 
-            // Render Rekapitulasi Harian 3 Shift
+            // Render Rekapitulasi Harian (Sesuai Format Gambar 2, Di-nol-kan)
             let rekapHtml = '';
-            for(let i = 1; i <= 10; i++) {
-                let dayStr = String(i).padStart(2, '0');
-                let shift1 = Math.floor(Math.random() * 5000) + 8000;
-                let shift2 = Math.floor(Math.random() * 4000) + 7000;
-                let shift3 = Math.floor(Math.random() * 3000) + 4000;
-                let totMasuk = shift1 + shift2 + shift3;
-                let bandung = Math.floor(totMasuk * 0.4);
-                let medan = Math.floor(totMasuk * 0.3);
-                let balaraja = totMasuk - bandung - medan;
+            let daysInMonth = 30; // Untuk bulan September
 
+            for(let i = 1; i <= daysInMonth; i++) {
+                let dayStr = String(i).padStart(2, '0');
                 rekapHtml += `
                     <tr>
                         <td class="fw-bold text-amber-700">${dayStr}/09/2026</td>
-                        <td>${shift1.toLocaleString('id-ID')}</td>
-                        <td>${shift2.toLocaleString('id-ID')}</td>
-                        <td>${shift3.toLocaleString('id-ID')}</td>
-                        <td class="fw-bold text-emerald-600">${totMasuk.toLocaleString('id-ID')}</td>
-                        <td>${bandung.toLocaleString('id-ID')}</td>
-                        <td>${medan.toLocaleString('id-ID')}</td>
-                        <td>${balaraja.toLocaleString('id-ID')}</td>
+                        <td>0</td><td>0</td><td>0</td>
+                        <td class="fw-bold text-slate-700">0</td>
+                        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                        <td class="fw-bold text-indigo-600">0</td>
+                        <td class="fw-bold text-slate-700">0</td>
                     </tr>
                 `;
             }
+
+            // Baris Total Bawah
+            rekapHtml += `
+                <tr class="table-active fw-bold">
+                    <td>TOTAL</td>
+                    <td>0</td><td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                    <td>0</td><td>0</td>
+                </tr>
+            `;
             rekapTbody.innerHTML = rekapHtml;
-
-            // Render Kartu Kendali Detail / Log FIFO (Sinkron dengan Pengeluaran Antrian Truk)
-            let logHtml = '';
-            let matchedOutbound = antrianData.filter(t => {
-                return t.pickingList && t.pickingList.some(p => p.sku && p.sku.includes(selectedSku));
-            });
-
-            if (matchedOutbound.length > 0) {
-                matchedOutbound.forEach(t => {
-                    t.pickingList.forEach(p => {
-                        if (p.sku && p.sku.includes(selectedSku)) {
-                            logHtml += `
-                                <tr>
-                                    <td>${p.prodate || '01/09/2026'}</td>
-                                    <td>${t.tanggalKirim || '10/09/2026'}</td>
-                                    <td><span class="badge bg-indigo-50 text-indigo-700 fw-bold border border-indigo-100">${t.noDoc || '-'}</span></td>
-                                    <td class="fw-bold">${t.noPol || '-'}</td>
-                                    <td>${t.ekspedisi || '-'}</td>
-                                    <td>${t.tujuan || '-'}</td>
-                                    <td class="fw-bold text-emerald-600">${p.jumlah || 0}</td>
-                                    <td><span class="badge bg-emerald-50 text-emerald-700 border border-emerald-100">FIFO Sesuai</span></td>
-                                </tr>
-                            `;
-                        }
-                    });
-                });
-            } else {
-                // Fallback log jika antrian spesifik belum ada
-                logHtml = `
-                    <tr>
-                        <td>01/09/2026</td>
-                        <td>10/09/2026</td>
-                        <td><span class="badge bg-indigo-50 text-indigo-700 fw-bold border border-indigo-100">76861357</span></td>
-                        <td class="fw-bold">B 9398 TEX</td>
-                        <td>SEINO</td>
-                        <td>SUBDIST</td>
-                        <td class="fw-bold text-emerald-600">570</td>
-                        <td><span class="badge bg-emerald-50 text-emerald-700 border border-emerald-100">FIFO Sesuai</span></td>
-                    </tr>
-                    <tr>
-                        <td>01/09/2026</td>
-                        <td>11/09/2026</td>
-                        <td><span class="badge bg-indigo-50 text-indigo-700 fw-bold border border-indigo-100">76860048</span></td>
-                        <td class="fw-bold">B 9052 BXV</td>
-                        <td>TMI</td>
-                        <td>SUBDIST</td>
-                        <td class="fw-bold text-emerald-600">193</td>
-                        <td><span class="badge bg-emerald-50 text-emerald-700 border border-emerald-100">FIFO Sesuai</span></td>
-                    </tr>
-                `;
-            }
-            logTbody.innerHTML = logHtml;
+            logTbody.innerHTML = '<tr><td colspan="8" class="text-muted py-3">Belum ada data log pengeluaran (sistem belum berjalan).</td></tr>';
         }
 
         function renderReportData() {

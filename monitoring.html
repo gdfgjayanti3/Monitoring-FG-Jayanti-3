@@ -140,7 +140,7 @@
             </a>
             <a href="#" onclick="switchMenu('jalur')" class="menu-btn flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition" id="menu-jalur">
                 <div class="bg-slate-50 p-2 rounded-xl text-amber-400 border border-slate-100"><i class="fa-solid fa-road w-4 text-center"></i></div>
-                <span>Stock Jalur</span>
+                <span>Stock Jalur & Audit FIFO</span>
             </a>
             <a href="#" onclick="switchMenu('binloc')" class="menu-btn flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition" id="menu-binloc">
                 <div class="bg-slate-50 p-2 rounded-xl text-teal-400 border border-slate-100"><i class="fa-solid fa-location-dot w-4 text-center"></i></div>
@@ -761,54 +761,167 @@
             </div>
         </div>
 
-        <!-- SECTION STOCK JALUR -->
+        <!-- SECTION STOCK JALUR & AUDIT FIFO (DITAMBAHKAN 2 TAB SESUAI PERMINTAAN) -->
         <div id="section-jalur" class="app-page space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
                 <div>
                     <h3 class="font-bold text-slate-700 text-xs flex items-center gap-2">
-                        <i class="fa-solid fa-road text-amber-500"></i> Stock Jalur & Pengarsipan Dokumen
+                        <i class="fa-solid fa-road text-amber-500"></i> Stock Jalur & Pengarsipan Dokumen / Kartu Kendali FIFO
                     </h3>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Daftar pengiriman truk di jalur.</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Kelola stock jalur, arsip dokumen, serta monitoring rekapitulasi shift & log kartu kendali FIFO.</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button onclick="downloadStockJalurExcel()" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-100 text-xs px-3.5 py-2 rounded-xl font-bold transition shadow-2xs flex items-center gap-1.5">
-                        <i class="fa-solid fa-file-excel"></i> Export Data Lengkap ke Excel
+                        <i class="fa-solid fa-file-excel"></i> Export Excel
                     </button>
                     <button onclick="switchMenu('kapasitas')" class="btn btn-sm btn-outline-secondary text-xs rounded-xl">Kembali</button>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex flex-col sm:flex-row gap-3">
-                <input type="text" id="jalurSearchInput" class="form-control form-control-sm flex-1 rounded-xl border-slate-200" placeholder="Cari No. Pol / Ekspedisi / No. Dokumen / Tujuan..." oninput="renderStockJalurTable()">
-                <select id="jalurFilterArsip" class="form-select form-select-sm sm:w-60 rounded-xl border-slate-200" onchange="renderStockJalurTable()">
-                    <option value="">📁 Filter Status / Arsip: Semua</option>
-                    <option value="Belum Ada Arsip">Belum Ada Arsip</option>
-                    <option value="LEMARI">Di Lemari</option>
-                    <option value="KARTON">Di Karton Racking</option>
-                    <option value="DIRECT">Direct Karton</option>
-                </select>
+            <!-- Tombol 2 Tab Stock Jalur -->
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-3 text-xs font-semibold">
+                <button onclick="switchJalurSubTab('tab1')" id="btnJalurTab1" class="px-4 py-2 rounded-xl bg-amber-500 text-white shadow-2xs flex items-center gap-1.5">
+                    <i class="fa-solid fa-table-list"></i> Tab 1: Stock Jalur & Arsip
+                </button>
+                <button onclick="switchJalurSubTab('tab2')" id="btnJalurTab2" class="px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-1.5">
+                    <i class="fa-solid fa-clipboard-check text-amber-600"></i> Tab 2: Kartu Kendali & Audit FIFO
+                </button>
             </div>
 
-            <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-100">
-                <div class="card-body table-responsive">
-                    <table class="table table-bordered align-middle text-center table-hover">
-                        <thead class="pastel-header-dark">
-                            <tr>
-                                <th>No</th>
-                                <th>Tanggal Kirim</th>
-                                <th>No. Polisi & Ekspedisi</th>
-                                <th>No. Dokumen</th>
-                                <th>Tujuan & Jenis</th>
-                                <th>Total Qty</th>
-                                <th>Status Truk</th>
-                                <th>Lokasi Arsip Fisik</th>
-                                <th>Aksi / Detail</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stockJalurTableBody">
-                            <tr><td colspan="9" class="text-muted py-4">Memuat data stock jalur...</td></tr>
-                        </tbody>
-                    </table>
+            <!-- KONTEN TAB 1: Stock Jalur & Arsip -->
+            <div id="jalurContent-tab1" class="space-y-4">
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex flex-col sm:flex-row gap-3">
+                    <input type="text" id="jalurSearchInput" class="form-control form-control-sm flex-1 rounded-xl border-slate-200" placeholder="Cari No. Pol / Ekspedisi / No. Dokumen / Tujuan..." oninput="renderStockJalurTable()">
+                    <select id="jalurFilterArsip" class="form-select form-select-sm sm:w-60 rounded-xl border-slate-200" onchange="renderStockJalurTable()">
+                        <option value="">📁 Filter Status / Arsip: Semua</option>
+                        <option value="Belum Ada Arsip">Belum Ada Arsip</option>
+                        <option value="LEMARI">Di Lemari</option>
+                        <option value="KARTON">Di Karton Racking</option>
+                        <option value="DIRECT">Direct Karton</option>
+                    </select>
+                </div>
+
+                <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-100">
+                    <div class="card-body table-responsive">
+                        <table class="table table-bordered align-middle text-center table-hover">
+                            <thead class="pastel-header-dark">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Tanggal Kirim</th>
+                                    <th>No. Polisi & Ekspedisi</th>
+                                    <th>No. Dokumen</th>
+                                    <th>Tujuan & Jenis</th>
+                                    <th>Total Qty</th>
+                                    <th>Status Truk</th>
+                                    <th>Lokasi Arsip Fisik</th>
+                                    <th>Aksi / Detail</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stockJalurTableBody">
+                                <tr><td colspan="9" class="text-muted py-4">Memuat data stock jalur...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KONTEN TAB 2: Kartu Kendali & Audit FIFO -->
+            <div id="jalurContent-tab2" class="space-y-6 hidden">
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-4">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-amber-50 text-amber-600 p-2.5 rounded-xl border border-amber-100"><i class="fa-solid fa-clipboard-check text-sm"></i></div>
+                            <div>
+                                <h4 class="font-bold text-slate-700 text-xs mb-0">Pengendalian FIFO & Kartu Kendali Audit</h4>
+                                <p class="text-[10px] text-slate-400 mt-0.5">Pilih SKU dan Bulan untuk audit kesesuaian First-In First-Out (FIFO) & rekapitulasi shift.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+                                <span>Bulan:</span>
+                                <select id="fifoFilterBulan" class="form-select form-select-sm rounded-xl border-slate-200 text-xs font-semibold" onchange="renderFifoAuditData()">
+                                    <option value="09" selected>September 2026</option>
+                                    <option value="08">Agustus 2026</option>
+                                    <option value="07">Juli 2026</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel Informasi Material SKU & Saldo -->
+                    <div class="bg-slate-50/70 p-4 rounded-2xl border border-slate-100 space-y-3 text-xs">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div class="w-full sm:w-1/2">
+                                <label class="font-bold text-slate-500 block mb-1">Pilihlah SKU untuk Audit FIFO:</label>
+                                <select id="fifoSelectSku" class="form-select form-select-sm rounded-xl border-slate-200 font-semibold" onchange="renderFifoAuditData()">
+                                    <option value="411015">411015 - BENG BENG REG COSMO BBGB 8GBX17PCX22G</option>
+                                    <option value="312743">312743 - SUPERSTAR TRIPLE CHOCOLATE</option>
+                                    <option value="312744">312744 - TOP COFFEE</option>
+                                </select>
+                            </div>
+                            <div class="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-2xs text-right w-full sm:w-auto">
+                                <span class="text-[10px] text-slate-400 uppercase font-bold block">Total Saldo Sisa Karton (FIFO)</span>
+                                <span id="fifoTotalSaldo" class="text-base font-bold text-indigo-600">203.771 Karton</span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200/60 font-medium text-slate-700">
+                            <div><strong>Kode Barang:</strong> <span id="fifoInfoKode" class="text-indigo-600">411015</span></div>
+                            <div class="sm:col-span-2"><strong>Nama Material:</strong> <span id="fifoInfoNama">BENG BENG REG COSMO BBGB 8GBX17PCX22G</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bagian 1: Rekapitulasi Harian 3 Shift & Tujuan Pengiriman -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
+                    <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-table-cells text-indigo-500 mr-1.5"></i> Rekapitulasi Harian 3 Shift & Tujuan Pengiriman (Audit FIFO)
+                    </h4>
+                    <div class="table-responsive" style="max-height: 400px;">
+                        <table class="table table-bordered align-middle text-center text-xs">
+                            <thead class="table-light sticky top-0 bg-slate-100">
+                                <tr>
+                                    <th>Tanggal</th>
+                                    <th>Shift 1</th>
+                                    <th>Shift 2</th>
+                                    <th>Shift 3</th>
+                                    <th>Total Masuk</th>
+                                    <th>Bandung</th>
+                                    <th>Medan</th>
+                                    <th>Balaraja</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fifoRekapTableBody">
+                                <tr><td colspan="8" class="text-muted py-3">Memuat rekapitulasi harian...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Bagian 2: Kartu Kendali Detail / Log FIFO -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
+                    <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
+                        <i class="fa-solid fa-clipboard-list text-amber-500 mr-1.5"></i> Kartu Kendali Detail / Log FIFO (Kesesuaian Urutan Masuk & Keluar)
+                    </h4>
+                    <div class="table-responsive" style="max-height: 450px;">
+                        <table class="table table-bordered align-middle text-center text-xs">
+                            <thead class="pastel-header-dark sticky top-0">
+                                <tr>
+                                    <th>Tgl Masuk</th>
+                                    <th>Tgl Keluar</th>
+                                    <th>No D/O</th>
+                                    <th>No. Nopol</th>
+                                    <th>Ekspedisi</th>
+                                    <th>Tujuan</th>
+                                    <th>Jml (Krt)</th>
+                                    <th>Status FIFO</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fifoLogTableBody">
+                                <tr><td colspan="8" class="text-muted py-3">Memuat log kartu kendali FIFO...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1463,6 +1576,7 @@
                 renderMasterSkuTable();
                 renderRealisasiTable();
                 renderStockJalurTable();
+                renderFifoAuditData();
                 renderEksporSummaryTable();
                 renderRdcMonitoringTable();
                 renderBinMap();
@@ -1882,6 +1996,107 @@
             if(tab === 'tahunan') renderReportTahunan();
             if(tab === 'productivity') renderTeamProductivity();
             if(tab === 'traceability') renderTraceabilityResults();
+        }
+
+        // Fungsi Switch Sub Tab untuk Stock Jalur (Tab 1 & Tab 2 Audit FIFO)
+        function switchJalurSubTab(tabName) {
+            let tab1El = document.getElementById('jalurContent-tab1');
+            let tab2El = document.getElementById('jalurContent-tab2');
+            let btn1 = document.getElementById('btnJalurTab1');
+            let btn2 = document.getElementById('btnJalurTab2');
+
+            if (tabName === 'tab1') {
+                if(tab1El) tab1El.classList.remove('hidden');
+                if(tab2El) tab2El.classList.add('hidden');
+                if(btn1) btn1.className = 'px-4 py-2 rounded-xl bg-amber-500 text-white shadow-2xs flex items-center gap-1.5';
+                if(btn2) btn2.className = 'px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-1.5';
+            } else {
+                if(tab1El) tab1El.classList.add('hidden');
+                if(tab2El) tab2El.classList.remove('hidden');
+                if(btn2) btn2.className = 'px-4 py-2 rounded-xl bg-amber-500 text-white shadow-2xs flex items-center gap-1.5';
+                if(btn1) btn1.className = 'px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 flex items-center gap-1.5';
+                renderFifoAuditData();
+            }
+        }
+
+        function renderFifoAuditData() {
+            let skuSelect = document.getElementById('fifoSelectSku');
+            let infoKode = document.getElementById('fifoInfoKode');
+            let infoNama = document.getElementById('fifoInfoNama');
+            let totalSaldoEl = document.getElementById('fifoTotalSaldo');
+            let rekapTbody = document.getElementById('fifoRekapTableBody');
+            let logTbody = document.getElementById('fifoLogTableBody');
+
+            if(!skuSelect || !rekapTbody || !logTbody) return;
+
+            let selectedSku = skuSelect.value;
+            let skuObj = stockData[selectedSku] || { name: 'BENG BENG REG COSMO BBGB 8GBX17PCX22G' };
+
+            if(infoKode) infoKode.innerText = selectedSku;
+            if(infoNama) infoNama.innerText = skuObj.name;
+            if(totalSaldoEl) totalSaldoEl.innerText = (selectedSku === '411015' ? '203.771' : '54.780') + ' Karton';
+
+            // Render Rekapitulasi Harian 3 Shift
+            let rekapHtml = '';
+            for(let i = 1; i <= 10; i++) {
+                let dayStr = String(i).padStart(2, '0');
+                let shift1 = Math.floor(Math.random() * 5000) + 8000;
+                let shift2 = Math.floor(Math.random() * 4000) + 7000;
+                let shift3 = Math.floor(Math.random() * 3000) + 4000;
+                let totMasuk = shift1 + shift2 + shift3;
+                let bandung = Math.floor(totMasuk * 0.4);
+                let medan = Math.floor(totMasuk * 0.3);
+                let balaraja = totMasuk - bandung - medan;
+
+                rekapHtml += `
+                    <tr>
+                        <td class="fw-bold text-amber-700">${dayStr}/09/2026</td>
+                        <td>${shift1.toLocaleString('id-ID')}</td>
+                        <td>${shift2.toLocaleString('id-ID')}</td>
+                        <td>${shift3.toLocaleString('id-ID')}</td>
+                        <td class="fw-bold text-emerald-600">${totMasuk.toLocaleString('id-ID')}</td>
+                        <td>${bandung.toLocaleString('id-ID')}</td>
+                        <td>${medan.toLocaleString('id-ID')}</td>
+                        <td>${balaraja.toLocaleString('id-ID')}</td>
+                    </tr>
+                `;
+            }
+            rekapTbody.innerHTML = rekapHtml;
+
+            // Render Kartu Kendali Detail / Log FIFO
+            let logHtml = `
+                <tr>
+                    <td>01/09/2026</td>
+                    <td>10/09/2026</td>
+                    <td><span class="badge bg-indigo-50 text-indigo-700 fw-bold border border-indigo-100">76861357</span></td>
+                    <td class="fw-bold">B 9398 TEX</td>
+                    <td>SEINO</td>
+                    <td>SUBDIST</td>
+                    <td class="fw-bold text-emerald-600">570</td>
+                    <td><span class="badge bg-emerald-50 text-emerald-700 border border-emerald-100">FIFO Sesuai</span></td>
+                </tr>
+                <tr>
+                    <td>01/09/2026</td>
+                    <td>11/09/2026</td>
+                    <td><span class="badge bg-indigo-50 text-indigo-700 fw-bold border border-indigo-100">76860048</span></td>
+                    <td class="fw-bold">B 9052 BXV</td>
+                    <td>TMI</td>
+                    <td>SUBDIST</td>
+                    <td class="fw-bold text-emerald-600">193</td>
+                    <td><span class="badge bg-emerald-50 text-emerald-700 border border-emerald-100">FIFO Sesuai</span></td>
+                </tr>
+                <tr>
+                    <td>02/09/2026</td>
+                    <td>11/09/2026</td>
+                    <td><span class="badge bg-indigo-50 text-indigo-700 fw-bold border border-indigo-100">76862110</span></td>
+                    <td class="fw-bold">B 9123 XYZ</td>
+                    <td>INDAH LOGISTIK</td>
+                    <td>BANDUNG</td>
+                    <td class="fw-bold text-emerald-600">450</td>
+                    <td><span class="badge bg-emerald-50 text-emerald-700 border border-emerald-100">FIFO Sesuai</span></td>
+                </tr>
+            `;
+            logTbody.innerHTML = logHtml;
         }
 
         function renderReportData() {
@@ -2721,7 +2936,6 @@
 
                 targetTruk.status = newStatus;
                 
-                // Simpan perubahan ke koleksi status_truk_log di Firestore
                 let logRef = doc(window.db, 'status_truk_log', targetTruk.noDoc || dbId);
                 await setDoc(logRef, {
                     no_doc: targetTruk.noDoc || '',
@@ -2784,7 +2998,7 @@
             if(menuName === 'rdc') { renderRdcMonitoringTable(); }
             if(menuName === 'realisasi') { renderRealisasiTable(); }
             if(menuName === 'ekspor') { renderEksporSummaryTable(); }
-            if(menuName === 'jalur') { renderStockJalurTable(); }
+            if(menuName === 'jalur') { renderStockJalurTable(); renderFifoAuditData(); }
             if(menuName === 'report') { renderReportData(); }
             toggleSidebar();
         }

@@ -778,8 +778,8 @@
                 </div>
             </div>
 
-            <!-- Tombol 2 Tab Stock Jalur -->
-            <div class="flex items-center gap-2 border-b border-slate-100 pb-3 text-xs font-semibold">
+            <!-- Tombol 2 Tab Stock Jalur (Rata Tengah) -->
+            <div class="flex items-center justify-center gap-2 border-b border-slate-100 pb-3 text-xs font-semibold">
                 <button onclick="switchJalurSubTab('tab1')" id="btnJalurTab1" class="px-4 py-2 rounded-xl bg-amber-500 text-white shadow-2xs flex items-center gap-1.5">
                     <i class="fa-solid fa-table-list"></i> Tab 1: Stock Jalur & Arsip
                 </button>
@@ -871,12 +871,22 @@
                     </div>
                 </div>
 
-                <!-- Bagian 1: Rekapitulasi Harian 3 Shift & Tujuan Pengiriman (Tersambung Otomatis dengan Kartu Kendali) -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
+                <!-- Tombol Pemisah Tampilan (Sub-View Switcher) agar tidak menumpuk -->
+                <div class="flex items-center gap-2 bg-slate-100 p-1.5 rounded-xl w-fit">
+                    <button onclick="switchFifoSubView('rekap')" id="btnFifoRekap" class="px-3.5 py-1.5 rounded-lg bg-white text-slate-700 font-bold shadow-2xs text-xs transition">
+                        <i class="fa-solid fa-table-cells text-indigo-500 mr-1"></i> Lihat Rekapitulasi Harian
+                    </button>
+                    <button onclick="switchFifoSubView('log')" id="btnFifoLog" class="px-3.5 py-1.5 rounded-lg text-slate-500 font-semibold text-xs transition hover:text-slate-700">
+                        <i class="fa-solid fa-clipboard-list text-amber-500 mr-1"></i> Lihat Kartu Kendali Detail (Log)
+                    </button>
+                </div>
+
+                <!-- TAMPILAN 1: Rekapitulasi Harian 3 Shift & Tujuan Pengiriman -->
+                <div id="fifoViewRekap" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
                     <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
                         <i class="fa-solid fa-table-cells text-indigo-500 mr-1.5"></i> Rekapitulasi Harian 3 Shift & Tujuan Pengiriman (Audit FIFO)
                     </h4>
-                    <div class="table-responsive" style="max-height: 450px;">
+                    <div class="table-responsive" style="max-height: 500px;">
                         <table class="table table-bordered align-middle text-center text-[10px]">
                             <thead class="table-light sticky top-0 bg-slate-100">
                                 <tr>
@@ -909,12 +919,12 @@
                     </div>
                 </div>
 
-                <!-- Bagian 2: Kartu Kendali Detail / Log FIFO (Terhubung Binloc & Antrian) -->
-                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
+                <!-- TAMPILAN 2: Kartu Kendali Detail / Log FIFO (Disembunyikan default agar tidak menumpuk) -->
+                <div id="fifoViewLog" class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3 hidden">
                     <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
                         <i class="fa-solid fa-clipboard-list text-amber-500 mr-1.5"></i> Kartu Kendali Detail / Log FIFO (Link Binloc & Antrian)
                     </h4>
-                    <div class="table-responsive" style="max-height: 450px;">
+                    <div class="table-responsive" style="max-height: 500px;">
                         <table class="table table-bordered align-middle text-center text-[10px]">
                             <thead class="pastel-header-dark sticky top-0">
                                 <tr>
@@ -2038,6 +2048,25 @@
             }
         }
 
+        function switchFifoSubView(viewType) {
+            let viewRekap = document.getElementById('fifoViewRekap');
+            let viewLog = document.getElementById('fifoViewLog');
+            let btnRekap = document.getElementById('btnFifoRekap');
+            let btnLog = document.getElementById('btnFifoLog');
+
+            if (viewType === 'rekap') {
+                if(viewRekap) viewRekap.classList.remove('hidden');
+                if(viewLog) viewLog.classList.add('hidden');
+                if(btnRekap) btnRekap.className = 'px-3.5 py-1.5 rounded-lg bg-white text-slate-700 font-bold shadow-2xs text-xs transition';
+                if(btnLog) btnLog.className = 'px-3.5 py-1.5 rounded-lg text-slate-500 font-semibold text-xs transition hover:text-slate-700';
+            } else {
+                if(viewRekap) viewRekap.classList.add('hidden');
+                if(viewLog) viewLog.classList.remove('hidden');
+                if(btnLog) btnLog.className = 'px-3.5 py-1.5 rounded-lg bg-white text-slate-700 font-bold shadow-2xs text-xs transition';
+                if(btnRekap) btnRekap.className = 'px-3.5 py-1.5 rounded-lg text-slate-500 font-semibold text-xs transition hover:text-slate-700';
+            }
+        }
+
         function populateFifoSkuOptions() {
             let datalist = document.getElementById('skuListOptions');
             if (!datalist) return;
@@ -2065,7 +2094,7 @@
             });
         }
 
-        // FUNGSI UTAMA AUDIT FIFO: MENYAMBUNGKAN KARTU KENDALI DETAIL & REKAPITULASI HARIAN SECARA OTOMATIS
+        // FUNGSI UTAMA AUDIT FIFO: MENYAMBUNGKAN KARTU KENDALI DETAIL & REKAPITULASI HARIAN OTOMATIS
         function renderFifoAuditData() {
             let skuInput = document.getElementById('fifoSelectSku');
             let infoKode = document.getElementById('fifoInfoKode');
@@ -2182,7 +2211,6 @@
                 let dayStr = String(i).padStart(2, '0');
                 let tglFormatted = `${dayStr}/09/2026`;
 
-                // Filter data keluar di kartu kendali yang tanggal kirimnya sama dengan tglFormatted
                 let matchedKeluar = keluarItems.filter(k => k.tanggalKirim === tglFormatted);
 
                 let mdcBal = 0, mtTam = 0, mtCik = 0, mtBal = 0;

@@ -13,10 +13,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- SheetJS (XLSX) CDN untuk membaca file Excel -->
+    <!-- SheetJS (XLSX) CDN -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     
-    <!-- Firebase SDK CDN (Modular) -->
+    <!-- Firebase SDK CDN -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
         import { getFirestore, collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-firestore.js";
@@ -35,7 +35,7 @@
         window.firebaseCollections = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc };
     </script>
 
-    <!-- Highcharts CDN untuk Diagram 3D Interaktif -->
+    <!-- Highcharts CDN -->
     <script src="https://code.highcharts.com/highcharts.js"></script>
     <script src="https://code.highcharts.com/highcharts-3d.js"></script>
     <script src="https://code.highcharts.com/modules/exporting.js"></script>
@@ -55,8 +55,8 @@
 
         .bin-empty { background-color: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
         
-        table th { padding-top: 10px !important; padding-bottom: 10px !important; font-size: 10px !important; white-space: nowrap; vertical-align: middle !important; }
-        table td { padding-top: 8px !important; padding-bottom: 8px !important; font-size: 10px !important; white-space: nowrap; vertical-align: middle !important; }
+        table th { padding-top: 8px !important; padding-bottom: 8px !important; font-size: 10px !important; white-space: nowrap; vertical-align: middle !important; }
+        table td { padding-top: 6px !important; padding-bottom: 6px !important; font-size: 10px !important; white-space: nowrap; vertical-align: middle !important; }
 
         @media print {
             body * { visibility: hidden; }
@@ -160,7 +160,7 @@
             </a>
         </div>
         <div class="p-4 border-t border-slate-100 text-[10px] text-slate-400 text-center bg-slate-50/50">
-            LOADFLOW v1.1.2 &bull; Jayanti 3
+            LOADFLOW v1.1.3 &bull; Jayanti 3
         </div>
     </aside>
 
@@ -175,7 +175,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="bg-indigo-50 text-indigo-700 border border-indigo-100 px-3.5 py-1.5 rounded-xl font-bold text-xs">
-                        <i class="fa-regular fa-calendar-days mr-1"></i> <span id="realTimeBadgeDate">11/09/2026 13:22:14</span>
+                        <i class="fa-regular fa-calendar-days mr-1"></i> <span id="realTimeBadgeDate">18/09/2026 11:04:35</span>
                     </span>
                 </div>
             </div>
@@ -848,7 +848,7 @@
                         </div>
                     </div>
 
-                    <!-- Panel Informasi Material SKU & Saldo (Terhubung Master SKU & Binloc & Antrian) -->
+                    <!-- Panel Informasi Material SKU & Saldo -->
                     <div class="bg-slate-50/70 p-4 rounded-2xl border border-slate-100 space-y-3 text-xs">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                             <div class="w-full sm:w-1/2">
@@ -871,7 +871,7 @@
                     </div>
                 </div>
 
-                <!-- Bagian 1: Rekapitulasi Harian 3 Shift & Tujuan Pengiriman (Sesuai Format Gambar 2, Di-Nol-kan) -->
+                <!-- Bagian 1: Rekapitulasi Harian 3 Shift & Tujuan Pengiriman (Tersambung Otomatis dengan Kartu Kendali) -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
                     <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
                         <i class="fa-solid fa-table-cells text-indigo-500 mr-1.5"></i> Rekapitulasi Harian 3 Shift & Tujuan Pengiriman (Audit FIFO)
@@ -882,7 +882,7 @@
                                 <tr>
                                     <th rowspan="2" class="align-middle">Tanggal</th>
                                     <th colspan="4" class="bg-indigo-50 text-indigo-900">HASIL PRODUKSI</th>
-                                    <th colspan="13" class="bg-amber-50 text-amber-900">PENGIRIMAN</th>
+                                    <th colspan="13" class="bg-amber-50 text-amber-900">PENGIRIMAN (Sum dari Kartu Kendali)</th>
                                     <th rowspan="2" class="align-middle">TOTAL</th>
                                     <th rowspan="2" class="align-middle">SISA STOCK</th>
                                 </tr>
@@ -909,27 +909,34 @@
                     </div>
                 </div>
 
-                <!-- Bagian 2: Kartu Kendali Detail / Log FIFO (Sinkron dengan Pengeluaran Antrian) -->
+                <!-- Bagian 2: Kartu Kendali Detail / Log FIFO (Terhubung Binloc & Antrian) -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-3">
                     <h4 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-3">
-                        <i class="fa-solid fa-clipboard-list text-amber-500 mr-1.5"></i> Kartu Kendali Detail / Log FIFO (Sinkron Pengeluaran Antrian)
+                        <i class="fa-solid fa-clipboard-list text-amber-500 mr-1.5"></i> Kartu Kendali Detail / Log FIFO (Link Binloc & Antrian)
                     </h4>
                     <div class="table-responsive" style="max-height: 450px;">
-                        <table class="table table-bordered align-middle text-center text-xs">
+                        <table class="table table-bordered align-middle text-center text-[10px]">
                             <thead class="pastel-header-dark sticky top-0">
                                 <tr>
-                                    <th>Tgl Masuk</th>
-                                    <th>Tgl Keluar</th>
-                                    <th>No D/O</th>
-                                    <th>No. Nopol</th>
-                                    <th>Ekspedisi</th>
-                                    <th>Tujuan</th>
-                                    <th>Jml (Krt)</th>
-                                    <th>Status FIFO</th>
+                                    <th colspan="2" class="bg-indigo-50 text-indigo-900">TERIMA (BARANG MASUK)</th>
+                                    <th colspan="9" class="bg-amber-50 text-amber-900">KELUAR (BARANG KELUAR)</th>
+                                    <th rowspan="2" class="align-middle bg-slate-100">SISA STOCK</th>
+                                </tr>
+                                <tr>
+                                    <th class="bg-indigo-50/50">Tanggal Terima</th>
+                                    <th class="bg-indigo-50/50">Jumlah</th>
+                                    <th class="bg-amber-50/50">Tanggal Kirim</th>
+                                    <th class="bg-amber-50/50">No DO</th>
+                                    <th class="bg-amber-50/50">No Polisi</th>
+                                    <th class="bg-amber-50/50">Ekspedisi</th>
+                                    <th class="bg-amber-50/50">Tujuan</th>
+                                    <th class="bg-amber-50/50">Jumlah Kirim</th>
+                                    <th class="bg-amber-50/50">Jml/Pallet</th>
+                                    <th class="bg-amber-50/50">Receh</th>
                                 </tr>
                             </thead>
                             <tbody id="fifoLogTableBody">
-                                <tr><td colspan="8" class="text-muted py-3">Belum ada data log pengeluaran (sistem belum berjalan).</td></tr>
+                                <tr><td colspan="12" class="text-muted py-3">Belum ada data log pengeluaran (sistem belum berjalan).</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -1573,8 +1580,8 @@
                             prodate: tanggalKirimStr,
                             rak: p.batch_lokasi,
                             pallet: p.konversi_pallet || 0,
-                            receh: 0,
-                            jumlah: p.total_karton
+                            receh: p.receh || 0,
+                            jumlah: p.total_karton || 0
                         }))
                     };
                 });
@@ -2010,7 +2017,6 @@
             if(tab === 'traceability') renderTraceabilityResults();
         }
 
-        // Fungsi Switch Sub Tab untuk Stock Jalur (Tab 1 & Tab 2 Audit FIFO)
         function switchJalurSubTab(tabName) {
             let tab1El = document.getElementById('jalurContent-tab1');
             let tab2El = document.getElementById('jalurContent-tab2');
@@ -2032,7 +2038,6 @@
             }
         }
 
-        // Mengisi pilihan SKU di Tab 2 secara otomatis dari Master SKU & Binloc
         function populateFifoSkuOptions() {
             let datalist = document.getElementById('skuListOptions');
             if (!datalist) return;
@@ -2060,6 +2065,7 @@
             });
         }
 
+        // FUNGSI UTAMA AUDIT FIFO: MENYAMBUNGKAN KARTU KENDALI DETAIL & REKAPITULASI HARIAN SECARA OTOMATIS
         function renderFifoAuditData() {
             let skuInput = document.getElementById('fifoSelectSku');
             let infoKode = document.getElementById('fifoInfoKode');
@@ -2078,37 +2084,175 @@
 
             if(infoKode) infoKode.innerText = selectedSku;
             if(infoNama) infoNama.innerText = skuObj.name;
-            if(totalSaldoEl) totalSaldoEl.innerText = '0 Karton'; // Di-nol-kan karena sistem belum berjalan
 
-            // Render Rekapitulasi Harian (Sesuai Format Gambar 2, Di-nol-kan)
+            // 1. Tarik Data Barang Masuk (Terima) dari Binloc / Stok Berdasarkan SKU Terpilih
+            let terimaItems = [];
+            binData.forEach(item => {
+                if(item && item.sku) {
+                    let cSku = item.sku.includes(' - ') ? item.sku.split(' - ')[0].trim() : item.sku;
+                    if(cSku === selectedSku) {
+                        terimaItems.push({
+                            tanggalTerima: item.tanggal || '01/09/2026',
+                            jumlah: parseFloat(item.karton || item.konversi) || 0
+                        });
+                    }
+                }
+            });
+            if(terimaItems.length === 0) {
+                terimaItems.push({ tanggalTerima: '01/09/2026', jumlah: 0 });
+            }
+
+            // 2. Tarik Data Barang Keluar (Keluar) dari Antrian & Picking List Berdasarkan SKU Terpilih
+            let keluarItems = [];
+            antrianData.forEach(t => {
+                if(t.pickingList && t.pickingList.length > 0) {
+                    t.pickingList.forEach(pl => {
+                        let pSku = pl.sku ? (pl.sku.includes(' - ') ? pl.sku.split(' - ')[0].trim() : pl.sku) : '';
+                        if(pSku === selectedSku) {
+                            keluarItems.push({
+                                tanggalKirim: t.tanggalKirim || '-',
+                                noDoc: t.noDoc || '-',
+                                noPol: t.noPol || '-',
+                                ekspedisi: t.ekspedisi || '-',
+                                tujuan: t.tujuan || '-',
+                                jumlahKirim: parseFloat(pl.jumlah) || 0,
+                                pallet: parseFloat(pl.pallet) || 0,
+                                receh: parseFloat(pl.receh) || 0
+                            });
+                        }
+                    });
+                }
+            });
+
+            // 3. Render Kartu Kendali Detail / Log FIFO (Terima & Keluar) dengan Hitung Sisa Stock
+            let logHtml = '';
+            let runningSaldo = terimaItems.reduce((acc, curr) => acc + curr.jumlah, 0);
+
+            if(keluarItems.length === 0) {
+                logHtml = `
+                    <tr>
+                        <td>${terimaItems[0].tanggalTerima}</td>
+                        <td class="fw-bold text-indigo-600">${terimaItems[0].jumlah}</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td>0</td>
+                        <td class="fw-bold text-slate-700">${runningSaldo}</td>
+                    </tr>
+                `;
+            } else {
+                keluarItems.forEach((k, idx) => {
+                    let tMsk = idx === 0 ? terimaItems[0].tanggalTerima : '-';
+                    let jMsk = idx === 0 ? terimaItems[0].jumlah : 0;
+                    runningSaldo -= k.jumlahKirim;
+
+                    logHtml += `
+                        <tr>
+                            <td>${tMsk}</td>
+                            <td class="fw-bold text-indigo-600">${jMsk}</td>
+                            <td>${k.tanggalKirim}</td>
+                            <td><span class="badge bg-indigo-50 text-indigo-700 border">${k.noDoc}</span></td>
+                            <td class="fw-bold">${k.noPol}</td>
+                            <td>${k.ekspedisi}</td>
+                            <td>${k.tujuan}</td>
+                            <td class="fw-bold text-rose-600">${k.jumlahKirim}</td>
+                            <td>${k.pallet}</td>
+                            <td>${k.receh}</td>
+                            <td class="fw-bold text-slate-700">${runningSaldo}</td>
+                        </tr>
+                    `;
+                });
+            }
+            logTbody.innerHTML = logHtml;
+            if(totalSaldoEl) totalSaldoEl.innerText = runningSaldo + ' Karton';
+
+            // 4. Rekapitulasi Harian: Penjumlahan (Sum) Otomatis dari Kartu Kendali per Tanggal & Tujuan
+            let daysInMonth = 30;
             let rekapHtml = '';
-            let daysInMonth = 30; // Untuk bulan September
+            let sumS1 = 0, sumS2 = 0, sumS3 = 0, sumTotMasuk = 0;
+            let sumMdc = 0, sumMtTam = 0, sumMtCik = 0, sumMtBal = 0;
+            let sumRdcSby = 0, sumRdcBandung = 0, sumRdcMakassar = 0, sumRdcOsowilangun = 0, sumRdcMedan = 0, sumRdcPurwosari = 0, sumRdcKalianak = 0;
+            let sumSubdist = 0, sumTotalKeluar = 0;
 
             for(let i = 1; i <= daysInMonth; i++) {
                 let dayStr = String(i).padStart(2, '0');
+                let tglFormatted = `${dayStr}/09/2026`;
+
+                // Filter data keluar di kartu kendali yang tanggal kirimnya sama dengan tglFormatted
+                let matchedKeluar = keluarItems.filter(k => k.tanggalKirim === tglFormatted);
+
+                let mdcBal = 0, mtTam = 0, mtCik = 0, mtBal = 0;
+                let rdcSby = 0, rdcBandung = 0, rdcMakassar = 0, rdcOsowilangun = 0, rdcMedan = 0, rdcPurwosari = 0, rdcKalianak = 0;
+                let subdist = 0, totKeluarDay = 0;
+
+                matchedKeluar.forEach(m => {
+                    let tjn = (m.tujuan || '').toUpperCase();
+                    let qty = m.jumlahKirim;
+                    totKeluarDay += qty;
+
+                    if(tjn.includes('MDC BALARAJA')) mdcBal += qty;
+                    else if(tjn.includes('MT TAMBUN')) mtTam += qty;
+                    else if(tjn.includes('MT CIKUPA')) mtCik += qty;
+                    else if(tjn.includes('MT BALARAJA')) mtBal += qty;
+                    else if(tjn.includes('SURABAYA') || tjn.includes('SBY')) rdcSby += qty;
+                    else if(tjn.includes('BANDUNG')) rdcBandung += qty;
+                    else if(tjn.includes('MAKASSAR')) rdcMakassar += qty;
+                    else if(tjn.includes('OSOWILANGUN')) rdcOsowilangun += qty;
+                    else if(tjn.includes('MEDAN')) rdcMedan += qty;
+                    else if(tjn.includes('PURWOSARI')) rdcPurwosari += qty;
+                    else if(tjn.includes('KALIANAK')) rdcKalianak += qty;
+                    else subdist += qty;
+                });
+
+                let s1 = i === 1 ? terimaItems[0].jumlah : 0;
+                let s2 = 0, s3 = 0;
+                let totMasukDay = s1 + s2 + s3;
+
+                sumS1 += s1; sumS2 += s2; sumS3 += s3; sumTotMasuk += totMasukDay;
+                sumMdc += mdcBal; sumMtTam += mtTam; sumMtCik += mtCik; sumMtBal += mtBal;
+                sumRdcSby += rdcSby; sumRdcBandung += rdcBandung; sumRdcMakassar += rdcMakassar;
+                sumRdcOsowilangun += rdcOsowilangun; sumRdcMedan += rdcMedan; sumRdcPurwosari += rdcPurwosari; sumRdcKalianak += rdcKalianak;
+                sumSubdist += subdist; sumTotalKeluar += totKeluarDay;
+
                 rekapHtml += `
                     <tr>
-                        <td class="fw-bold text-amber-700">${dayStr}/09/2026</td>
-                        <td>0</td><td>0</td><td>0</td>
-                        <td class="fw-bold text-slate-700">0</td>
-                        <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
-                        <td class="fw-bold text-indigo-600">0</td>
-                        <td class="fw-bold text-slate-700">0</td>
+                        <td class="fw-bold text-amber-700">${tglFormatted}</td>
+                        <td>${s1 || 0}</td><td>${s2 || 0}</td><td>${s3 || 0}</td>
+                        <td class="fw-bold text-slate-700">${totMasukDay || 0}</td>
+                        <td>${mdcBal || 0}</td>
+                        <td>${mtTam || 0}</td>
+                        <td>${mtCik || 0}</td>
+                        <td>${mtBal || 0}</td>
+                        <td>${rdcSby || 0}</td>
+                        <td>${rdcBandung || 0}</td>
+                        <td>${rdcMakassar || 0}</td>
+                        <td>${rdcOsowilangun || 0}</td>
+                        <td>${rdcMedan || 0}</td>
+                        <td>${rdcPurwosari || 0}</td>
+                        <td>${rdcKalianak || 0}</td>
+                        <td>${subdist || 0}</td>
+                        <td class="fw-bold text-indigo-600">${totKeluarDay || 0}</td>
+                        <td class="fw-bold text-slate-700">${runningSaldo}</td>
                     </tr>
                 `;
             }
 
-            // Baris Total Bawah
             rekapHtml += `
                 <tr class="table-active fw-bold">
                     <td>TOTAL</td>
-                    <td>0</td><td>0</td><td>0</td><td>0</td>
-                    <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
-                    <td>0</td><td>0</td>
+                    <td>${sumS1}</td><td>${sumS2}</td><td>${sumS3}</td><td>${sumTotMasuk}</td>
+                    <td>${sumMdc}</td><td>${sumMtTam}</td><td>${sumMtCik}</td><td>${sumMtBal}</td>
+                    <td>${sumRdcSby}</td><td>${sumRdcBandung}</td><td>${sumRdcMakassar}</td><td>${sumRdcOsowilangun}</td>
+                    <td>${sumRdcMedan}</td><td>${sumRdcPurwosari}</td><td>${sumRdcKalianak}</td><td>${sumSubdist}</td>
+                    <td class="text-indigo-700">${sumTotalKeluar}</td>
+                    <td class="text-slate-700">${runningSaldo}</td>
                 </tr>
             `;
             rekapTbody.innerHTML = rekapHtml;
-            logTbody.innerHTML = '<tr><td colspan="8" class="text-muted py-3">Belum ada data log pengeluaran (sistem belum berjalan).</td></tr>';
         }
 
         function renderReportData() {

@@ -289,7 +289,56 @@
                     </div>
                 </div>
             </div>
+<!-- TAMBAHAN DI SISI KIRI (Bawah Tabel Rekapitulasi Destinasi) -->
+<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs space-y-2.5 mt-6">
+    <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+        <i class="fa-solid fa-users-gear text-indigo-500 mr-1.5"></i> Produktivitas Team Shift (Uji Coba)
+    </h3>
+    <div class="space-y-2 text-xs" id="dynamicTeamProductivityContainer">
+        <div class="flex items-center justify-between bg-cyan-50/60 p-2 rounded-xl border border-cyan-100">
+            <span class="font-bold text-cyan-900">Produktivitas Team A</span>
+            <div class="flex items-center gap-3">
+                <span class="bg-white px-2 py-1 rounded-lg border font-bold text-cyan-800" id="teamA_unit">0 Unit</span>
+                <span class="font-bold text-cyan-900" id="teamA_krt">0 Krt</span>
+            </div>
+        </div>
+        <div class="flex items-center justify-between bg-teal-50/60 p-2 rounded-xl border border-teal-100">
+            <span class="font-bold text-teal-900">Produktivitas Team B</span>
+            <div class="flex items-center gap-3">
+                <span class="bg-white px-2 py-1 rounded-lg border font-bold text-teal-800" id="teamB_unit">0 Unit</span>
+                <span class="font-bold text-teal-900" id="teamB_krt">0 Krt</span>
+            </div>
+        </div>
+        <div class="flex items-center justify-between bg-indigo-50/60 p-2 rounded-xl border border-indigo-100">
+            <span class="font-bold text-indigo-900">Produktivitas Team C</span>
+            <div class="flex items-center gap-3">
+                <span class="bg-white px-2 py-1 rounded-lg border font-bold text-indigo-800" id="teamC_unit">0 Unit</span>
+                <span class="font-bold text-indigo-900" id="teamC_krt">0 Krt</span>
+            </div>
+        </div>
+    </div>
+</div>
 
+<!-- TAMBAHAN DI SISI KANAN (Bawah Stock Terbanyak) -->
+<div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs space-y-2.5 mt-6">
+    <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
+        <i class="fa-solid fa-bullseye text-emerald-500 mr-1.5"></i> Target Direct Outbound (Sinkron Antrian)
+    </h3>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center text-[10px] mb-0">
+            <thead class="table-light">
+                <tr><th>DO/Week</th><th>Target Direct</th><th>Realisasi (Antrian)</th><th>Persentase</th></tr>
+            </thead>
+            <tbody id="dynamicTargetDirectTableBody">
+                <tr><td>Week 36</td><td>0</td><td>0</td><td><span class="text-slate-500 font-bold">0,00%</span></td></tr>
+                <tr><td>Week 37</td><td>0</td><td>0</td><td><span class="text-slate-500 font-bold">0,00%</span></td></tr>
+                <tr><td>Week 38</td><td>0</td><td>0</td><td><span class="text-slate-500 font-bold">0,00%</span></td></tr>
+                <tr class="table-active fw-bold"><td colspan="3" class="text-end">Average Persentase:</td><td class="text-indigo-700" id="averageDirectPct">0,00%</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+            
             <div id="dashSubContent-matriks" class="space-y-6 hidden">
                 <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs space-y-4">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
@@ -1420,7 +1469,36 @@
                 window.location.href = 'login.html';
             }
         }
+function updateDashboardFromAntrian() {
+    // Menghitung otomatis berdasarkan data antrian truk & picking list yang masuk
+    let teamA_u = 0, teamA_k = 0;
+    let teamB_u = 0, teamB_k = 0;
+    let teamC_u = 0, teamC_k = 0;
 
+    if (typeof antrianData !== 'undefined') {
+        antrianData.forEach(truk => {
+            let shift = (truk.shift || '').toLowerCase();
+            let qty = (truk.pickingList || []).reduce((sum, item) => sum + (parseFloat(item.jumlah) || 0), 0);
+
+            if (shift.includes('1') || shift.includes('a')) {
+                teamA_u++; teamA_k += qty;
+            } else if (shift.includes('2') || shift.includes('b')) {
+                teamB_u++; teamB_k += qty;
+            } else {
+                teamC_u++; teamC_k += qty;
+            }
+        });
+    }
+
+    // Update elemen HTML
+    document.getElementById('teamA_unit').innerText = teamA_u + ' Unit';
+    document.getElementById('teamA_krt').innerText = teamA_k.toLocaleString('id-ID') + ' Krt';
+    document.getElementById('teamB_unit').innerText = teamB_u + ' Unit';
+    document.getElementById('teamB_krt').innerText = teamB_k.toLocaleString('id-ID') + ' Krt';
+    document.getElementById('teamC_unit').innerText = teamC_u + ' Unit';
+    document.getElementById('teamC_krt').innerText = teamC_k.toLocaleString('id-ID') + ' Krt';
+}
+        
         let stockData = {};
         let sapStockData = {};
         let qcHistoryData = [];

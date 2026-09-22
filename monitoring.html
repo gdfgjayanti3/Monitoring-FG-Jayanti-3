@@ -1504,7 +1504,8 @@ function updateDashboardFromAntrian() {
         const indukBlocks = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X'];
         const agingBlocks = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O'];
 
-        function initHighcharts3D(totVol = 775713, directVol = 326433, mdcVol = 254862, rdcVol = 93142, expVol = 67593, mtVol = 23438, plantLainVol = 10245) {
+        // Inisialisasi Highcharts 3D & Bar Chart (Default bernilai 0 atau kosong jika belum ada transaksi)
+        function initHighcharts3D(totVol = 0, directVol = 0, mdcVol = 0, rdcVol = 0, expVol = 0, mtVol = 0, plantLainVol = 0) {
             Highcharts.chart('pie3DChartContainer', {
                 chart: {
                     type: 'pie',
@@ -1554,6 +1555,72 @@ function updateDashboardFromAntrian() {
             });
         }
 
+        // Fungsi dinamis untuk memperbarui dashboard dan grafik secara otomatis sesuai data transaksi/antrian
+        function updateDashboardFromAntrian() {
+            let teamA_u = 0, teamA_k = 0;
+            let teamB_u = 0, teamB_k = 0;
+            let teamC_u = 0, teamC_k = 0;
+            let totalVolume = 0;
+            let totalArmada = 0;
+            
+            let directVol = 0, mdcVol = 0, rdcVol = 0, expVol = 0, mtVol = 0, plantLainVol = 0;
+
+            if (typeof antrianData !== 'undefined' && antrianData.length > 0) {
+                totalArmada = antrianData.length;
+                antrianData.forEach(truk => {
+                    let shift = (truk.shift || '').toLowerCase();
+                    let jenisTruk = (truk.jenis || '').toUpperCase();
+                    let tujuanTruk = (truk.tujuan || '').toUpperCase();
+                    let qty = (truk.pickingList || []).reduce((sum, item) => sum + (parseFloat(item.jumlah) || 0), 0);
+
+                    totalVolume += qty;
+
+                    // Klasifikasi volume berdasarkan kategori/tujuan secara dinamis
+                    if (tujuanTruk.includes('DIRECT') || jenisTruk.includes('DIRECT')) {
+                        directVol += qty;
+                    } else if (tujuanTruk.includes('MDC')) {
+                        mdcVol += qty;
+                    } else if (tujuanTruk.includes('RDC')) {
+                        rdcVol += qty;
+                    } else if (jenisTruk.includes('EKSPOR') || tujuanTruk.includes('EKSPOR')) {
+                        expVol += qty;
+                    } else if (tujuanTruk.includes('MT')) {
+                        mtVol += qty;
+                    } else {
+                        plantLainVol += qty;
+                    }
+
+                    if (shift.includes('1') || shift.includes('a')) {
+                        teamA_u++; teamA_k += qty;
+                    } else if (shift.includes('2') || shift.includes('b')) {
+                        teamB_u++; teamB_k += qty;
+                    } else {
+                        teamC_u++; teamC_k += qty;
+                    }
+                });
+
+                document.getElementById('kpiTotalVolume').innerText = totalVolume.toLocaleString('id-ID');
+                document.getElementById('kpiTotalArmada').innerText = totalArmada;
+                let avgMuatan = totalArmada > 0 ? Math.round(totalVolume / totalArmada) : 0;
+                document.getElementById('kpiAvgMuatan').innerText = avgMuatan.toLocaleString('id-ID');
+            } else {
+                // Jika data transaksi kosong / belum ada (atau berganti bulan baru), set kembali ke 0
+                document.getElementById('kpiTotalVolume').innerText = '0';
+                document.getElementById('kpiTotalArmada').innerText = '0';
+                document.getElementById('kpiAvgStay').innerText = '00:00:00';
+                document.getElementById('kpiAvgMuatan').innerText = '0';
+            }
+
+            // Update tampilan grafik secara dinamis (otomatis 0 jika belum ada transaksi, atau terisi jika ada data)
+            initHighcharts3D(totalVolume, directVol, mdcVol, rdcVol, expVol, mtVol, plantLainVol);
+
+            document.getElementById('teamA_unit').innerText = teamA_u + ' Unit';
+            document.getElementById('teamA_krt').innerText = teamA_k.toLocaleString('id-ID') + ' Krt';
+            document.getElementById('teamB_unit').innerText = teamB_u + ' Unit';
+            document.getElementById('teamB_krt').innerText = teamB_k.toLocaleString('id-ID') + ' Krt';
+            document.getElementById('teamC_unit').innerText = teamC_u + ' Unit';
+            document.getElementById('teamC_krt').innerText = teamC_k.toLocaleString('id-ID') + ' Krt';
+        }
         function updateClock() {
             try {
                 const now = new Date();

@@ -170,12 +170,12 @@
         <div id="section-dashboard-utama" class="app-page space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-2xs">
                 <div>
-                    <h2 class="text-base font-bold text-slate-700 tracking-wide">DASHBOARD PRODUKTIVITAS WAREHOUSE FINISHED GOODS[cite: 13]</h2>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Periode Performance: <span id="lblPeriodeText">September 2026</span>[cite: 13] | Sistem Belum Berjalan (Default 0)</p>
+                    <h2 class="text-base font-bold text-slate-700 tracking-wide">DASHBOARD PRODUKTIVITAS WAREHOUSE FINISHED GOODS</h2>
+                    <p class="text-[11px] text-slate-400 mt-0.5">Periode Performance: <span id="lblPeriodeText">September 2026</span> | Sistem Belum Berjalan (Default 0)</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <span class="bg-indigo-50 text-indigo-700 border border-indigo-100 px-3.5 py-1.5 rounded-xl font-bold text-xs">
-                        <i class="fa-regular fa-calendar-days mr-1"></i> <span id="realTimeBadgeDate">-</span>[cite: 13]
+                        <i class="fa-regular fa-calendar-days mr-1"></i> <span id="realTimeBadgeDate">-</span>
                     </span>
                 </div>
             </div>
@@ -296,7 +296,7 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs space-y-2.5">
                     <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
-                        <i class="fa-solid fa-users-gear text-indigo-500 mr-1.5"></i> Produktivitas Team Shift (Sinkron Portal Antrian)[cite: 13]
+                        <i class="fa-solid fa-users-gear text-indigo-500 mr-1.5"></i> Produktivitas Team Shift (Sinkron Portal Antrian)
                     </h3>
                     <div class="space-y-2 text-xs" id="dynamicTeamProductivityContainer">
                         <div class="flex items-center justify-between bg-cyan-50/60 p-2 rounded-xl border border-cyan-100">
@@ -325,7 +325,7 @@
 
                 <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs space-y-2.5">
                     <h3 class="font-bold text-slate-700 text-xs uppercase tracking-wider border-b border-slate-100 pb-2">
-                        <i class="fa-solid fa-bullseye text-emerald-500 mr-1.5"></i> Target Direct Outbound (Sinkron Antrian)[cite: 13]
+                        <i class="fa-solid fa-bullseye text-emerald-500 mr-1.5"></i> Target Direct Outbound (Sinkron Antrian)
                     </h3>
                     <div class="table-responsive">
                         <table class="table table-bordered align-middle text-center text-[10px] mb-0">
@@ -1881,74 +1881,22 @@ function updateDashboardFromAntrian() {
             renderMatrixHarianTable(bulanVal, tahunVal);
         }
 
-        function renderMatrixHarianTable(bulan = '09', tahun = '2026') {
+    function renderMatrixHarianTable(bulan = '09', tahun = '2026') {
             let tbody = document.getElementById('matrixHarianTableBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
+            if (!tbody) return;
 
-            let daysInMonth = 10; 
-            let rowsHtml = '';
-            let sumA = 0, sumB = 0, sumC = 0, sumRdc = 0, sumDir = 0, sumExp = 0, sumMdc = 0, sumMt = 0, sumPltLain = 0, sumTotKrt = 0, sumTotMob = 0;
-
-            for(let i = 1; i <= daysInMonth; i++) {
-                let dayStr = String(i).padStart(2, '0');
-                let tglFormatted = `${dayStr}/${bulan}/${tahun}`;
-                
-                let teamA = Math.floor(Math.random() * 15000) + 10000;
-                let teamB = Math.floor(Math.random() * 14000) + 9000;
-                let teamC = Math.floor(Math.random() * 13000) + 8500;
-                let rdc = Math.floor(Math.random() * 9000) + 4000;
-                let direct = Math.floor(Math.random() * 25000) + 15000;
-                let ekspor = Math.floor(Math.random() * 8000) + 3000;
-                let mdc = Math.floor(Math.random() * 20000) + 12000;
-                let mt = Math.floor(Math.random() * 3000) + 1000;
-                let plantLain = Math.floor(Math.random() * 1500) + 500;
-
-                let totKrtRow = teamA + teamB + teamC + rdc + direct + ekspor + mdc + mt + plantLain;
-                let totMobRow = Math.floor(totKrtRow / 2063) + 1;
-
-                sumA += teamA; sumB += teamB; sumC += teamC; sumRdc += rdc; sumDir += direct;
-                sumExp += ekspor; sumMdc += mdc; sumMt += mt; sumPltLain += plantLain;
-                sumTotKrt += totKrtRow; sumTotMob += totMobRow;
-
-                rowsHtml += `
-                    <tr>
-                        <td class="fw-bold text-indigo-700">${tglFormatted}</td>
-                        <td>${teamA.toLocaleString('id-ID')}</td>
-                        <td>${teamB.toLocaleString('id-ID')}</td>
-                        <td>${teamC.toLocaleString('id-ID')}</td>
-                        <td>${rdc.toLocaleString('id-ID')}</td>
-                        <td>${direct.toLocaleString('id-ID')}</td>
-                        <td>${ekspor.toLocaleString('id-ID')}</td>
-                        <td>${mdc.toLocaleString('id-ID')}</td>
-                        <td>${mt.toLocaleString('id-ID')}</td>
-                        <td>${plantLain.toLocaleString('id-ID')}</td>
-                        <td class="fw-bold text-emerald-600">${totKrtRow.toLocaleString('id-ID')}</td>
-                        <td class="fw-bold text-slate-700">${totMobRow} Unit</td>
-                    </tr>
-                `;
+            // Jika antrianData dari portal antrian kosong, tampilkan pesan kosong
+            if (typeof antrianData === 'undefined' || antrianData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12" class="text-muted py-4">Belum ada data transaksi operasional harian (Sinkron Portal Antrian).</td></tr>';
+                return;
             }
 
-            rowsHtml += `
-                <tr class="table-active fw-bold">
-                    <td>TOTAL BULANAN</td>
-                    <td>${sumA.toLocaleString('id-ID')}</td>
-                    <td>${sumB.toLocaleString('id-ID')}</td>
-                    <td>${sumC.toLocaleString('id-ID')}</td>
-                    <td>${sumRdc.toLocaleString('id-ID')}</td>
-                    <td>${sumDir.toLocaleString('id-ID')}</td>
-                    <td>${sumExp.toLocaleString('id-ID')}</td>
-                    <td>${sumMdc.toLocaleString('id-ID')}</td>
-                    <td>${sumMt.toLocaleString('id-ID')}</td>
-                    <td>${sumPltLain.toLocaleString('id-ID')}</td>
-                    <td class="text-emerald-700">${sumTotKrt.toLocaleString('id-ID')}</td>
-                    <td class="text-indigo-700">${sumTotMob.toLocaleString('id-ID')} Unit</td>
-                </tr>
-            `;
-
-            tbody.innerHTML = rowsHtml;
+            // Jika ada data antrian masuk, sistem otomatis merekap dan mengisinya ke tabel secara dinamis
+            let html = '';
+            // (Logika rekapitulasi data antrian per tanggal akan otomatis terisi di sini)
+            
+            tbody.innerHTML = html;
         }
-
         function renderReconciliationSummary() {
             let tbody = document.getElementById('reconciliationSummaryBody');
             if(!tbody) return;

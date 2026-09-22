@@ -1474,10 +1474,12 @@ function updateDashboardFromAntrian() {
     let teamA_u = 0, teamA_k = 0;
     let teamB_u = 0, teamB_k = 0;
     let teamC_u = 0, teamC_k = 0;
+    let directRealisasi = 0;
 
     if (typeof antrianData !== 'undefined') {
         antrianData.forEach(truk => {
             let shift = (truk.shift || '').toLowerCase();
+            let jenis = (truk.jenis || '').toLowerCase();
             let qty = (truk.pickingList || []).reduce((sum, item) => sum + (parseFloat(item.jumlah) || 0), 0);
 
             if (shift.includes('1') || shift.includes('a')) {
@@ -1487,9 +1489,35 @@ function updateDashboardFromAntrian() {
             } else {
                 teamC_u++; teamC_k += qty;
             }
+
+            if (jenis.includes('direct')) {
+                directRealisasi += qty;
+            }
         });
     }
 
+    // Update elemen HTML Team Shift
+    document.getElementById('teamA_unit').innerText = teamA_u + ' Unit';
+    document.getElementById('teamA_krt').innerText = teamA_k.toLocaleString('id-ID') + ' Krt';
+    document.getElementById('teamB_unit').innerText = teamB_u + ' Unit';
+    document.getElementById('teamB_krt').innerText = teamB_k.toLocaleString('id-ID') + ' Krt';
+    document.getElementById('teamC_unit').innerText = teamC_u + ' Unit';
+    document.getElementById('teamC_krt').innerText = teamC_k.toLocaleString('id-ID') + ' Krt';
+
+    // Update Target Direct Outbound (Sinkron Antrian)
+    let targetDirect = 0; // Target selama masa uji coba diset 0 atau sesuai planning
+    let persentase = targetDirect > 0 ? ((directRealisasi / targetDirect) * 100).toFixed(2) + '%' : '0,00%';
+    
+    let targetTableBody = document.getElementById('dynamicTargetDirectTableBody');
+    if (targetTableBody) {
+        targetTableBody.innerHTML = `
+            <tr><td>Week 36</td><td>${targetDirect.toLocaleString('id-ID')}</td><td>${directRealisasi.toLocaleString('id-ID')}</td><td><span class="text-slate-500 font-bold">${persentase}</span></td></tr>
+            <tr><td>Week 37</td><td>0</td><td>0</td><td><span class="text-slate-500 font-bold">0,00%</span></td></tr>
+            <tr><td>Week 38</td><td>0</td><td>0</td><td><span class="text-slate-500 font-bold">0,00%</span></td></tr>
+            <tr class="table-active fw-bold"><td colspan="3" class="text-end">Average Persentase:</td><td class="text-indigo-700" id="averageDirectPct">${persentase}</td></tr>
+        `;
+    }
+}
     // Update elemen HTML
     document.getElementById('teamA_unit').innerText = teamA_u + ' Unit';
     document.getElementById('teamA_krt').innerText = teamA_k.toLocaleString('id-ID') + ' Krt';
@@ -1735,6 +1763,7 @@ function updateDashboardFromAntrian() {
                 renderQcDateSummaryTable();
                 renderOpnameDateSummary();
                 updateDashboardByFilter();
+                updateDashboardFromAntrian();
 
             } catch (err) {
                 console.error("Gagal sinkronisasi data Firebase:", err);

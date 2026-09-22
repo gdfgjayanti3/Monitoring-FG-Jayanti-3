@@ -759,7 +759,7 @@
                 </div>
             </div>
 
-            <!-- TAB 4: STOCK JALUR EKSPOR (PUSAT KARTU KENDALI PER QT) -->
+            <!-- TAB 4: STOCK JALUR EKSPOR (DENGAN FITUR TAMBAHAN) -->
             <div id="eksporContent-stockjalur" class="space-y-6 hidden">
                 <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-2xs space-y-5">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-slate-100">
@@ -776,28 +776,39 @@
                         </div>
                     </div>
 
-                    <!-- Panel Filter Pintar Menggantikan Folder Komputer -->
+                    <!-- 1. Kotak Upload Rekap QT Aktif (Status Open) -->
+                    <div class="upload-section bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <h4 class="font-bold text-slate-700 text-xs mb-1">1. Kotak Upload Rekap QT Aktif (Status Open)</h4>
+                        <p class="text-[10px] text-slate-500 mb-2">Gunakan bagian ini untuk masa transisi agar dropdown No. QT tidak kosong.</p>
+                        <input type="file" id="fileQT" class="form-control form-control-sm text-xs rounded-xl border-slate-200" accept=".xlsx, .xls, .csv">
+                    </div>
+
+                    <!-- Panel Filter Pintar & Pilihan Negara Ekspor Mayora + Ketik Manual -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
                         <div>
-                            <label class="font-bold text-slate-600 block mb-1">1. Pilih Negara Tujuan:</label>
-                            <select id="filterNegaraEkspor" class="form-select form-select-sm rounded-xl border-slate-200 font-semibold" onchange="populateQtOptionsByNegara()">
+                            <label class="font-bold text-slate-600 block mb-1">2. Pilih Negara Tujuan Ekspor (Mayora):</label>
+                            <select id="filterNegaraEkspor" class="form-select form-select-sm rounded-xl border-slate-200 font-semibold" onchange="checkManualNegara(this); populateQtOptionsByNegara();">
                                 <option value="">-- Pilih Negara --</option>
-                                <option value="CHINA">CHINA</option>
-                                <option value="MALAYSIA">MALAYSIA</option>
-                                <option value="AFRIKA">AFRIKA</option>
-                                <option value="VIETNAM">VIETNAM</option>
+                                <option value="CHINA">China</option>
+                                <option value="MALAYSIA">Malaysia</option>
+                                <option value="AFRIKA">Afrika</option>
+                                <option value="VIETNAM">Vietnam</option>
+                                <option value="PHILIPPINES">Philippines</option>
+                                <option value="THAILAND">Thailand</option>
                                 <option value="USA">USA</option>
+                                <option value="Manual">Lainnya (Ketik Manual)...</option>
                             </select>
+                            <input type="text" id="manualNegara" class="form-control form-control-sm rounded-xl border-slate-200 mt-2" placeholder="Ketik nama negara baru..." style="display:none;">
                         </div>
                         <div>
-                            <label class="font-bold text-slate-600 block mb-1">2. Pilih No. Quotation (QT) / SO:</label>
+                            <label class="font-bold text-slate-600 block mb-1">3. Pilih No. Quotation (QT) / SO:</label>
                             <select id="filterQtEkspor" class="form-select form-select-sm rounded-xl border-slate-200 font-semibold" onchange="renderStockJalurEksporCard()">
                                 <option value="">-- Pilih No Quotation --</option>
                             </select>
                         </div>
                     </div>
 
-                    <!-- Area Tampilan Kartu Kendali Ekspor (Format Sesuai Request) -->
+                    <!-- Area Tampilan Kartu Kendali Ekspor (Format Sesuai Request dengan Auto-Link Master SKU) -->
                     <div id="stockJalurEksporContent" class="space-y-4">
                         <div class="text-center py-12 text-slate-400 text-xs">
                             <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
@@ -998,7 +1009,7 @@
                 <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-2xs">
                     <h3 class="font-bold text-slate-700 text-xs mb-3">Ringkasan Stok Aktual per Rak</h3>
                     <table class="table table-bordered align-middle text-center">
-                        <thead class="pastel-header-purple"><tr><th>SKU</th><th class="text-start">Nama Produk</th><th>Lokasi Rak</th><th>Total Stok (Pallet)</th></tr></thead>
+                        <pastel-header-purple class="pastel-header-purple"><tr><th>SKU</th><th class="text-start">Nama Produk</th><th>Lokasi Rak</th><th>Total Stok (Pallet)</th></tr></pastel-header-purple>
                         <tbody id="currentStockTableBody"><tr><td colspan="4" class="text-muted">Memuat stok...</td></tr></tbody>
                     </table>
                 </div>
@@ -2029,18 +2040,35 @@
             if(tab === 'planning') renderEksporPlanningTable();
         }
 
-        // FUNGSI PENGATURAN PILIHAN NEGARA & QT PADA TAB STOCK JALUR EKSPOR
+        // FUNGSI OPSI NEGARA MANUAL & AUTO-LINK MASTER SKU PADA STOCK JALUR EKSPOR
+        function checkManualNegara(select) {
+            const manualInput = document.getElementById('manualNegara');
+            if (select.value === 'Manual') {
+                manualInput.style.display = 'block';
+                manualInput.required = true;
+            } else {
+                manualInput.style.display = 'none';
+                manualInput.required = false;
+                manualInput.value = '';
+            }
+        }
+
         function populateQtOptionsByNegara() {
             let negaraSelect = document.getElementById('filterNegaraEkspor');
             let qtSelect = document.getElementById('filterQtEkspor');
             if(!negaraSelect || !qtSelect) return;
 
             let selectedNegara = negaraSelect.value.toUpperCase();
+            if (selectedNegara === 'MANUAL') {
+                let manualVal = document.getElementById('manualNegara').value.toUpperCase();
+                selectedNegara = manualVal;
+            }
+
             qtSelect.innerHTML = '<option value="">-- Pilih No Quotation --</option>';
 
             let filteredList = eksporPlanningData.filter(p => {
                 let neg = (p.negara || p.destination || '').toUpperCase();
-                return !selectedNegara || neg.includes(selectedNegara);
+                return !selectedNegara || selectedNegara === 'MANUAL' || neg.includes(selectedNegara);
             });
 
             filteredList.forEach(p => {
@@ -2075,13 +2103,15 @@
                 return;
             }
 
-            let skuObj = stockData[planningItem.sku] || { cartonPerPallet: 60 };
-            let cartonPerPlt = skuObj.cartonPerPallet || 60;
+            // AUTO-LINK MASTER SKU
+            let skuCode = planningItem.sku || '';
+            let masterSkuObj = stockData[skuCode] || {};
+            let autoLinkedName = masterSkuObj.name || planningItem.name || '-';
+            let cartonPerPlt = masterSkuObj.cartonPerPallet || 60;
             let totalQtyVal = parseFloat(planningItem.qtySi) || 300;
 
             let matchingAntrian = antrianData.find(t => (t.noDoc && t.noDoc.trim() === planningItem.noSo.trim()) || (t.noDoc && t.noDoc.trim() === planningItem.quotation.trim()));
 
-            // Render Pengiriman Menyeluruh (Bisa disesuaikan dengan pengiriman menyamping ke kanan)
             let pengirimanColsHtml = `
                 <td class="bg-white">
                     <div><b>${matchingAntrian ? matchingAntrian.tanggalKirim : '17/09/2026'}</b></div>
@@ -2105,22 +2135,22 @@
 
             containerDiv.innerHTML = `
                 <div class="space-y-4 border border-slate-200 p-5 rounded-2xl bg-white shadow-2xs">
-                    <!-- Info Atas Barang (Request 2: Karton/Pallet, Prodate & Exp Date) -->
+                    <!-- Info Atas Barang (Auto-Link Master SKU: Nama Produk & Standar Karton per Pallet) -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
                         <div class="space-y-1.5">
-                            <div><strong>Nama Barang:</strong> <span class="text-indigo-600 font-bold">${planningItem.name || '-'}</span></div>
+                            <div><strong>Nama Barang (Auto-Link):</strong> <span class="text-indigo-600 font-bold">${autoLinkedName}</span></div>
                             <div><strong>Tanggal Produksi:</strong> ${planningItem.proDate || '07/09/2026'}</div>
-                            <div><strong>Karton per Pallet:</strong> <span class="font-bold text-emerald-600">${cartonPerPlt} Karton / Pallet</span></div>
+                            <div><strong>Standar Karton per Pallet (Auto-Link):</strong> <span class="font-bold text-emerald-600">${cartonPerPlt} Karton / Pallet</span></div>
                         </div>
                         <div class="space-y-1.5">
-                            <div><strong>SKU:</strong> <span class="font-bold">${planningItem.sku || '-'}</span></div>
+                            <div><strong>SKU:</strong> <span class="font-bold">${skuCode || '-'}</span></div>
                             <div><strong>No E.O / QT:</strong> <span class="text-amber-700 font-bold">${planningItem.quotation || planningItem.noEo || '-'}</span></div>
                             <div><strong>No. SO / DO:</strong> <span class="text-indigo-600 font-bold">${planningItem.noSo || '-'}</span></div>
-                            <div><strong>No. Prodate & Exp Date:</strong> <span class="text-indigo-700 font-bold">${planningItem.proDate || '07/09/26'} / ${planningItem.expDate || '07/12/27'}</span></div>
+                            <div><strong>Prodate / Exp Date:</strong> <span class="text-indigo-700 font-bold">${planningItem.proDate || '07/09/26'} / ${planningItem.expDate || '07/12/27'}</span></div>
                         </div>
                     </div>
 
-                    <!-- Tabel Gabungan Output Produksi (3 Shift + Keterangan) & Pengiriman Menyamping ke Kanan (Request 1 & 3) -->
+                    <!-- Tabel Gabungan Output Produksi & Pengiriman Bergeser ke Kanan -->
                     <div class="table-responsive border border-slate-200 rounded-xl">
                         <table class="table table-bordered align-middle text-center text-[10px] mb-0">
                             <thead class="bg-amber-100 text-amber-900">

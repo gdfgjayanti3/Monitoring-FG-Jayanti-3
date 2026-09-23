@@ -571,23 +571,59 @@
         </div>
 
         <!-- SECTION RDC -->
-        <div id="section-rdc" class="app-page space-y-6">
-            <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
-                <h3 class="font-bold text-slate-700 text-xs"><i class="fa-solid fa-warehouse text-sky-500 mr-2"></i> Monitoring Pengiriman RDC (SLA Max 6 Jam)</h3>
-                <button type="button" class="btn btn-sm btn-outline-secondary text-xs" onclick="renderRdcMonitoringTable()">Refresh</button>
-            </div>
-            <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-100">
-                <div class="card-body table-responsive">
-                    <table class="table table-bordered align-middle text-center">
-                        <thead class="pastel-header-blue">
-                            <tr><th>Tanggal</th><th>Plant</th><th>Tujuan</th><th>No DO</th><th>SKU</th><th class="text-start">Nama Barang</th><th>QTY</th><th>No Mobil</th><th>Ekspedisi</th><th>Masuk</th><th>Muat</th><th>Selesai</th><th>Keluar</th><th>Lama</th><th>SLA</th><th>Status</th></tr>
-                        </thead>
-                        <tbody id="rdcMonitoringBody"><tr><td colspan="16" class="text-muted">Memuat data RDC...</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
+        <div id="section-rdc" class="app-page space-y-6 max-w-full px-4">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+        <div>
+            <h3 class="font-bold text-slate-700 text-base"><i class="fa-solid fa-truck-fast mr-2 text-indigo-600"></i> Monitoring Pengiriman RDC (SLA Max 6 Jam)</h3>
+            <p class="text-xs text-slate-400">Gabungan data Planning RDC dan Realisasi truk masuk yang tersinkronisasi otomatis dengan portal antrian.</p>
         </div>
+        <div class="flex items-center gap-2">
+            <button onclick="openUploadPlanningModal()" class="btn btn-sm btn-primary fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Upload / Input Planning</button>
+            <button onclick="refreshRdcMonitoring()" class="btn btn-sm btn-outline-secondary fw-bold text-xs"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
+        </div>
+    </div>
 
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs overflow-x-auto">
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 1600px;">
+                <thead class="table-dark text-white">
+                    <tr>
+                        <th colspan="8" class="bg-indigo-900 border-bottom">PLANNING</th>
+                        <th colspan="11" class="bg-slate-800 border-bottom">REALISASI (SINKRON PORTAL ANTRIAN)</th>
+                        <th rowspan="2" class="bg-emerald-800 align-middle">SLA (6 Jam)</th>
+                        <th rowspan="2" class="bg-amber-800 align-middle">NOTE / KENDALA</th>
+                    </tr>
+                    <tr>
+                        <!-- Planning -->
+                        <th class="bg-indigo-700">Tanggal</th>
+                        <th class="bg-indigo-700">Plant</th>
+                        <th class="bg-indigo-700">Tujuan</th>
+                        <th class="bg-indigo-700">No. DO</th>
+                        <th class="bg-indigo-700">SKU</th>
+                        <th class="bg-indigo-700">Nama Barang</th>
+                        <th class="bg-indigo-700">QTY</th>
+                        <th class="bg-indigo-700">Nopol</th>
+                        <!-- Realisasi -->
+                        <th class="bg-slate-700">Tanggal</th>
+                        <th class="bg-slate-700">Datang</th>
+                        <th class="bg-slate-700">Start</th>
+                        <th class="bg-slate-700">Finish</th>
+                        <th class="bg-slate-700">Keluar</th>
+                        <th class="bg-slate-700">Lama Loading</th>
+                        <th class="bg-slate-700">Lama Stay</th>
+                        <th class="bg-slate-700">Nama Ekspedisi</th>
+                        <th class="bg-slate-700">Status Mobil</th>
+                        <th class="bg-slate-700">Jenis Mobil</th>
+                        <th class="bg-slate-700">Aksi Note</th>
+                    </tr>
+                </thead>
+                <tbody id="rdcMonitoringTableBody">
+                    <tr><td colspan="21" class="text-muted py-4">Memuat data planning dan realisasi RDC...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
         <!-- SECTION EKSPOR -->
         <div id="section-ekspor" class="app-page space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs">
@@ -1428,7 +1464,62 @@
             </div>
         </div>
     </div>
-
+    
+<div id="modalUploadPlanning" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs">
+        <div class="pastel-header-blue px-6 py-4 flex justify-between items-center">
+            <h3 class="font-bold">Input / Upload Data Planning RDC</h3>
+            <button onclick="closeModal('modalUploadPlanning')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <form onsubmit="savePlanningRdc(event)" class="p-6 space-y-3">
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label fw-bold">Tanggal Planning *</label>
+                    <input type="date" id="planTanggal" class="form-control form-control-sm" required>
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">Plant *</label>
+                    <input type="text" id="planPlant" class="form-control form-control-sm" required placeholder="Cth: 1116">
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label fw-bold">Tujuan RDC *</label>
+                    <input type="text" id="planTujuan" class="form-control form-control-sm" required placeholder="Cth: KALIANAK, MEDAN">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">No. DO *</label>
+                    <input type="text" id="planDo" class="form-control form-control-sm" required placeholder="Cth: 00836/DDSTR/...">
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label fw-bold">SKU Produk *</label>
+                    <input type="text" id="planSku" class="form-control form-control-sm" required placeholder="Cth: 410394">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">Nama Barang *</label>
+                    <input type="text" id="planNamaBarang" class="form-control form-control-sm" required placeholder="Nama barang...">
+                </div>
+            </div>
+            <div class="row g-2">
+                <div class="col-6">
+                    <label class="form-label fw-bold">QTY Karton *</label>
+                    <input type="number" id="planQty" class="form-control form-control-sm" required min="1" placeholder="48">
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-bold">No. Polisi (Nopol) *</label>
+                    <input type="text" id="planNopol" class="form-control form-control-sm" required placeholder="Cth: B 9869 TEX">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">Simpan Planning RDC</button>
+                <button type="button" class="btn btn-sm btn-outline-secondary px-3" onclick="closeModal('modalUploadPlanning')">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let sessionUser = localStorage.getItem('loggedUser');
@@ -3781,6 +3872,145 @@ function updateDashboardFromAntrian() {
                 </tr>`;
             });
         }
+
+        let planningRdcData = [];
+
+function openUploadPlanningModal() {
+    document.getElementById('planTanggal').value = new Date().toISOString().split('T')[0];
+    document.getElementById('modalUploadPlanning').classList.remove('hidden');
+}
+
+async function savePlanningRdc(e) {
+    e.preventDefault();
+    let newPlan = {
+        tanggal: document.getElementById('planTanggal').value,
+        plant: document.getElementById('planPlant').value,
+        tujuan: document.getElementById('planTujuan').value.toUpperCase(),
+        do: document.getElementById('planDo').value.trim(),
+        sku: document.getElementById('planSku').value,
+        namaBarang: document.getElementById('planNamaBarang').value,
+        qty: parseFloat(document.getElementById('planQty').value) || 0,
+        nopol: document.getElementById('planNopol').value.toUpperCase().trim(),
+        note: '-'
+    };
+
+    const db = window._db;
+    const { collection, addDoc } = window._fsHelpers;
+    try {
+        await addDoc(collection(db, 'planning_rdc'), newPlan);
+        alert('Berhasil menyimpan data planning RDC!');
+        closeModal('modalUploadPlanning');
+        e.target.reset();
+        loadRdcMonitoringData();
+    } catch (err) {
+        alert('Gagal menyimpan planning: ' + err.message);
+    }
+}
+
+async function loadRdcMonitoringData() {
+    if (!window._db) return;
+    const db = window._db;
+    const { collection, getDocs } = window._fsHelpers;
+
+    try {
+        let planSnap = await getDocs(collection(db, 'planning_rdc'));
+        planningRdcData = [];
+        planSnap.forEach(docSnap => {
+            planningRdcData.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        // antrianData didapat dari portal antrian global
+        renderRdcMonitoringTable();
+    } catch (e) {
+        console.error('Gagal memuat data RDC:', e);
+    }
+}
+
+function renderRdcMonitoringTable() {
+    let tbody = document.getElementById('rdcMonitoringTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (planningRdcData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="21" class="text-muted py-4">Belum ada data planning RDC. Silakan upload atau input terlebih dahulu.</td></tr>';
+        return;
+    }
+
+    planningRdcData.forEach(plan => {
+        // Cari realisasi di antrianData berdasarkan Nopol atau No DO
+        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => 
+            (t.nopol && t.nopol.toUpperCase().includes(plan.nopol)) || 
+            (t.do && t.do.toUpperCase().includes(plan.do))
+        );
+
+        let realTgl = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
+        let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
+        let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
+        let realFinish = matchedTruk ? (matchedTruk.finish || '-') : '-';
+        let realKeluar = matchedTruk ? (matchedTruk.keluar || '-') : '-';
+        let realLoading = matchedTruk ? (matchedTruk.lamaLoading || '-') : '-';
+        let realStay = matchedTruk ? (matchedTruk.lamaStay || '-') : '-';
+        let realEkspedisi = matchedTruk ? (matchedTruk.ekspedisi || '-') : '-';
+        let realStatus = matchedTruk ? (matchedTruk.status || 'Antrian') : 'Belum Datang';
+        let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
+        let noteText = plan.note || '-';
+
+        // Hitung SLA max 6 jam (berdasarkan lama stay atau selisih waktu datang s/d keluar)
+        let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
+        if (matchedTruk && matchedTruk.lamaStay) {
+            let parts = matchedTruk.lamaStay.split(':');
+            let hours = parseInt(parts[0]) || 0;
+            if (hours > 6) {
+                slaBadge = '<span class="badge bg-danger fw-bold">⚠️ Over SLA (>6j)</span>';
+            } else {
+                slaBadge = '<span class="badge bg-success fw-bold">✓ On Track (≤6j)</span>';
+            }
+        }
+
+        tbody.innerHTML += `<tr>
+            <td class="bg-indigo-50">${plan.tanggal || '-'}</td>
+            <td class="bg-indigo-50">${plan.plant || '-'}</td>
+            <td class="bg-indigo-50 fw-bold">${plan.tujuan || '-'}</td>
+            <td class="bg-indigo-50 font-monospace">${plan.do || '-'}</td>
+            <td class="bg-indigo-50">${plan.sku || '-'}</td>
+            <td class="bg-indigo-50 text-start">${plan.namaBarang || '-'}</td>
+            <td class="bg-indigo-50 fw-bold">${plan.qty || 0}</td>
+            <td class="bg-indigo-50 fw-bold text-indigo-900">${plan.nopol || '-'}</td>
+            
+            <td>${realTgl}</td>
+            <td>${realDatang}</td>
+            <td>${realStart}</td>
+            <td>${realFinish}</td>
+            <td>${realKeluar}</td>
+            <td>${realLoading}</td>
+            <td class="fw-bold">${realStay}</td>
+            <td>${realEkspedisi}</td>
+            <td><span class="badge bg-info-subtle text-info border">${realStatus}</span></td>
+            <td>${realJenis}</td>
+            <td><button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="editRdcNote('${plan.id}', '${noteText}')">Edit Note</button></td>
+            
+            <td class="bg-emerald-50">${slaBadge}</td>
+            <td class="bg-amber-50 text-start text-xs">${noteText}</td>
+        </tr>`;
+    });
+}
+
+function refreshRdcMonitoring() {
+    loadRdcMonitoringData();
+    alert('Data monitoring RDC berhasil disinkronkan dengan portal antrian!');
+}
+
+function editRdcNote(planId, currentNote) {
+    let newNote = prompt("Masukkan Catatan / Kendala untuk pengiriman ini:", currentNote === '-' ? '' : currentNote);
+    if (newNote !== null) {
+        // Update note ke database planning_rdc
+        const db = window._db;
+        const { doc, updateDoc } = window._fsHelpers;
+        updateDoc(doc(db, 'planning_rdc', planId), { note: newNote }).then(() => {
+            loadRdcMonitoringData();
+        });
+    }
+}
 
         function switchBinSubTab(tabId) {
             ['stok', 'movement', 'peta'].forEach(id => {

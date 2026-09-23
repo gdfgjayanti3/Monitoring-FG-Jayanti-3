@@ -1485,57 +1485,32 @@
     </div>
     
 <div id="modalUploadPlanning" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs">
+    <div class="bg-white rounded-2xl shadow-xl max-w-xl w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs">
         <div class="pastel-header-blue px-6 py-4 flex justify-between items-center">
-            <h3 class="font-bold">Input / Upload Data Planning RDC</h3>
+            <h3 class="font-bold">Upload atau Paste Data Planning RDC</h3>
             <button onclick="closeModal('modalUploadPlanning')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <form onsubmit="savePlanningRdc(event)" class="p-6 space-y-3">
-            <div class="row g-2">
-                <div class="col-6">
-                    <label class="form-label fw-bold">Tanggal Planning *</label>
-                    <input type="date" id="planTanggal" class="form-control form-control-sm" required>
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-bold">Plant *</label>
-                    <input type="text" id="planPlant" class="form-control form-control-sm" required placeholder="Cth: 1116">
-                </div>
+        <div class="p-6 space-y-4">
+            <!-- Opsi 1: Upload File Excel -->
+            <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50">
+                <label class="form-label fw-bold block mb-1">1. Upload File Excel Planning (.xlsx)</label>
+                <input type="file" id="excelFileRdc" accept=".xlsx, .xls, .csv" class="form-control form-control-sm mb-2" onchange="handleExcelUpload(event)">
+                <p class="text-[10px] text-slate-400">Format kolom: Tanggal, Plant, Tujuan, DO, SKU, Nama Barang, Qty, Nopol</p>
             </div>
-            <div class="row g-2">
-                <div class="col-6">
-                    <label class="form-label fw-bold">Tujuan RDC *</label>
-                    <input type="text" id="planTujuan" class="form-control form-control-sm" required placeholder="Cth: KALIANAK, MEDAN">
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-bold">No. DO *</label>
-                    <input type="text" id="planDo" class="form-control form-control-sm" required placeholder="Cth: 00836/DDSTR/...">
-                </div>
+
+            <div class="text-center font-bold text-slate-400">- ATAU -</div>
+
+            <!-- Opsi 2: Paste Data dari Excel -->
+            <div>
+                <label class="form-label fw-bold mb-1">2. Paste Tabel Langsung dari Excel (Copy & Paste)</label>
+                <textarea id="pasteExcelRdc" rows="4" class="form-control form-control-sm font-monospace text-[11px]" placeholder="Copy baris dari Excel lalu Paste di sini..."></textarea>
+                <button type="button" onclick="handlePasteExcelData()" class="btn btn-sm btn-dark w-100 mt-2 fw-bold">Proses & Simpan Data Paste</button>
             </div>
-            <div class="row g-2">
-                <div class="col-6">
-                    <label class="form-label fw-bold">SKU Produk *</label>
-                    <input type="text" id="planSku" class="form-control form-control-sm" required placeholder="Cth: 410394">
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-bold">Nama Barang *</label>
-                    <input type="text" id="planNamaBarang" class="form-control form-control-sm" required placeholder="Nama barang...">
-                </div>
+
+            <div class="flex justify-end pt-2">
+                <button type="button" class="btn btn-sm btn-outline-secondary px-4" onclick="closeModal('modalUploadPlanning')">Tutup</button>
             </div>
-            <div class="row g-2">
-                <div class="col-6">
-                    <label class="form-label fw-bold">QTY Karton *</label>
-                    <input type="number" id="planQty" class="form-control form-control-sm" required min="1" placeholder="48">
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-bold">No. Polisi (Nopol) *</label>
-                    <input type="text" id="planNopol" class="form-control form-control-sm" required placeholder="Cth: B 9869 TEX">
-                </div>
-            </div>
-            <div class="flex gap-2 pt-2">
-                <button type="submit" class="btn btn-sm btn-primary w-100 fw-bold">Simpan Planning RDC</button>
-                <button type="button" class="btn btn-sm btn-outline-secondary px-3" onclick="closeModal('modalUploadPlanning')">Batal</button>
-            </div>
-        </form>
+        </div>
     </div>
 </div>
     
@@ -4204,6 +4179,98 @@ function exportRdcToExcel() {
     let workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Monitoring RDC");
     XLSX.writeFile(workbook, `Monitoring_RDC_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+        // Fungsi untuk memproses Upload File Excel
+async function handleExcelUpload(event) {
+    let file = event.target.files[0];
+    if (!file) return;
+
+    let reader = new FileReader();
+    reader.onload = async function(e) {
+        let data = new Uint8Array(e.target.result);
+        let workbook = XLSX.read(data, { type: 'array' });
+        let firstSheetName = workbook.SheetNames[0];
+        let worksheet = workbook.Sheets[firstSheetName];
+        let jsonSheet = XLSX.utils.sheet_to_json(worksheet);
+
+        if (jsonSheet.length === 0) {
+            alert('File Excel kosong atau format tidak valid!');
+            return;
+        }
+
+        const db = window._db;
+        const { collection, addDoc } = window._fsHelpers;
+
+        let count = 0;
+        for (let row of jsonSheet) {
+            let newPlan = {
+                tanggal: row['Tanggal'] || row['tanggal'] || new Date().toISOString().split('T')[0],
+                plant: String(row['Plant'] || row['plant'] || ''),
+                tujuan: String(row['Tujuan'] || row['tujuan'] || '').toUpperCase(),
+                do: String(row['DO'] || row['No. DO'] || row['do'] || ''),
+                sku: String(row['SKU'] || row['sku'] || ''),
+                namaBarang: String(row['Nama Barang'] || row['nama_barang'] || ''),
+                qty: parseFloat(row['QTY'] || row['Qty'] || row['qty']) || 0,
+                nopol: String(row['Nopol'] || row['NOPOL'] || row['nopol'] || '').toUpperCase(),
+                note: '-'
+            };
+
+            if (newPlan.do && newPlan.nopol) {
+                await addDoc(collection(db, 'planning_rdc'), newPlan);
+                count++;
+            }
+        }
+
+        alert(`Berhasil mengimport ${count} data planning RDC dari Excel!`);
+        closeModal('modalUploadPlanning');
+        loadRdcMonitoringData();
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// Fungsi untuk memproses data hasil Paste dari Excel
+async function handlePasteExcelData() {
+    let text = document.getElementById('pasteExcelRdc').value.trim();
+    if (!text) {
+        alert('Silakan paste data tabel Excel terlebih dahulu pada kotak yang tersedia!');
+        return;
+    }
+
+    let rows = text.split('\n');
+    const db = window._db;
+    const { collection, addDoc } = window._fsHelpers;
+
+    let count = 0;
+    for (let r of rows) {
+        let cols = r.split('\t'); // Tab-separated dari hasil copy-paste Excel
+        if (cols.length >= 8) {
+            let newPlan = {
+                tanggal: cols[0].trim() || new Date().toISOString().split('T')[0],
+                plant: cols[1].trim(),
+                tujuan: cols[2].trim().toUpperCase(),
+                do: cols[3].trim(),
+                sku: cols[4].trim(),
+                namaBarang: cols[5].trim(),
+                qty: parseFloat(cols[6].trim()) || 0,
+                nopol: cols[7].trim().toUpperCase(),
+                note: '-'
+            };
+
+            if (newPlan.do && newPlan.nopol) {
+                await addDoc(collection(db, 'planning_rdc'), newPlan);
+                count++;
+            }
+        }
+    }
+
+    if (count > 0) {
+        alert(`Berhasil menyimpan ${count} data planning dari hasil paste Excel!`);
+        closeModal('modalUploadPlanning');
+        document.getElementById('pasteExcelRdc').value = '';
+        loadRdcMonitoringData();
+    } else {
+        alert('Format paste tidak dikenali. Pastikan Anda meng-copy langsung dari kolom Excel secara utuh.');
+    }
 }
         function switchBinSubTab(tabId) {
             ['stok', 'movement', 'peta'].forEach(id => {

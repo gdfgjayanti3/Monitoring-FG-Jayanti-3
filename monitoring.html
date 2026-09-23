@@ -578,10 +578,29 @@
             <p class="text-xs text-slate-400">Gabungan data Planning RDC dan Realisasi truk masuk yang tersinkronisasi otomatis dengan portal antrian.</p>
         </div>
         <div class="flex items-center gap-2">
+            <button onclick="exportRdcToExcel()" class="btn btn-sm btn-success fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Download Excel</button>
             <button onclick="openUploadPlanningModal()" class="btn btn-sm btn-primary fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Upload / Input Planning</button>
             <button onclick="refreshRdcMonitoring()" class="btn btn-sm btn-outline-secondary fw-bold text-xs"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
         </div>
     </div>
+            
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+    <div>
+        <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Cari Dokumen / Keyword</label>
+        <input type="text" id="rdcSearchInput" class="form-control form-control-sm" placeholder="Ketik No. DO, Nopol, SKU, Tujuan..." oninput="filterRdcTable()">
+    </div>
+    <div>
+        <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Filter Tanggal Tertentu</label>
+        <input type="date" id="rdcFilterDate" class="form-control form-control-sm" onchange="filterRdcTable()">
+    </div>
+    <div>
+        <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Filter Bulan & Tahun</label>
+        <input type="month" id="rdcFilterMonth" class="form-control form-control-sm" onchange="filterRdcTable()">
+    </div>
+    <div class="flex items-end">
+        <button class="btn btn-sm btn-outline-secondary w-100 fw-bold" onclick="resetRdcFilter()">Reset Filter</button>
+    </div>
+</div>        
 
     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs overflow-x-auto">
         <div class="table-responsive">
@@ -3874,6 +3893,111 @@ function updateDashboardFromAntrian() {
         }
 
         let planningRdcData = [];
+function filterRdcTable() {
+    let keyword = document.getElementById('rdcSearchInput').value.toLowerCase().trim();
+    let filterDate = document.getElementById('rdcFilterDate').value; // Format: YYYY-MM-DD
+    let filterMonth = document.getElementById('rdcFilterMonth').value; // Format: YYYY-MM
+
+    let filteredData = planningRdcData.filter(plan => {
+        // Pencarian universal (mencocokkan DO, Nopol, Tujuan, SKU, Nama Barang)
+        let matchKeyword = !keyword || 
+            (plan.do && plan.do.toLowerCase().includes(keyword)) ||
+            (plan.nopol && plan.nopol.toLowerCase().includes(keyword)) ||
+            (plan.tujuan && plan.tujuan.toLowerCase().includes(keyword)) ||
+            (plan.sku && plan.sku.toLowerCase().includes(keyword)) ||
+            (plan.namaBarang && plan.namaBarang.toLowerCase().includes(keyword));
+
+        // Filter Tanggal
+        let matchDate = !filterDate || plan.tanggal === filterDate;
+
+        // Filter Bulan & Tahun
+        let matchMonth = !filterMonth || (plan.tanggal && plan.tanggal.startsWith(filterMonth));
+
+        return matchKeyword && matchDate && matchMonth;
+    });
+
+    renderRdcMonitoringTableFiltered(filteredData);
+}
+
+function resetRdcFilter() {
+    document.getElementById('rdcSearchInput').value = '';
+    document.getElementById('rdcFilterDate').value = '';
+    document.getElementById('rdcFilterMonth').value = '';
+    renderRdcMonitoringTable();
+}
+
+// Modifikasi sedikit render tabel agar bisa menerima data hasil filter
+function renderRdcMonitoringTableFiltered(dataList) {
+    let tbody = document.getElementById('rdcMonitoringTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (dataList.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="21" class="text-muted py-4">Tidak ada data RDC yang sesuai dengan filter pencarian.</td></tr>';
+        return;
+    }
+
+    dataList.forEach(plan => {
+        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => 
+            (t.nopol && t.nopol.toUpperCase().includes(plan.nopol)) || 
+            (t.do && t.do.toUpperCase().includes(plan.do))
+        );
+
+        let realTgl = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
+        let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
+        let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
+        let realFinish = matchedTruk ? (matchedTruk.finish || '-') : '-';
+        let realKeluar = matchedTruk ? (matchedTruk.keluar || '-') : '-';
+        let realLoading = matchedTruk ? (matchedTruk.lamaLoading || '-') : '-';
+        let realStay = matchedTruk ? (matchedTruk.lamaStay || '-') : '-';
+        let realEkspedisi = matchedTruk ? (matchedTruk.ekspedisi || '-') : '-';
+        let realStatus = matchedTruk ? (matchedTruk.status || 'Antrian') : 'Belum Datang';
+        let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
+        let noteText = plan.note || '-';
+
+        let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
+        if (matchedTruk && matchedTruk.lamaStay) {
+            let parts = matchedTruk.lamaStay.split(':');
+            let hours = parseInt(parts[0]) || 0;
+            if (hours > 6) {
+                slaBadge = '<span class="badge bg-danger fw-bold">⚠️ Over SLA (>6j)</span>';
+            } else {
+                slaBadge = '<span class="badge bg-success fw-bold">✓ On Track (≤6j)</span>';
+            }
+        }
+
+        tbody.innerHTML += `<tr>
+            <td class="bg-indigo-50">${plan.tanggal || '-'}</td>
+            <td class="bg-indigo-50">${plan.plant || '-'}</td>
+            <td class="bg-indigo-50 fw-bold">${plan.tujuan || '-'}</td>
+            <td class="bg-indigo-50 font-monospace">${plan.do || '-'}</td>
+            <td class="bg-indigo-50">${plan.sku || '-'}</td>
+            <td class="bg-indigo-50 text-start">${plan.namaBarang || '-'}</td>
+            <td class="bg-indigo-50 fw-bold">${plan.qty || 0}</td>
+            <td class="bg-indigo-50 fw-bold text-indigo-900">${plan.nopol || '-'}</td>
+            
+            <td>${realTgl}</td>
+            <td>${realDatang}</td>
+            <td>${realStart}</td>
+            <td>${realFinish}</td>
+            <td>${realKeluar}</td>
+            <td>${realLoading}</td>
+            <td class="fw-bold">${realStay}</td>
+            <td>${realEkspedisi}</td>
+            <td><span class="badge bg-info-subtle text-info border">${realStatus}</span></td>
+            <td>${realJenis}</td>
+            <td><button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="editRdcNote('${plan.id}', '${noteText}')">Edit Note</button></td>
+            
+            <td class="bg-emerald-50">${slaBadge}</td>
+            <td class="bg-amber-50 text-start text-xs">${noteText}</td>
+        </tr>`;
+    });
+}
+
+// Sesuaikan fungsi render utama agar langsung memanggil fungsi filter kosong
+function renderRdcMonitoringTable() {
+    filterRdcTable();
+}
 
 function openUploadPlanningModal() {
     document.getElementById('planTanggal').value = new Date().toISOString().split('T')[0];
@@ -3999,6 +4123,7 @@ function refreshRdcMonitoring() {
     loadRdcMonitoringData();
     alert('Data monitoring RDC berhasil disinkronkan dengan portal antrian!');
 }
+        
 
 function editRdcNote(planId, currentNote) {
     let newNote = prompt("Masukkan Catatan / Kendala untuk pengiriman ini:", currentNote === '-' ? '' : currentNote);
@@ -4011,7 +4136,75 @@ function editRdcNote(planId, currentNote) {
         });
     }
 }
+function exportRdcToExcel() {
+    let keyword = document.getElementById('rdcSearchInput').value.toLowerCase().trim();
+    let filterDate = document.getElementById('rdcFilterDate').value;
+    let filterMonth = document.getElementById('rdcFilterMonth').value;
 
+    // Ambil data yang sedang difilter atau seluruh data jika tidak ada filter
+    let dataToExport = planningRdcData.filter(plan => {
+        let matchKeyword = !keyword || 
+            (plan.do && plan.do.toLowerCase().includes(keyword)) ||
+            (plan.nopol && plan.nopol.toLowerCase().includes(keyword)) ||
+            (plan.tujuan && plan.tujuan.toLowerCase().includes(keyword)) ||
+            (plan.sku && plan.sku.toLowerCase().includes(keyword)) ||
+            (plan.namaBarang && plan.namaBarang.toLowerCase().includes(keyword));
+
+        let matchDate = !filterDate || plan.tanggal === filterDate;
+        let matchMonth = !filterMonth || (plan.tanggal && plan.tanggal.startsWith(filterMonth));
+
+        return matchKeyword && matchDate && matchMonth;
+    });
+
+    if (dataToExport.length === 0) {
+        alert('Tidak ada data RDC yang dapat diexport!');
+        return;
+    }
+
+    let excelRows = [];
+    dataToExport.forEach(plan => {
+        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => 
+            (t.nopol && t.nopol.toUpperCase().includes(plan.nopol)) || 
+            (t.do && t.do.toUpperCase().includes(plan.do))
+        );
+
+        let realStay = matchedTruk ? (matchedTruk.lamaStay || '-') : '-';
+        let slaStatus = 'Menunggu';
+        if (matchedTruk && matchedTruk.lamaStay) {
+            let parts = matchedTruk.lamaStay.split(':');
+            let hours = parseInt(parts[0]) || 0;
+            slaStatus = hours > 6 ? 'Over SLA (>6j)' : 'On Track (<=6j)';
+        }
+
+        excelRows.push({
+            "Tanggal Planning": plan.tanggal || '-',
+            "Plant Planning": plan.plant || '-',
+            "Tujuan": plan.tujuan || '-',
+            "No. DO": plan.do || '-',
+            "SKU": plan.sku || '-',
+            "Nama Barang": plan.namaBarang || '-',
+            "QTY": plan.qty || 0,
+            "Nopol": plan.nopol || '-',
+            "Tanggal Realisasi": matchedTruk ? (matchedTruk.tanggal || '-') : '-',
+            "Datang": matchedTruk ? (matchedTruk.datang || '-') : '-',
+            "Start": matchedTruk ? (matchedTruk.start || '-') : '-',
+            "Finish": matchedTruk ? (matchedTruk.finish || '-') : '-',
+            "Keluar": matchedTruk ? (matchedTruk.keluar || '-') : '-',
+            "Lama Loading": matchedTruk ? (matchedTruk.lamaLoading || '-') : '-',
+            "Lama Stay": realStay,
+            "Nama Ekspedisi": matchedTruk ? (matchedTruk.ekspedisi || '-') : '-',
+            "Status Mobil": matchedTruk ? (matchedTruk.status || 'Antrian') : 'Belum Datang',
+            "Jenis Mobil": matchedTruk ? (matchedTruk.jenis || '-') : '-',
+            "SLA (6 Jam)": slaStatus,
+            "Note / Kendala": plan.note || '-'
+        });
+    });
+
+    let worksheet = XLSX.utils.json_to_sheet(excelRows);
+    let workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Monitoring RDC");
+    XLSX.writeFile(workbook, `Monitoring_RDC_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
         function switchBinSubTab(tabId) {
             ['stok', 'movement', 'peta'].forEach(id => {
                 let el = document.getElementById(`binContent-${id}`);

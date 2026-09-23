@@ -570,8 +570,8 @@
             </div>
         </div>
 
-        <!-- SECTION RDC -->
-        <div id="section-rdc" class="app-page space-y-6 max-w-full px-4">
+       <!-- SECTION RDC -->
+<div id="section-rdc" class="app-page space-y-6 max-w-full px-4">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
         <div>
             <h3 class="font-bold text-slate-700 text-base"><i class="fa-solid fa-truck-fast mr-2 text-indigo-600"></i> Monitoring Pengiriman RDC (SLA Max 6 Jam)</h3>
@@ -583,25 +583,27 @@
             <button onclick="refreshRdcMonitoring()" class="btn btn-sm btn-outline-secondary fw-bold text-xs"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
         </div>
     </div>
-            
-    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
-    <div>
-        <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Cari Dokumen / Keyword</label>
-        <input type="text" id="rdcSearchInput" class="form-control form-control-sm" placeholder="Ketik No. DO, Nopol, SKU, Tujuan..." oninput="filterRdcTable()">
-    </div>
-    <div>
-        <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Filter Tanggal Tertentu</label>
-        <input type="date" id="rdcFilterDate" class="form-control form-control-sm" onchange="filterRdcTable()">
-    </div>
-    <div>
-        <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Filter Bulan & Tahun</label>
-        <input type="month" id="rdcFilterMonth" class="form-control form-control-sm" onchange="filterRdcTable()">
-    </div>
-    <div class="flex items-end">
-        <button class="btn btn-sm btn-outline-secondary w-100 fw-bold" onclick="resetRdcFilter()">Reset Filter</button>
-    </div>
-</div>        
 
+    <!-- BOX FILTER & SEARCH -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4">
+        <div>
+            <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Cari Dokumen / Keyword</label>
+            <input type="text" id="rdcSearchInput" class="form-control form-control-sm" placeholder="Ketik No. DO, Nopol, SKU, Tujuan..." oninput="filterRdcTable()">
+        </div>
+        <div>
+            <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Filter Tanggal Tertentu</label>
+            <input type="date" id="rdcFilterDate" class="form-control form-control-sm" onchange="filterRdcTable()">
+        </div>
+        <div>
+            <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Filter Bulan & Tahun</label>
+            <input type="month" id="rdcFilterMonth" class="form-control form-control-sm" onchange="filterRdcTable()">
+        </div>
+        <div class="flex items-end">
+            <button class="btn btn-sm btn-outline-secondary w-100 fw-bold" onclick="resetRdcFilter()">Reset Filter</button>
+        </div>
+    </div>
+
+    <!-- TABEL GABUNGAN PLANNING VS REALISASI -->
     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs overflow-x-auto">
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 1600px;">

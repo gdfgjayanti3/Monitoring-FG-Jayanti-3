@@ -3870,6 +3870,19 @@ function updateDashboardFromAntrian() {
         }
 
         let planningRdcData = [];
+        function openUploadPlanningModal() {
+    let modal = document.getElementById('modalUploadPlanning');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
+}
+
+function closeModal(modalId) {
+    let modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
 function filterRdcTable() {
     let keyword = document.getElementById('rdcSearchInput').value.toLowerCase().trim();
     let filterDate = document.getElementById('rdcFilterDate').value; // Format: YYYY-MM-DD

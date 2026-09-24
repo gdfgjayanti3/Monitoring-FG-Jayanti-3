@@ -3984,10 +3984,15 @@ function renderRdcMonitoringTable() {
 }
 
 function openUploadPlanningModal() {
-    document.getElementById('planTanggal').value = new Date().toISOString().split('T')[0];
-    document.getElementById('modalUploadPlanning').classList.remove('hidden');
+    let dateInput = document.getElementById('planTanggal');
+    if (dateInput) {
+        dateInput.value = new Date().toISOString().split('T')[0];
+    }
+    let modal = document.getElementById('modalUploadPlanning');
+    if (modal) {
+        modal.classList.remove('hidden');
+    }
 }
-
 async function savePlanningRdc(e) {
     e.preventDefault();
     let newPlan = {

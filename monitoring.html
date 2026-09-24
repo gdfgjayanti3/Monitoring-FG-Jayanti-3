@@ -623,8 +623,8 @@
                         <th class="bg-indigo-700">SKU</th>
                         <th class="bg-indigo-700">Nama Barang</th>
                         <th class="bg-indigo-700">QTY</th>
-                        <th class="bg-indigo-700">Nopol</th>
                         <!-- Realisasi -->
+                        <th class="bg-indigo-700">Nopol</th>
                         <th class="bg-slate-700">Tanggal</th>
                         <th class="bg-slate-700">Datang</th>
                         <th class="bg-slate-700">Start</th>
@@ -4222,7 +4222,6 @@ async function handleExcelUpload(event) {
                 return;
             }
 
-            // PERBAIKAN DI SINI: Menggunakan window.db dan window.firebaseCollections
             const db = window.db;
             const { collection, addDoc } = window.firebaseCollections;
 
@@ -4236,11 +4235,11 @@ async function handleExcelUpload(event) {
                     sku: String(row['SKU'] || row['sku'] || ''),
                     namaBarang: String(row['Nama Barang'] || row['nama_barang'] || ''),
                     qty: parseFloat(row['QTY'] || row['Qty'] || row['qty']) || 0,
-                    nopol: String(row['Nopol'] || row['NOPOL'] || row['nopol'] || '').toUpperCase(),
                     note: '-'
                 };
 
-                if (newPlan.do && newPlan.nopol) {
+                // Pengecekan cukup menggunakan No. DO saja
+                if (newPlan.do) {
                     await addDoc(collection(db, 'planning_rdc'), newPlan);
                     count++;
                 }

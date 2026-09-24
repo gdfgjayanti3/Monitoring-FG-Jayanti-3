@@ -4210,47 +4210,52 @@ async function handleExcelUpload(event) {
 
     let reader = new FileReader();
     reader.onload = async function(e) {
-        let data = new Uint8Array(e.target.result);
-        let workbook = XLSX.read(data, { type: 'array' });
-        let firstSheetName = workbook.SheetNames[0];
-        let worksheet = workbook.Sheets[firstSheetName];
-        let jsonSheet = XLSX.utils.sheet_to_json(worksheet);
+        try {
+            let data = new Uint8Array(e.target.result);
+            let workbook = XLSX.read(data, { type: 'array' });
+            let firstSheetName = workbook.SheetNames[0];
+            let worksheet = workbook.Sheets[firstSheetName];
+            let jsonSheet = XLSX.utils.sheet_to_json(worksheet);
 
-        if (jsonSheet.length === 0) {
-            alert('File Excel kosong atau format tidak valid!');
-            return;
-        }
-
-        const db = window._db;
-        const { collection, addDoc } = window._fsHelpers;
-
-        let count = 0;
-        for (let row of jsonSheet) {
-            let newPlan = {
-                tanggal: row['Tanggal'] || row['tanggal'] || new Date().toISOString().split('T')[0],
-                plant: String(row['Plant'] || row['plant'] || ''),
-                tujuan: String(row['Tujuan'] || row['tujuan'] || '').toUpperCase(),
-                do: String(row['DO'] || row['No. DO'] || row['do'] || ''),
-                sku: String(row['SKU'] || row['sku'] || ''),
-                namaBarang: String(row['Nama Barang'] || row['nama_barang'] || ''),
-                qty: parseFloat(row['QTY'] || row['Qty'] || row['qty']) || 0,
-                nopol: String(row['Nopol'] || row['NOPOL'] || row['nopol'] || '').toUpperCase(),
-                note: '-'
-            };
-
-            if (newPlan.do && newPlan.nopol) {
-                await addDoc(collection(db, 'planning_rdc'), newPlan);
-                count++;
+            if (jsonSheet.length === 0) {
+                alert('File Excel kosong atau format tidak valid!');
+                return;
             }
-        }
 
-        alert(`Berhasil mengimport ${count} data planning RDC dari Excel!`);
-        closeModal('modalUploadPlanning');
-        loadRdcMonitoringData();
+            // PERBAIKAN DI SINI: Menggunakan window.db dan window.firebaseCollections
+            const db = window.db;
+            const { collection, addDoc } = window.firebaseCollections;
+
+            let count = 0;
+            for (let row of jsonSheet) {
+                let newPlan = {
+                    tanggal: row['Tanggal'] || row['tanggal'] || new Date().toISOString().split('T')[0],
+                    plant: String(row['Plant'] || row['plant'] || ''),
+                    tujuan: String(row['Tujuan'] || row['tujuan'] || '').toUpperCase(),
+                    do: String(row['DO'] || row['No. DO'] || row['do'] || ''),
+                    sku: String(row['SKU'] || row['sku'] || ''),
+                    namaBarang: String(row['Nama Barang'] || row['nama_barang'] || ''),
+                    qty: parseFloat(row['QTY'] || row['Qty'] || row['qty']) || 0,
+                    nopol: String(row['Nopol'] || row['NOPOL'] || row['nopol'] || '').toUpperCase(),
+                    note: '-'
+                };
+
+                if (newPlan.do && newPlan.nopol) {
+                    await addDoc(collection(db, 'planning_rdc'), newPlan);
+                    count++;
+                }
+            }
+
+            alert(`Berhasil mengimport ${count} data planning RDC dari Excel!`);
+            closeModal('modalUploadPlanning');
+            loadRdcMonitoringData();
+        } catch (err) {
+            console.error(err);
+            alert('Gagal memproses file Excel: ' + err.message);
+        }
     };
     reader.readAsArrayBuffer(file);
 }
-
 // Fungsi untuk memproses data hasil Paste dari Excel
 async function handlePasteExcelData() {
     let text = document.getElementById('pasteExcelRdc').value.trim();

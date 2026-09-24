@@ -4030,24 +4030,29 @@ async function savePlanningRdc(e) {
 }
 
 async function loadRdcMonitoringData() {
-    if (!window._db) return;
-    const db = window._db;
-    const { collection, getDocs } = window._fsHelpers;
-
+    if (!window.db) return;
     try {
-        let planSnap = await getDocs(collection(db, 'planning_rdc'));
-        planningRdcData = [];
-        planSnap.forEach(docSnap => {
-            planningRdcData.push({ id: docSnap.id, ...docSnap.data() });
+        const db = window.db;
+        const { collection, getDocs } = window.firebaseCollections;
+        
+        let querySnapshot = await getDocs(collection(db, 'planning_rdc'));
+        planningRdcData = []; // Pastikan variabel penampung global ini ada
+        
+        querySnapshot.forEach((doc) => {
+            planningRdcData.push({ id: doc.id, ...doc.data() });
         });
 
-        // antrianData didapat dari portal antrian global
-        renderRdcMonitoringTable();
-    } catch (e) {
-        console.error('Gagal memuat data RDC:', e);
+        // Jalankan filter/render agar tabel langsung terisi
+        if (typeof filterRdcTable === 'function') {
+            filterRdcTable();
+        } else {
+            renderRdcMonitoringTableFiltered(planningRdcData);
+        }
+    } catch (err) {
+        console.error("Gagal memuat data RDC:", err);
     }
 }
-
+        
 function renderRdcMonitoringTable() {
     let tbody = document.getElementById('rdcMonitoringTableBody');
     if (!tbody) return;

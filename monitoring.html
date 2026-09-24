@@ -3804,73 +3804,7 @@ function updateDashboardFromAntrian() {
             });
         }
 
-        function renderRdcMonitoringTable() {
-            let tbody = document.getElementById('rdcMonitoringBody');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-            
-            let rdcTrucks = antrianData.filter(t => t.jenis && t.jenis.toUpperCase().includes('RDC'));
-            if(rdcTrucks.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="16" class="text-muted text-center py-4">Belum ada data truk RDC yang masuk antrian.</td></tr>'; 
-                return; 
-            }
-
-            rdcTrucks.forEach(t => {
-                let totalQty = (t.pickingList || []).reduce((sum, i) => sum + (parseFloat(i.jumlah) || 0), 0);
-                let skuItem = t.pickingList && t.pickingList.length > 0 ? t.pickingList.map(i => i.sku).join(', ') : '-';
-                let namaBarangItem = t.pickingList && t.pickingList.length > 0 ? t.pickingList.map(i => i.nama).join(', ') : '-';
-                
-                let actualKeluar = '-';
-                if (t.status === 'Keluar' && t.timeOut && t.timeOut !== '-') {
-                    actualKeluar = t.timeOut;
-                }
-
-                let selesaiMuat = '-';
-                if (t.status === 'Selesai Muat' || t.status === 'Keluar') {
-                    selesaiMuat = t.timeOut && t.timeOut !== '-' ? t.timeOut : (t.timeStartLoading || '-');
-                }
-
-                let lamaStay = '-';
-                if (t.timeIn && t.timeIn !== '-' && actualKeluar !== '-') {
-                    try {
-                        let [inH, inM] = t.timeIn.split(':').map(Number);
-                        let [outH, outM] = actualKeluar.split(':').map(Number);
-                        let inTotalMin = inH * 60 + inM;
-                        let outTotalMin = outH * 60 + outM;
-                        
-                        let diffMin = outTotalMin - inTotalMin;
-                        if (diffMin < 0) diffMin += 24 * 60;
-                        
-                        let dh = Math.floor(diffMin / 60);
-                        let dm = diffMin % 60;
-                        lamaStay = `${dh}j ${dm}m`;
-                    } catch(err) {
-                        lamaStay = '-';
-                    }
-                }
-
-                tbody.innerHTML += `<tr>
-                    <td>${t.tanggalKirim || '-'}</td>
-                    <td>Plant 1115</td>
-                    <td class="fw-bold">${t.tujuan || '-'}</td>
-                    <td>${t.noDoc || '-'}</td>
-                    <td>${skuItem}</td>
-                    <td class="text-start">${namaBarangItem}</td>
-                    <td class="fw-bold text-emerald-600">${totalQty} Krt</td>
-                    <td class="fw-bold">${t.noPol || '-'}</td>
-                    <td>${t.ekspedisi || '-'}</td>
-                    <td><span class="text-indigo-600 font-bold">${t.timeIn || '-'}</span></td>
-                    <td><span class="text-emerald-600 font-bold">${t.timeStartLoading || '-'}</span></td>
-                    <td><span class="text-purple-600 font-bold">${selesaiMuat}</span></td>
-                    <td><span class="text-slate-700 font-bold">${actualKeluar}</span></td>
-                    <td><span class="font-bold text-amber-600">${lamaStay}</span></td>
-                    <td><span class="badge bg-emerald-50 text-emerald-700 border border-emerald-100">Aman</span></td>
-                    <td><span class="badge bg-slate-50 text-slate-700 border border-slate-100">${t.status || '-'}</span></td>
-                </tr>`;
-            });
-        }
-
-        let planningRdcData = [];
+       let planningRdcData = [];
        
 function closeModal(modalId) {
     let modal = document.getElementById(modalId);

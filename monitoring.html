@@ -3940,6 +3940,39 @@ function renderRdcMonitoringTableFiltered(dataList) {
         let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
         let noteText = plan.note || '-';
 
+        tbody.innerHTML += `<tr>
+            <!-- Kolom Planning -->
+            <td class="bg-indigo-50">${plan.tanggal || '-'}</td>
+            <td class="bg-indigo-50">${plan.plant || '-'}</td>
+            <td class="bg-indigo-50 fw-bold">${plan.tujuan || '-'}</td>
+            <td class="bg-indigo-50 font-monospace">${plan.do || '-'}</td>
+            <td class="bg-indigo-50">${plan.sku || '-'}</td>
+            <td class="bg-indigo-50 text-start">${plan.namaBarang || '-'}</td>
+            <td class="bg-indigo-50 fw-bold">${plan.qty || 0}</td>
+            
+            <!-- Kolom Realisasi -->
+            <td class="bg-slate-100 fw-bold text-indigo-900">${realNopol}</td>
+            <td>${realTgl}</td>
+            <td>${realDatang}</td>
+            <td>${realStart}</td>
+            <td>${realFinish}</td>
+            <td>${realKeluar}</td>
+            <td>${realLoading}</td>
+            <td class="fw-bold">${realStay}</td>
+            <td>${realEkspedisi}</td>
+            <td><span class="badge bg-info-subtle text-info border">${realStatus}</span></td>
+            <td>${realJenis}</td>
+            
+            <!-- Kolom Aksi Note & Hapus -->
+            <td class="text-nowrap">
+                <button class="btn btn-xs btn-outline-secondary py-0 px-2 mb-1" onclick="editRdcNote('${plan.id}', '${noteText}')">Edit Note</button>
+                <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="deleteSinglePlanningRdc('${plan.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
+            </td>
+            
+            <td class="bg-emerald-50">${slaBadge}</td>
+            <td class="bg-amber-50 text-start text-xs">${noteText}</td>
+        </tr>`;        
+
         let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
         if (matchedTruk && matchedTruk.lamaStay) {
             let parts = matchedTruk.lamaStay.split(':');
@@ -4052,6 +4085,23 @@ async function clearAllPlanningRdc() {
     } catch (err) {
         console.error("Gagal menghapus data:", err);
         alert('Gagal menghapus data planning: ' + err.message);
+    }
+}
+        async function deleteSinglePlanningRdc(docId) {
+    if (!confirm('Apakah Anda yakin ingin menghapus data planning ini?')) {
+        return;
+    }
+
+    try {
+        const db = window.db;
+        const { deleteDoc, doc } = window.firebaseCollections;
+
+        await deleteDoc(doc(db, 'planning_rdc', docId));
+        alert('Data planning berhasil dihapus!');
+        loadRdcMonitoringData(); // Muat ulang tabel
+    } catch (err) {
+        console.error("Gagal menghapus data:", err);
+        alert('Gagal menghapus data: ' + err.message);
     }
 }
 async function loadRdcMonitoringData() {

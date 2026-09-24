@@ -4054,23 +4054,6 @@ async function clearAllPlanningRdc() {
         alert('Gagal menghapus data planning: ' + err.message);
     }
 }
-      async function deleteSinglePlanningRdc(docId) {
-    if (!confirm('Apakah Anda yakin ingin menghapus data planning ini?')) {
-        return;
-    }
-
-    try {
-        const db = window.db;
-        const { deleteDoc, doc } = window.firebaseCollections;
-
-        await deleteDoc(doc(db, 'planning_rdc', docId));
-        alert('Data planning berhasil dihapus!');
-        loadRdcMonitoringData(); // Muat ulang tabel
-    } catch (err) {
-        console.error("Gagal menghapus data:", err);
-        alert('Gagal menghapus data: ' + err.message);
-    }
-}  
 async function loadRdcMonitoringData() {
     if (!window.db) return;
     try {
@@ -4135,10 +4118,8 @@ function renderRdcMonitoringTable() {
                 slaBadge = '<span class="badge bg-success fw-bold">✓ On Track (≤6j)</span>';
             }
         }
-let noteText = plan.note || '-';
 
         tbody.innerHTML += `<tr>
-            <!-- Kolom Planning -->
             <td class="bg-indigo-50">${plan.tanggal || '-'}</td>
             <td class="bg-indigo-50">${plan.plant || '-'}</td>
             <td class="bg-indigo-50 fw-bold">${plan.tujuan || '-'}</td>
@@ -4146,9 +4127,8 @@ let noteText = plan.note || '-';
             <td class="bg-indigo-50">${plan.sku || '-'}</td>
             <td class="bg-indigo-50 text-start">${plan.namaBarang || '-'}</td>
             <td class="bg-indigo-50 fw-bold">${plan.qty || 0}</td>
+            <td class="bg-indigo-50 fw-bold text-indigo-900">${plan.nopol || '-'}</td>
             
-            <!-- Kolom Realisasi -->
-            <td class="bg-slate-100 fw-bold text-indigo-900">${realNopol}</td>
             <td>${realTgl}</td>
             <td>${realDatang}</td>
             <td>${realStart}</td>
@@ -4159,12 +4139,7 @@ let noteText = plan.note || '-';
             <td>${realEkspedisi}</td>
             <td><span class="badge bg-info-subtle text-info border">${realStatus}</span></td>
             <td>${realJenis}</td>
-            
-            <!-- Kolom Aksi Note & Hapus -->
-            <td class="text-nowrap">
-                <button class="btn btn-xs btn-outline-secondary py-0 px-2 mb-1" onclick="editRdcNote('${plan.id}', '${noteText}')">Edit Note</button>
-                <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="deleteSinglePlanningRdc('${plan.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
-            </td>
+            <td><button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="editRdcNote('${plan.id}', '${noteText}')">Edit Note</button></td>
             
             <td class="bg-emerald-50">${slaBadge}</td>
             <td class="bg-amber-50 text-start text-xs">${noteText}</td>
@@ -4322,38 +4297,26 @@ async function handlePasteExcelData() {
         let rows = pasteText.split('\n');
         let count = 0;
 
+        // Menggunakan window.db dan window.firebaseCollections yang benar
         const db = window.db;
         const { collection, addDoc } = window.firebaseCollections;
 
         for (let rowStr of rows) {
             let cols = rowStr.split('\t');
-            if (cols.length < 7) continue; // Pastikan minimal ada 7 kolom data utama
-
-            // Mengatur urutan kolom sesuai tabel Excel:
-            // Indeks 0: Tanggal, 1: Plant, 2: Tujuan, 3: DO, 4: SKU, 5: Nama Barang, 6: Qty
-            let rawTgl = cols[0] ? cols[0].trim() : '';
-            let formattedTgl = rawTgl;
-
-            // Jika format tanggal dari Excel berupa DD/MM/YYYY, ubah ke YYYY-MM-DD agar seragam
-            if (rawTgl.includes('/')) {
-                let parts = rawTgl.split('/');
-                if (parts.length === 3) {
-                    formattedTgl = `${parts[2]}-${parts[1]}-${parts[0]}`;
-                }
-            }
+            if (cols.length < 5) continue; // Pastikan kolom minimal mencukupi
 
             let newPlan = {
-                tanggal: formattedTgl || new Date().toISOString().split('T')[0],
+                tanggal: cols[0] ? cols[0].trim() || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
                 plant: cols[1] ? cols[1].trim() : '',
                 tujuan: cols[2] ? cols[2].trim().toUpperCase() : '',
                 do: cols[3] ? cols[3].trim() : '',
                 sku: cols[4] ? cols[4].trim() : '',
                 namaBarang: cols[5] ? cols[5].trim() : '',
-                qty: parseFloat(cols[6] ? cols[6].replace(/,/g, '').trim() : 0) || 0,
+                qty: parseFloat(cols[6] ? cols[6].trim() : 0) || 0,
                 note: '-'
             };
 
-            // Simpan ke database jika No. DO terisi
+            // Pengecekan cukup menggunakan No. DO saja
             if (newPlan.do) {
                 await addDoc(collection(db, 'planning_rdc'), newPlan);
                 count++;
@@ -4366,7 +4329,7 @@ async function handlePasteExcelData() {
             document.getElementById('pasteExcelRdc').value = '';
             loadRdcMonitoringData();
         } else {
-            alert('Format paste tidak terbaca. Pastikan Anda meng-copy langsung dari sel tabel Excel secara utuh dari kolom Tanggal sampai Qty.');
+            alert('Format paste tidak dikenali. Pastikan Anda meng-copy langsung dari kolom Excel secara utuh.');
         }
     } catch (err) {
         console.error(err);

@@ -4257,46 +4257,53 @@ async function handleExcelUpload(event) {
 }
 // Fungsi untuk memproses data hasil Paste dari Excel
 async function handlePasteExcelData() {
-    let text = document.getElementById('pasteExcelRdc').value.trim();
-    if (!text) {
+    let pasteText = document.getElementById('pasteExcelRdc').value.trim();
+    if (!pasteText) {
         alert('Silakan paste data tabel Excel terlebih dahulu pada kotak yang tersedia!');
         return;
     }
 
-    let rows = text.split('\n');
-    const db = window._db;
-    const { collection, addDoc } = window._fsHelpers;
+    try {
+        let rows = pasteText.split('\n');
+        let count = 0;
 
-    let count = 0;
-    for (let r of rows) {
-        let cols = r.split('\t'); // Tab-separated dari hasil copy-paste Excel
-        if (cols.length >= 8) {
+        // Menggunakan window.db dan window.firebaseCollections yang benar
+        const db = window.db;
+        const { collection, addDoc } = window.firebaseCollections;
+
+        for (let rowStr of rows) {
+            let cols = rowStr.split('\t');
+            if (cols.length < 5) continue; // Pastikan kolom minimal mencukupi
+
             let newPlan = {
-                tanggal: cols[0].trim() || new Date().toISOString().split('T')[0],
-                plant: cols[1].trim(),
-                tujuan: cols[2].trim().toUpperCase(),
-                do: cols[3].trim(),
-                sku: cols[4].trim(),
-                namaBarang: cols[5].trim(),
-                qty: parseFloat(cols[6].trim()) || 0,
-                nopol: cols[7].trim().toUpperCase(),
+                tanggal: cols[0] ? cols[0].trim() || new Date().toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                plant: cols[1] ? cols[1].trim() : '',
+                tujuan: cols[2] ? cols[2].trim().toUpperCase() : '',
+                do: cols[3] ? cols[3].trim() : '',
+                sku: cols[4] ? cols[4].trim() : '',
+                namaBarang: cols[5] ? cols[5].trim() : '',
+                qty: parseFloat(cols[6] ? cols[6].trim() : 0) || 0,
                 note: '-'
             };
 
-            if (newPlan.do && newPlan.nopol) {
+            // Pengecekan cukup menggunakan No. DO saja
+            if (newPlan.do) {
                 await addDoc(collection(db, 'planning_rdc'), newPlan);
                 count++;
             }
         }
-    }
 
-    if (count > 0) {
-        alert(`Berhasil menyimpan ${count} data planning dari hasil paste Excel!`);
-        closeModal('modalUploadPlanning');
-        document.getElementById('pasteExcelRdc').value = '';
-        loadRdcMonitoringData();
-    } else {
-        alert('Format paste tidak dikenali. Pastikan Anda meng-copy langsung dari kolom Excel secara utuh.');
+        if (count > 0) {
+            alert(`Berhasil menyimpan ${count} data planning dari hasil paste Excel!`);
+            closeModal('modalUploadPlanning');
+            document.getElementById('pasteExcelRdc').value = '';
+            loadRdcMonitoringData();
+        } else {
+            alert('Format paste tidak dikenali. Pastikan Anda meng-copy langsung dari kolom Excel secara utuh.');
+        }
+    } catch (err) {
+        console.error(err);
+        alert('Gagal menyimpan planning: ' + err.message);
     }
 }
         function switchBinSubTab(tabId) {

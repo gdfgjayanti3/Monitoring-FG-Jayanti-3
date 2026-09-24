@@ -3971,7 +3971,7 @@ function renderRdcMonitoringTableFiltered(dataList) {
             <td>${realEkspedisi}</td>
             <td><span class="badge bg-info-subtle text-info border">${realStatus}</span></td>
             <td>${realJenis}</td>
-            <td><button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="editRdcNote('${plan.id}', '${noteText}')">Edit Note</button></td>
+            <td><button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="editRdcNote('${plan.id}', '${}')">Edit Note</button></td>
             
             <td class="bg-emerald-50">${slaBadge}</td>
             <td class="bg-amber-50 text-start text-xs">${noteText}</td>
@@ -4135,7 +4135,6 @@ function renderRdcMonitoringTable() {
                 slaBadge = '<span class="badge bg-success fw-bold">✓ On Track (≤6j)</span>';
             }
         }
-let noteText = plan.note || '-';
 
         tbody.innerHTML += `<tr>
             <!-- Kolom Planning -->

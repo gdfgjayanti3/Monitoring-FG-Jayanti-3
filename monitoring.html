@@ -4286,16 +4286,16 @@ async function handlePasteExcelData() {
         const db = window.db;
         const { collection, addDoc } = window.firebaseCollections;
 
-        for (let rowStr of rows) {
-            let cols = rowStr.split('\t');
-            if (cols.length < 7) continue; // Pastikan minimal ada 7 kolom data utama
+        // Gunakan Set untuk mencegah duplikasi No. DO yang sama dalam sekali paste
+        let processedDos = new Set();
 
-            // Mengatur urutan kolom sesuai tabel Excel:
-            // Indeks 0: Tanggal, 1: Plant, 2: Tujuan, 3: DO, 4: SKU, 5: Nama Barang, 6: Qty
-            let rawTgl = cols[0] ? cols[0].trim() : '';
+        for (let rowStr of rows) {
+            let cols = rowStr.split('\t').map(c => c.trim());
+            if (cols.length < 7) continue; 
+
+            let rawTgl = cols[0] || '';
             let formattedTgl = rawTgl;
 
-            // Jika format tanggal dari Excel berupa DD/MM/YYYY, ubah ke YYYY-MM-DD agar seragam
             if (rawTgl.includes('/')) {
                 let parts = rawTgl.split('/');
                 if (parts.length === 3) {
@@ -4303,18 +4303,21 @@ async function handlePasteExcelData() {
                 }
             }
 
+            let doNum = cols[3] || '';
+            if (!doNum || processedDos.has(doNum)) continue; // Lewati jika kosong atau sudah diproses
+            processedDos.add(doNum);
+
             let newPlan = {
                 tanggal: formattedTgl || new Date().toISOString().split('T')[0],
-                plant: cols[1] ? cols[1].trim() : '',
-                tujuan: cols[2] ? cols[2].trim().toUpperCase() : '',
-                do: cols[3] ? cols[3].trim() : '',
-                sku: cols[4] ? cols[4].trim() : '',
-                namaBarang: cols[5] ? cols[5].trim() : '',
-                qty: parseFloat(cols[6] ? cols[6].replace(/,/g, '').trim() : 0) || 0,
+                plant: cols[1] || '',
+                tujuan: (cols[2] || '').toUpperCase(),
+                do: doNum,
+                sku: cols[4] || '',
+                namaBarang: cols[5] || '',
+                qty: parseFloat((cols[6] || '0').replace(/,/g, '')) || 0,
                 note: '-'
             };
 
-            // Simpan ke database jika No. DO terisi
             if (newPlan.do) {
                 await addDoc(collection(db, 'planning_rdc'), newPlan);
                 count++;
@@ -4322,12 +4325,12 @@ async function handlePasteExcelData() {
         }
 
         if (count > 0) {
-            alert(`Berhasil menyimpan ${count} data planning dari hasil paste Excel!`);
+            alert(`Berhasil menyimpan ${count} data planning unik dari hasil paste Excel!`);
             closeModal('modalUploadPlanning');
             document.getElementById('pasteExcelRdc').value = '';
             loadRdcMonitoringData();
         } else {
-            alert('Format paste tidak terbaca. Pastikan Anda meng-copy langsung dari sel tabel Excel secara utuh dari kolom Tanggal sampai Qty.');
+            alert('Format paste tidak terbaca atau data sudah ada. Pastikan Anda meng-copy langsung dari sel tabel Excel secara utuh.');
         }
     } catch (err) {
         console.error(err);

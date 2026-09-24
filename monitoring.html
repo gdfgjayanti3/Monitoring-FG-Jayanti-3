@@ -3881,7 +3881,20 @@ function renderRdcMonitoringTableFiltered(dataList) {
         let realStatus = matchedTruk ? (matchedTruk.status || 'Antrian') : 'Belum Datang';
         let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
         let noteText = plan.note || '-'; 
-       
+
+              // PASTIKAN slaBadge DIDEKLARASIKAN DI SINI (SEBELUM HTML):
+        let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
+        if (matchedTruk && matchedTruk.lamaStay) {
+            let parts = matchedTruk.lamaStay.split(':');
+            let hours = parseInt(parts[0]) || 0;
+            if (hours > 6) {
+                slaBadge = '<span class="badge bg-danger fw-bold">⚠️ Over SLA (>6j)</span>';
+            } else {
+                slaBadge = '<span class="badge bg-success fw-bold">✓ On Track (≤6j)</span>';
+            }
+        }
+
+      
         tbody.innerHTML += `<tr>
             <!-- Kolom Planning -->
             <td class="bg-indigo-50">${plan.tanggal || '-'}</td>

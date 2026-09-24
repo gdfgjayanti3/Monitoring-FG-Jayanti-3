@@ -3857,32 +3857,25 @@ function renderRdcMonitoringTableFiltered(dataList) {
     }
 
    dataList.forEach(plan => {
-        // Melakukan penariakn data dengan multi-parameter yang kuat & aman
-        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => {
-            // 1. Wajib cocok No. DO (karena No. DO dijamin unik per dokumen pengiriman)
-            let matchDo = t.noDoc && plan.do && t.noDoc.toUpperCase().trim() === plan.do.toUpperCase().trim();
-            
-            // 2. Validasi pendukung (Tujuan & Tanggal) agar semakin akurat
-            let matchTujuan = !plan.tujuan || !t.tujuan || t.tujuan.toUpperCase().includes(plan.tujuan.toUpperCase());
-            
-            return matchDo && matchTujuan;
-        });
+        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => 
+            (t.nopol && t.nopol.toUpperCase().includes(plan.nopol)) || 
+            (t.do && t.do.toUpperCase().includes(plan.do))
+        );
 
-        // Menarik data otomatis dari hasil link yang akurat
-        let realNopol = matchedTruk ? (matchedTruk.noPol || '-') : '-';
-        let realTgl = matchedTruk ? (matchedTruk.tanggalKirim || matchedTruk.tanggal || '-') : '-';
-        let realDatang = matchedTruk ? (matchedTruk.timeIn || matchedTruk.datang || '-') : '-';
-        let realStart = matchedTruk ? (matchedTruk.timeStartLoading || matchedTruk.start || '-') : '-';
-        let realFinish = matchedTruk ? (matchedTruk.timeOut || matchedTruk.finish || '-') : '-';
-        let realKeluar = matchedTruk ? (matchedTruk.timeOut || matchedTruk.keluar || '-') : '-';
+        let realNopol = matchedTruk ? (matchedTruk.noPol || matchedTruk.nopol || '-') : '-';
+        let realTgl = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
+        let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
+        let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
+        let realFinish = matchedTruk ? (matchedTruk.finish || '-') : '-';
+        let realKeluar = matchedTruk ? (matchedTruk.keluar || '-') : '-';
         let realLoading = matchedTruk ? (matchedTruk.lamaLoading || '-') : '-';
         let realStay = matchedTruk ? (matchedTruk.lamaStay || '-') : '-';
         let realEkspedisi = matchedTruk ? (matchedTruk.ekspedisi || '-') : '-';
         let realStatus = matchedTruk ? (matchedTruk.status || 'Antrian') : 'Belum Datang';
         let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
-        let noteText = plan.note || '-'; 
+        let noteText = plan.note || '-';
 
-              // PASTIKAN slaBadge DIDEKLARASIKAN DI SINI (SEBELUM HTML):
+        // PASTIKAN slaBadge DIDEKLARASIKAN DI SINI (SEBELUM HTML):
         let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
         if (matchedTruk && matchedTruk.lamaStay) {
             let parts = matchedTruk.lamaStay.split(':');
@@ -3893,7 +3886,6 @@ function renderRdcMonitoringTableFiltered(dataList) {
                 slaBadge = '<span class="badge bg-success fw-bold">✓ On Track (≤6j)</span>';
             }
         }
-
       
         tbody.innerHTML += `<tr>
             <!-- Kolom Planning -->

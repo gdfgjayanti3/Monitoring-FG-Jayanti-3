@@ -578,10 +578,11 @@
             <p class="text-xs text-slate-400">Gabungan data Planning RDC dan Realisasi truk masuk yang tersinkronisasi otomatis dengan portal antrian.</p>
         </div>
         <div class="flex items-center gap-2">
-            <button onclick="exportRdcToExcel()" class="btn btn-sm btn-success fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Download Excel</button>
-            <button onclick="openUploadPlanningModal()" class="btn btn-sm btn-primary fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Upload / Input Planning</button>
-            <button onclick="refreshRdcMonitoring()" class="btn btn-sm btn-outline-secondary fw-bold text-xs"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
-        </div>
+    <button onclick="exportRdcToExcel()" class="btn btn-sm btn-success fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Download Excel</button>
+    <button onclick="openUploadPlanningModal()" class="btn btn-sm btn-primary fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Upload / Input Planning</button>
+    <button onclick="clearAllPlanningRdc()" class="btn btn-sm btn-danger fw-bold text-xs"><i class="fa-solid fa-trash-can mr-1"></i> Hapus Semua Planning</button>
+    <button onclick="loadRdcMonitoringData()" class="btn btn-sm btn-outline-secondary fw-bold text-xs"><i class="fa-solid fa-rotate mr-1"></i> Refresh</button>
+</div>
     </div>
 
     <!-- BOX FILTER & SEARCH -->
@@ -4028,7 +4029,31 @@ async function savePlanningRdc(e) {
         alert('Gagal menyimpan planning: ' + err.message);
     }
 }
+async function clearAllPlanningRdc() {
+    if (!confirm('Apakah Anda yakin ingin menghapus SELURUH data planning RDC? Data yang dihapus tidak dapat dikembalikan!')) {
+        return;
+    }
 
+    try {
+        const db = window.db;
+        const { collection, getDocs, deleteDoc, doc } = window.firebaseCollections;
+
+        let querySnapshot = await getDocs(collection(db, 'planning_rdc'));
+        let deletePromises = [];
+        
+        querySnapshot.forEach((document) => {
+            deletePromises.push(deleteDoc(doc(db, 'planning_rdc', document.id)));
+        });
+
+        await Promise.all(deletePromises);
+
+        alert('Semua data planning RDC berhasil dihapus!');
+        loadRdcMonitoringData(); // Muat ulang tabel agar kosong kembali
+    } catch (err) {
+        console.error("Gagal menghapus data:", err);
+        alert('Gagal menghapus data planning: ' + err.message);
+    }
+}
 async function loadRdcMonitoringData() {
     if (!window.db) return;
     try {
@@ -4474,14 +4499,16 @@ async function handlePasteExcelData() {
             if(modalEl) modalEl.classList.add('hidden');
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
-            try {
-                fetchAllDataFromSupabase();
-                switchEksporTab('summary');
-            } catch (err) {
-                console.error("Initialization error:", err);
-            }
-        });
+ document.addEventListener("DOMContentLoaded", () => {
+    try {
+        fetchAllDataFromSupabase();
+        switchBinSubTab('summary');
+    } catch (err) {
+        console.error("Initialization error:", err);
+    }
+    // Tambahkan pemanggilan RDC di sini
+    loadRdcMonitoringData();
+});
     </script>
 </body>
 </html>

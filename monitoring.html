@@ -1493,13 +1493,13 @@
             <button onclick="closeModal('modalUploadPlanning')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="p-6 space-y-4">
-            <!-- Opsi 1: Upload File Excel -->
-            <div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50">
-                <label class="form-label fw-bold block mb-1">1. Upload File Excel Planning (.xlsx)</label>
-                <input type="file" id="excelFileRdc" accept=".xlsx, .xls, .csv" class="form-control form-control-sm mb-2" onchange="handleExcelUpload(event)">
-                <p class="text-[10px] text-slate-400">Format kolom: Tanggal, Plant, Tujuan, DO, SKU, Nama Barang, Qty, Nopol</p>
-            </div>
-
+           <!-- Opsi 1: Upload File Excel -->
+<div class="border-2 border-dashed border-slate-300 rounded-xl p-4 text-center bg-slate-50 space-y-2">
+    <label class="form-label fw-bold block mb-1">1. Upload File Excel Planning (.xlsx)</label>
+    <input type="file" id="excelFileRdc" accept=".xlsx, .xls, .csv" class="form-control form-control-sm mb-2">
+    <button type="button" onclick="prokerUploadExcelButton()" class="btn btn-sm btn-success fw-bold w-100">Proses & Simpan File Excel</button>
+    <p class="text-[10px] text-slate-400">Format kolom: Tanggal, Plant, Tujuan, DO, SKU, Nama Barang, Qty, Nopol</p>
+</div>
             <div class="text-center font-bold text-slate-400">- ATAU -</div>
 
             <!-- Opsi 2: Paste Data dari Excel -->
@@ -3992,6 +3992,15 @@ function openUploadPlanningModal() {
     if (modal) {
         modal.classList.remove('hidden');
     }
+}
+       function prokerUploadExcelButton() {
+    let fileInput = document.getElementById('excelFileRdc');
+    if (!fileInput.files || fileInput.files.length === 0) {
+        alert('Silakan pilih file Excel terlebih dahulu!');
+        return;
+    }
+    // Panggil fungsi pembaca excel yang sudah ada
+    handleExcelUpload({ target: fileInput });
 }
 async function savePlanningRdc(e) {
     e.preventDefault();

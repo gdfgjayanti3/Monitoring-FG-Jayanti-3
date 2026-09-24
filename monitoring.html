@@ -3920,17 +3920,6 @@ function renderRdcMonitoringTableFiltered(dataList) {
             <td class="bg-amber-50 text-start text-xs">${noteText}</td>
         </tr>`;        
 
-        let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
-        if (matchedTruk && matchedTruk.lamaStay) {
-            let parts = matchedTruk.lamaStay.split(':');
-            let hours = parseInt(parts[0]) || 0;
-            if (hours > 6) {
-                slaBadge = '<span class="badge bg-danger fw-bold">⚠️ Over SLA (>6j)</span>';
-            } else {
-                slaBadge = '<span class="badge bg-success fw-bold">✓ On Track (≤6j)</span>';
-            }
-        }
-
         tbody.innerHTML += `<tr>
             <td class="bg-indigo-50">${plan.tanggal || '-'}</td>
             <td class="bg-indigo-50">${plan.plant || '-'}</td>

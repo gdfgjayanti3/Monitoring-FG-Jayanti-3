@@ -4093,7 +4093,7 @@ function renderRdcMonitoringTable() {
         let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
         let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
         let realFinish = matchedTruk ? (matchedTruk.finish || '-') : '-';
-        let realKeluar = matchedTruk ? (matchedTruk.keluar || '-') : '-';
+        let realKeluar = matchedTruk ? (matchedTruk.keluar || matchedTruk.timeOut || '-') : '-';
         let realLoading = matchedTruk ? (matchedTruk.lamaLoading || '-') : '-';
         let realStay = matchedTruk ? (matchedTruk.lamaStay || '-') : '-';
         let realEkspedisi = matchedTruk ? (matchedTruk.ekspedisi || '-') : '-';

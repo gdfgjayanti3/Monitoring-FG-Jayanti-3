@@ -4284,13 +4284,9 @@ async function handlePasteExcelData() {
     let pasteText = document.getElementById('pasteExcelRdc').value.trim();
     if (!pasteText) {
         alert('Silakan paste data tabel Excel terlebih dahulu pada kotak yang tersedia!');
-        return; // Ini return yang benar (di dalam fungsi)
+        return;
     }
 
-    try {
-        let rows = pasteText.split('\n');
-        let count = 0;
-        // ...lanjutan kodenya di sini...
     try {
         let rows = pasteText.split('\n');
         let count = 0;
@@ -4340,8 +4336,8 @@ async function handlePasteExcelData() {
                 tanggal: formattedTgl || new Date().toISOString().split('T')[0],
                 plant: lastPlant,
                 tujuan: lastTujuan.toUpperCase(),
-                do: lastDo,
-                spe: lastSpe,
+                do: doNum,
+                spe: speNum,
                 sku: skuVal,
                 namaBarang: namaBarangVal,
                 qty: qtyVal,
@@ -4355,7 +4351,7 @@ async function handlePasteExcelData() {
         }
 
         if (count > 0) {
-            alert(`Berhasil menyimpan ${count} data planning (termasuk No. SPE) dari hasil paste Excel!`);
+            alert(`Berhasil menyimpan ${count} data planning dari hasil paste Excel!`);
             closeModal('modalUploadPlanning');
             document.getElementById('pasteExcelRdc').value = '';
             loadRdcMonitoringData();

@@ -1040,6 +1040,7 @@ async function submitAntrian(e) {
         alert('Gagal menyimpan ke Database: ' + err.message);
     }
 }
+
 // Fungsi untuk mendeteksi dan membaca data planning berdasarkan No. DO / No. SPE yang diketik
 async function checkPlanningData(doOrSpeInput) {
     let queryVal = doOrSpeInput.trim().toUpperCase();
@@ -1072,7 +1073,8 @@ async function checkPlanningData(doOrSpeInput) {
     } catch (err) {
         console.error("Gagal membaca data planning:", err);
     }
-}    
+}
+
 let activePlTruckIdx = null;
 async function openPickingListModal(index) {
     activePlTruckIdx = index;
@@ -1235,7 +1237,6 @@ async function addItemToTruckPickingList() {
     if(!truckQueue[activePlTruckIdx].pickingList) truckQueue[activePlTruckIdx].pickingList = [];
     truckQueue[activePlTruckIdx].pickingList.push(item);
 
-    // Cari dokumen stok yang cocok berdasarkan SKU dan Lokasi di Firestore untuk dipotong
     let targetColl = selectedBatchData.kategori_stok === 'Ekspor' ? 'stok_ekspor' : 'stok_lokal';
     let lokSnap = await getDocs(collection(window.db, targetColl));
     let matchedDocId = null;
@@ -1255,7 +1256,7 @@ async function addItemToTruckPickingList() {
         } else {
             let stdPlt = getCartonPerPallet(skuCode);
             let pltVal = Math.floor(newKarton / stdPlt);
-            let rchVal = newKarton % stdPlt; // Diperbaiki dari typo sebelumnya
+            let rchVal = newKarton % stdPlt;
             let konvStr = `${pltVal} Plt (${newKarton} krt)`;
             if (rchVal > 0) konvStr = `${pltVal} Plt + ${rchVal} krt`;
             await updateDoc(docRef, { karton: newKarton, konversi: konvStr });
@@ -1270,6 +1271,7 @@ async function addItemToTruckPickingList() {
     selectedBatchData = null;
     renderPlTable();
 }
+
 async function removePlItem(idx) {
     if(activePlTruckIdx === null) return;
     let t = truckQueue[activePlTruckIdx];
@@ -1777,7 +1779,7 @@ function renderAll() {
                         <span style="color:#cbd5e1;">&bull;</span>
                         <span style="font-weight:600; color:#334155;">${t.ekspedisi}</span>
                         <span style="color:#cbd5e1;">&bull;</span>
-                        <span style="color:#0284c7; font-weight:600;">Doc: ${t.}</span>
+                        <span style="color:#0284c7; font-weight:600;">Doc: ${t.noDoc}</span>
                     </div>
 
                     <div style="color:#475569; font-size:11px; line-height: 1.4;">

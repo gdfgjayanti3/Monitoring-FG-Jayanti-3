@@ -3860,13 +3860,13 @@ function renderRdcMonitoringTableFiltered(dataList) {
 
   dataList.forEach(plan => {
         // Mencocokkan data dari portal antrian berdasarkan No. DO atau No. SPE (No Doc)
-        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => {
-            let tDoc = (t.noDoc || '').toUpperCase().trim();
-            let pDo = (plan.do || '').toUpperCase().trim();
-            let pSpe = (plan.spe || '').toUpperCase().trim();
-            return (tDoc && pDo && tDoc.includes(pDo)) || (tDoc && pSpe && tDoc.includes(pSpe));
-        });
-
+     let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => {
+    let tDoc = t.noDoc || '';
+    let pDo = plan.do || '';
+    let pSpe = plan.spe || '';
+    // Menggunakan fungsi isDocMatched agar bisa membaca koma
+    return isDocMatched(pDo, tDoc) || isDocMatched(pSpe, tDoc);
+});
         // Nopol otomatis ditarik dari data realisasi portal antrian
         let realNopol = matchedTruk ? (matchedTruk.noPol || '-') : '-';
         let realTgl = matchedTruk ? (matchedTruk.tanggalKirim || '-') : '-';
@@ -4525,7 +4525,15 @@ async function handlePasteExcelData() {
             let modalEl = document.getElementById('binModal');
             if(modalEl) modalEl.classList.add('hidden');
         }
-
+// Fungsi untuk memecah No. Doc dengan koma dan mencocokkannya dengan planning
+function isDocMatched(planningDocOrSpe, truckNoDocInput) {
+    if (!planningDocOrSpe || !truckNoDocInput) return false;
+    
+    let truckDocs = truckNoDocInput.toUpperCase().split(',').map(s => s.trim());
+    let planTarget = planningDocOrSpe.toUpperCase().trim();
+    
+    return truckDocs.some(docItem => planTarget.includes(docItem) || docItem.includes(planTarget));
+}
  document.addEventListener("DOMContentLoaded", () => {
     try {
         fetchAllDataFromSupabase();

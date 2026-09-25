@@ -3872,7 +3872,7 @@ function renderRdcMonitoringTableFiltered(dataList) {
         let realTgl = matchedTruk ? (matchedTruk.tanggalKirim || '-') : '-';
         let realDatang = matchedTruk ? (matchedTruk.timeIn || '-') : '-';
         let realStart = matchedTruk ? (matchedTruk.timeStartLoading || '-') : '-';
-        let realFinish = matchedTruk ? (matchedTruk.timeOut || '-') : '-';
+        let realFinish = matchedTruk ? (matchedTruk.finish || matchedTruk.selesai || matchedTruk.timeEndLoading || '-') : '-';
         let realKeluar = matchedTruk ? (matchedTruk.timeOut || '-') : '-';
         let realLoading = '-';
         let realStay = '-';

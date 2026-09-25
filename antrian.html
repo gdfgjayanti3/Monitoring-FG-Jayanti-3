@@ -231,8 +231,7 @@
             <div class="form-group"><label>Nama Sopir *</label><input type="text" id="mSopir" required placeholder="Contoh: Budi"></div>
             <div class="form-group"><label>Nama Ekspedisi *</label><input type="text" id="mEkspedisi" required placeholder="Contoh: Seino"></div>
             <div class="form-group"><label>No. Polisi Truk *</label><input type="text" id="mNoPol" required placeholder="B 1234 XYZ"></div>
-            <div class="form-group"><label>No. Doc (SPE / SPM / SO / QT) *</label><input type="text" id="mNoDoc" required placeholder="Contoh: SPE-2026-001"></div>
-            
+            <div class="form-group"><label>No. Doc (SPE / SPM / SO / QT) *</label><input type="text" id="mNoDoc" required placeholder="Contoh: 02740/DO/09/2026/MYOR" onblur="checkPlanningData(this.value)"></div>            
             <div class="form-group">
                 <label>Jenis *</label>
                 <select id="mJenis" required onchange="handleJenisChange()">

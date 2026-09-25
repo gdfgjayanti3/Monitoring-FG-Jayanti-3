@@ -1041,6 +1041,43 @@ async function submitAntrian(e) {
         alert('Gagal menyimpan ke Database: ' + err.message);
     }
 }
+// Fungsi untuk mendeteksi dan membaca data planning berdasarkan No. DO / No. SPE yang diketik
+async function checkPlanningData(doOrSpeInput) {
+    let queryVal = doOrSpeInput.trim().toUpperCase();
+    if (!queryVal) return;
+
+    try {
+        const db = window.db;
+        const { collection, getDocs, query, where } = window.firebaseCollections;
+
+        // Cari data di collection planning_rdc berdasarkan DO atau SPE
+        const q = query(collection(db, 'planning_rdc'));
+        const querySnapshot = await getDocs(q);
+
+        let matchedPlan = null;
+        querySnapshot.forEach((docSnap) => {
+            let data = docSnap.data();
+            let planDo = (data.do || '').toUpperCase().trim();
+            let planSpe = (data.spe || '').toUpperCase().trim();
+            if ((planDo && queryVal.includes(planDo)) || (planSpe && queryVal.includes(planSpe))) {
+                matchedPlan = data;
+            }
+        });
+
+        if (matchedPlan) {
+            // Jika ketemu di planning, otomatis isi kolom Tujuan Pengiriman di form antrian
+            let tujuanInput = document.getElementById('tujuanPengiriman'); // Sesuaikan dengan id input tujuan di antrian.html kamu
+            if (tujuanInput && !tujuanInput.value) {
+                tujuanInput.value = matchedPlan.tujuan || '';
+            }
+            
+            // Opsional: Berikan notifikasi kecil atau indikator bahwa DO/SPE terdaftar di Planning
+            console.log("Planning ditemukan:", matchedPlan);
+        }
+    } catch (err) {
+        console.error("Gagal membaca data planning:", err);
+    }
+}
     
 let activePlTruckIdx = null;
 async function openPickingListModal(index) {
@@ -1746,7 +1783,7 @@ function renderAll() {
                         <span style="color:#cbd5e1;">&bull;</span>
                         <span style="font-weight:600; color:#334155;">${t.ekspedisi}</span>
                         <span style="color:#cbd5e1;">&bull;</span>
-                        <span style="color:#0284c7; font-weight:600;">Doc: ${t.noDoc}</span>
+                        <span style="color:#0284c7; font-weight:600;">Doc: ${t.}</span>
                     </div>
 
                     <div style="color:#475569; font-size:11px; line-height: 1.4;">

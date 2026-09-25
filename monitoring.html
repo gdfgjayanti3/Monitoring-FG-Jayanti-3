@@ -608,37 +608,39 @@
     <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs overflow-x-auto">
         <div class="table-responsive">
             <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 1600px;">
-                <thead class="table-dark text-white">
-                    <tr>
-                        <th colspan="8" class="bg-indigo-900 border-bottom">PLANNING</th>
-                        <th colspan="11" class="bg-slate-800 border-bottom">REALISASI (SINKRON PORTAL ANTRIAN)</th>
-                        <th rowspan="2" class="bg-emerald-800 align-middle">SLA (6 Jam)</th>
-                        <th rowspan="2" class="bg-amber-800 align-middle">NOTE / KENDALA</th>
-                    </tr>
-                    <tr>
-                        <!-- Planning -->
-                        <th class="bg-indigo-700">Tanggal</th>
-                        <th class="bg-indigo-700">Plant</th>
-                        <th class="bg-indigo-700">Tujuan</th>
-                        <th class="bg-indigo-700">No. DO</th>
-                        <th class="bg-indigo-700">SKU</th>
-                        <th class="bg-indigo-700">Nama Barang</th>
-                        <th class="bg-indigo-700">QTY</th>
-                        <!-- Realisasi -->
-                        <th class="bg-indigo-700">Nopol</th>
-                        <th class="bg-slate-700">Tanggal</th>
-                        <th class="bg-slate-700">Datang</th>
-                        <th class="bg-slate-700">Start</th>
-                        <th class="bg-slate-700">Finish</th>
-                        <th class="bg-slate-700">Keluar</th>
-                        <th class="bg-slate-700">Lama Loading</th>
-                        <th class="bg-slate-700">Lama Stay</th>
-                        <th class="bg-slate-700">Nama Ekspedisi</th>
-                        <th class="bg-slate-700">Status Mobil</th>
-                        <th class="bg-slate-700">Jenis Mobil</th>
-                        <th class="bg-slate-700">Aksi Note</th>
-                    </tr>
-                </thead>
+               <thead class="table-dark text-white">
+    <tr>
+        <th colspan="8" class="bg-indigo-900 border-bottom">PLANNING</th>
+        <th colspan="12" class="bg-slate-800 border-bottom">REALISASI (SINKRON PORTAL ANTRIAN)</th>
+        <th rowspan="2" class="bg-emerald-800 align-middle">SLA (6 Jam)</th>
+        <th rowspan="2" class="bg-amber-800 align-middle">NOTE / KENDALA</th>
+    </tr>
+    <tr>
+        <!-- Planning (Termasuk No. SPE, Nopol dibuang dari planning) -->
+        <th class="bg-indigo-700">Tanggal</th>
+        <th class="bg-indigo-700">Plant</th>
+        <th class="bg-indigo-700">Tujuan</th>
+        <th class="bg-indigo-700">No. DO</th>
+        <th class="bg-indigo-700">No. SPE</th>
+        <th class="bg-indigo-700">SKU</th>
+        <th class="bg-indigo-700">Nama Barang</th>
+        <th class="bg-indigo-700">QTY</th>
+        
+        <!-- Realisasi (Nopol masuk ke sini, ditarik dari antrian) -->
+        <th class="bg-slate-700">Nopol</th>
+        <th class="bg-slate-700">Tanggal</th>
+        <th class="bg-slate-700">Datang</th>
+        <th class="bg-slate-700">Start</th>
+        <th class="bg-slate-700">Finish</th>
+        <th class="bg-slate-700">Keluar</th>
+        <th class="bg-slate-700">Lama Loading</th>
+        <th class="bg-slate-700">Lama Stay</th>
+        <th class="bg-slate-700">Nama Ekspedisi</th>
+        <th class="bg-slate-700">Status Mobil</th>
+        <th class="bg-slate-700">Jenis Mobil</th>
+        <th class="bg-slate-700">Aksi Note</th>
+    </tr>
+</thead>
                 <tbody id="rdcMonitoringTableBody">
                     <tr><td colspan="21" class="text-muted py-4">Memuat data planning dan realisasi RDC...</td></tr>
                 </tbody>
@@ -3856,48 +3858,51 @@ function renderRdcMonitoringTableFiltered(dataList) {
         return;
     }
 
-   dataList.forEach(plan => {
-        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => 
-            (t.nopol && t.nopol.toUpperCase().includes(plan.nopol)) || 
-            (t.do && t.do.toUpperCase().includes(plan.do))
-        );
+  dataList.forEach(plan => {
+        // Mencocokkan data dari portal antrian berdasarkan No. DO atau No. SPE (No Doc)
+        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => {
+            let tDoc = (t.noDoc || '').toUpperCase().trim();
+            let pDo = (plan.do || '').toUpperCase().trim();
+            let pSpe = (plan.spe || '').toUpperCase().trim();
+            return (tDoc && pDo && tDoc.includes(pDo)) || (tDoc && pSpe && tDoc.includes(pSpe));
+        });
 
-        let realNopol = matchedTruk ? (matchedTruk.noPol || matchedTruk.nopol || '-') : '-';
-        let realTgl = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
-        let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
-        let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
-        let realFinish = matchedTruk ? (matchedTruk.finish || '-') : '-';
-        let realKeluar = matchedTruk ? (matchedTruk.keluar || '-') : '-';
-        let realLoading = matchedTruk ? (matchedTruk.lamaLoading || '-') : '-';
-        let realStay = matchedTruk ? (matchedTruk.lamaStay || '-') : '-';
+        // Nopol otomatis ditarik dari data realisasi portal antrian
+        let realNopol = matchedTruk ? (matchedTruk.noPol || '-') : '-';
+        let realTgl = matchedTruk ? (matchedTruk.tanggalKirim || '-') : '-';
+        let realDatang = matchedTruk ? (matchedTruk.timeIn || '-') : '-';
+        let realStart = matchedTruk ? (matchedTruk.timeStartLoading || '-') : '-';
+        let realFinish = matchedTruk ? (matchedTruk.timeOut || '-') : '-';
+        let realKeluar = matchedTruk ? (matchedTruk.timeOut || '-') : '-';
+        let realLoading = '-';
+        let realStay = '-';
         let realEkspedisi = matchedTruk ? (matchedTruk.ekspedisi || '-') : '-';
         let realStatus = matchedTruk ? (matchedTruk.status || 'Antrian') : 'Belum Datang';
         let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
         let noteText = plan.note || '-';
 
-        // PASTIKAN slaBadge DIDEKLARASIKAN DI SINI (SEBELUM HTML):
         let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
         if (matchedTruk && matchedTruk.lamaStay) {
-            let parts = matchedTruk.lamaStay.split(':');
-            let hours = parseInt(parts[0]) || 0;
+            let hours = parseInt(matchedTruk.lamaStay) || 0;
             if (hours > 6) {
                 slaBadge = '<span class="badge bg-danger fw-bold">⚠️ Over SLA (>6j)</span>';
             } else {
                 slaBadge = '<span class="badge bg-success fw-bold">✓ On Track (≤6j)</span>';
             }
         }
-      
+
         tbody.innerHTML += `<tr>
-            <!-- Kolom Planning -->
+            <!-- Kolom Planning (Termasuk No. SPE) -->
             <td class="bg-indigo-50">${plan.tanggal || '-'}</td>
             <td class="bg-indigo-50">${plan.plant || '-'}</td>
             <td class="bg-indigo-50 fw-bold">${plan.tujuan || '-'}</td>
             <td class="bg-indigo-50 font-monospace">${plan.do || '-'}</td>
+            <td class="bg-indigo-50 font-monospace text-indigo-800 fw-bold">${plan.spe || '-'}</td>
             <td class="bg-indigo-50">${plan.sku || '-'}</td>
             <td class="bg-indigo-50 text-start">${plan.namaBarang || '-'}</td>
             <td class="bg-indigo-50 fw-bold">${plan.qty || 0}</td>
             
-            <!-- Kolom Realisasi -->
+            <!-- Kolom Realisasi (Nopol otomatis muncul di sini dari portal antrian) -->
             <td class="bg-slate-100 fw-bold text-indigo-900">${realNopol}</td>
             <td>${realTgl}</td>
             <td>${realDatang}</td>
@@ -3910,16 +3915,20 @@ function renderRdcMonitoringTableFiltered(dataList) {
             <td><span class="badge bg-info-subtle text-info border">${realStatus}</span></td>
             <td>${realJenis}</td>
             
-            <!-- Kolom Aksi Note & Hapus -->
-            <td class="text-nowrap">
-                <button class="btn btn-xs btn-outline-secondary py-0 px-2 mb-1" onclick="editRdcNote('${plan.id}', '${noteText}')">Edit Note</button>
-                <button class="btn btn-xs btn-outline-danger py-0 px-2" onclick="deleteSinglePlanningRdc('${plan.id}')"><i class="fa-solid fa-trash"></i> Hapus</button>
+            <!-- Tombol Aksi Minimalis -->
+            <td class="text-nowrap py-1">
+                <button class="btn btn-outline-secondary btn-sm py-0 px-2 text-[10px] me-1" onclick="editRdcNote('${plan.id}', '${noteText}')">
+                    <i class="fa-solid fa-pen"></i> Note
+                </button>
+                <button class="btn btn-outline-danger btn-sm py-0 px-2 text-[10px]" onclick="deleteSinglePlanningRdc('${plan.id}')">
+                    <i class="fa-solid fa-trash"></i>
+                </button>
             </td>
             
             <td class="bg-emerald-50">${slaBadge}</td>
             <td class="bg-amber-50 text-start text-xs">${noteText}</td>
-        </tr>`;        
-
+        </tr>`;
+    });
         tbody.innerHTML += `<tr>
             <td class="bg-indigo-50">${plan.tanggal || '-'}</td>
             <td class="bg-indigo-50">${plan.plant || '-'}</td>
@@ -4271,8 +4280,7 @@ async function handleExcelUpload(event) {
     };
     reader.readAsArrayBuffer(file);
 }
-// Fungsi untuk memproses data hasil Paste dari Excel
-async function handlePasteExcelData() {
+// Fungsi untuk memproses data hasil Paste dari Excelasync function handlePasteExcelData() {
     let pasteText = document.getElementById('pasteExcelRdc').value.trim();
     if (!pasteText) {
         alert('Silakan paste data tabel Excel terlebih dahulu pada kotak yang tersedia!');
@@ -4286,19 +4294,21 @@ async function handlePasteExcelData() {
         const db = window.db;
         const { collection, addDoc } = window.firebaseCollections;
 
+        let lastTanggal = '';
+        let lastPlant = '';
+        let lastTujuan = '';
+        let lastDo = '';
+        let lastSpe = '';
+
         for (let rowStr of rows) {
             let cols = rowStr.split('\t').map(c => c.trim());
-            // Pastikan baris memiliki cukup kolom (minimal 8 kolom termasuk nomor urut di awal)
-            if (cols.length < 7) continue; 
+            if (cols.length < 6) continue; 
 
-            // Menyesuaikan indeks kolom dengan hasil copy Excel kamu:
-            // Jika kolom ke-0 adalah nomor urut, geser indeksnya:
-            // Indeks 1: Tanggal, 2: Plant, 3: Tujuan, 4: DO, 5: SKU, 6: Nama Barang, 7: Qty
-            // (Kita buat aman dengan mengecek apakah kolom 0 berupa angka/nomor urut)
             let offset = cols[0] && !cols[0].includes('/') && !isNaN(cols[0]) ? 1 : 0;
 
-            let rawTgl = cols[0 + offset] || '';
-            let formattedTgl = rawTgl;
+            let rawTgl = cols[0 + offset] || lastTanggal;
+            if (rawTgl) lastTanggal = rawTgl;
+            let formattedTgl = lastTanggal;
             if (formattedTgl.includes('/')) {
                 let parts = formattedTgl.split('/');
                 if (parts.length === 3) {
@@ -4306,25 +4316,34 @@ async function handlePasteExcelData() {
                 }
             }
 
-            let plantVal = cols[1 + offset] || '';
-            let tujuanVal = cols[2 + offset] || '';
-            let doNum = cols[3 + offset] || '';
-            let skuVal = cols[4 + offset] || '';
-            let namaBarangVal = cols[5 + offset] || '';
-            let qtyVal = parseFloat((cols[6 + offset] || '0').replace(/,/g, '')) || 0;
+            let plantVal = cols[1 + offset] || lastPlant;
+            if (plantVal) lastPlant = plantVal;
+
+            let tujuanVal = cols[2 + offset] || lastTujuan;
+            if (tujuanVal) lastTujuan = tujuanVal;
+
+            let doNum = cols[3 + offset] || lastDo;
+            if (doNum) lastDo = doNum;
+
+            let speNum = cols[4 + offset] || lastSpe;
+            if (speNum) lastSpe = speNum;
+
+            let skuVal = cols[5 + offset] || '';
+            let namaBarangVal = cols[6 + offset] || '';
+            let qtyVal = parseFloat((cols[7 + offset] || '0').replace(/,/g, '')) || 0;
 
             let newPlan = {
                 tanggal: formattedTgl || new Date().toISOString().split('T')[0],
-                plant: plantVal,
-                tujuan: tujuanVal.toUpperCase(),
-                do: doNum,
+                plant: lastPlant,
+                tujuan: lastTujuan.toUpperCase(),
+                do: lastDo,
+                spe: lastSpe,
                 sku: skuVal,
                 namaBarang: namaBarangVal,
                 qty: qtyVal,
                 note: '-'
             };
 
-            // Simpan setiap baris data ke database
             if (newPlan.do && newPlan.sku) {
                 await addDoc(collection(db, 'planning_rdc'), newPlan);
                 count++;
@@ -4332,7 +4351,7 @@ async function handlePasteExcelData() {
         }
 
         if (count > 0) {
-            alert(`Berhasil menyimpan ${count} data planning dari hasil paste Excel!`);
+            alert(`Berhasil menyimpan ${count} data planning (termasuk No. SPE) dari hasil paste Excel!`);
             closeModal('modalUploadPlanning');
             document.getElementById('pasteExcelRdc').value = '';
             loadRdcMonitoringData();

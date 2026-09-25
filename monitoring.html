@@ -4279,13 +4279,18 @@ async function handleExcelUpload(event) {
     };
     reader.readAsArrayBuffer(file);
 }
-// Fungsi untuk memproses data hasil Paste dari Excelasync function handlePasteExcelData() {
+// Fungsi untuk memproses data hasil Paste dari Excel
+async function handlePasteExcelData() {
     let pasteText = document.getElementById('pasteExcelRdc').value.trim();
     if (!pasteText) {
         alert('Silakan paste data tabel Excel terlebih dahulu pada kotak yang tersedia!');
-        return;
+        return; // Ini return yang benar (di dalam fungsi)
     }
 
+    try {
+        let rows = pasteText.split('\n');
+        let count = 0;
+        // ...lanjutan kodenya di sini...
     try {
         let rows = pasteText.split('\n');
         let count = 0;

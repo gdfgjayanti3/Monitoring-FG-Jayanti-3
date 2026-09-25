@@ -4082,17 +4082,18 @@ function renderRdcMonitoringTable() {
         return;
     }
 
-    planningRdcData.forEach(plan => {
-        // Cari realisasi di antrianData berdasarkan Nopol atau No DO
-        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => 
-            (t.nopol && t.nopol.toUpperCase().includes(plan.nopol)) || 
-            (t.do && t.do.toUpperCase().includes(plan.do))
-        );
-
+    // Cari realisasi di antrianData menggunakan fungsi isDocMatched (bisa baca koma)
+    let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => {
+        let tDoc = t.noDoc || '';
+        let pDo = plan.do || '';
+        let pSpe = plan.spe || '';
+        return isDocMatched(pDo, tDoc) || isDocMatched(pSpe, tDoc);
+    });
+    
         let realTgl = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
         let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
         let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
-        let realFinish = matchedTruk ? (matchedTruk.finish || '-') : '-';
+        let realFinish = matchedTruk ? (matchedTruk.finish || matchedTruk.selesai || matchedTruk.timeEndLoading || '-') : '-';
         let realKeluar = matchedTruk ? (matchedTruk.keluar || matchedTruk.timeOut || '-') : '-';
         let realLoading = matchedTruk ? (matchedTruk.lamaLoading || '-') : '-';
         let realStay = matchedTruk ? (matchedTruk.lamaStay || '-') : '-';

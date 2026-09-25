@@ -1047,9 +1047,8 @@ async function checkPlanningData(doOrSpeInput) {
 
     try {
         const db = window.db;
-        const { collection, getDocs, query, where } = window.firebaseCollections;
+        const { collection, getDocs, query } = window.firebaseCollections;
 
-        // Cari data di collection planning_rdc berdasarkan DO atau SPE
         const q = query(collection(db, 'planning_rdc'));
         const querySnapshot = await getDocs(q);
 
@@ -1064,20 +1063,16 @@ async function checkPlanningData(doOrSpeInput) {
         });
 
         if (matchedPlan) {
-            // Jika ketemu di planning, otomatis isi kolom Tujuan Pengiriman di form antrian
-            let tujuanInput = document.getElementById('tujuanPengiriman'); // Sesuaikan dengan id input tujuan di antrian.html kamu
+            let tujuanInput = document.getElementById('mTujuan'); 
             if (tujuanInput && !tujuanInput.value) {
                 tujuanInput.value = matchedPlan.tujuan || '';
             }
-            
-            // Opsional: Berikan notifikasi kecil atau indikator bahwa DO/SPE terdaftar di Planning
             console.log("Planning ditemukan:", matchedPlan);
         }
     } catch (err) {
         console.error("Gagal membaca data planning:", err);
     }
-}
-    
+}    
 let activePlTruckIdx = null;
 async function openPickingListModal(index) {
     activePlTruckIdx = index;

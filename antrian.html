@@ -2063,15 +2063,17 @@ async function saveStatus() {
         targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
 
-    if (newSt === 'Selesai Muat' || newSt === 'Keluar') {
+    if (newSt === 'Keluar') {
+        // Jika sebelumnya belum sempat terekam jam selesainya, rekam juga
         if (!targetTruck.timeEndLoading || targetTruck.timeEndLoading === '-') {
             logRecord.time_end_loading = currentIsoTime;
             targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         }
+        // Jam keluar HANYA terisi saat status benar-benar "Keluar"
         logRecord.time_out = currentIsoTime;
         targetTruck.timeOut = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
-
+            
     const { updateDoc, doc, setDoc } = window.firebaseCollections;
     try {
         await updateDoc(doc(window.db, 'antrian_truk', targetTruck.firestoreId), { status_antrian: newSt });

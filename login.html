@@ -63,14 +63,8 @@
                     // Simpan sesi login ke browser
                     localStorage.setItem('loggedUser', JSON.stringify(userData));
                     
-                    // Validasi halaman tujuan berdasarkan role
-                    if (userData.role === 'manpower') {
-                        window.location.href = 'antrian.html';
-                    } else if (userData.role === 'admin') {
-                        window.location.href = 'monitoring.html';
-                    } else {
-                        window.location.href = 'index.html';
-                    }
+                    // Semua diarahkan ke index.html (pilihan portal dulu)
+                    window.location.href = 'index.html';
                 } else {
                     errEl.innerText = "Password salah!";
                     errEl.classList.remove('hidden');

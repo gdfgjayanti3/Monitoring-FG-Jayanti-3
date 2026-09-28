@@ -2185,11 +2185,12 @@ async function resetData() {
             pickSnap.forEach(async (d) => {
                 if (d.data().no_doc === t.noDoc) await deleteDoc(doc(window.db, 'picking_list_truk', d.id));
             });
-            try { await deleteDoc(doc(window.db, 'status_truk_log', t.noDoc)); } catch(e){}
+           try {
             await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
+            loadDataFromCloud();
+        } catch (e) {
+            console.error(e);
         }
-        truckQueue = [];
-        loadDataFromCloud();
     }
 }
 </script>

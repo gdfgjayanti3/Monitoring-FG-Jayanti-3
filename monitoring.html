@@ -4077,13 +4077,15 @@ function renderRdcMonitoringTable() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-  if (planningRdcData.length === 0) {
+    if (planningRdcData.length === 0) {
         tbody.innerHTML = `<tr><td colspan="21" class="text-muted py-4">Belum ada data planning RDC. Silakan upload atau input terlebih dahulu.</td></tr>`;
         return;
     }
 
-        planningRdcData.forEach(plan => {
-        // Cari realisasi di antrianData menggunakan fungsi isDocMatched
+    // 1. Perulangan planningRdcData dibuka di sini menggunakan 'plan'
+    planningRdcData.forEach(plan => {
+        
+        // 2. Cari matchedTruk menggunakan isDocMatched
         let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => {
             let tDoc = t.noDoc || '';
             let pDo = plan.do || '';
@@ -4091,7 +4093,8 @@ function renderRdcMonitoringTable() {
             return isDocMatched(pDo, tDoc) || isDocMatched(pSpe, tDoc);
         });
 
-        let realTgl = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
+        // 3. Deklarasi variabel realisasi di dalam lingkup perulangan ini (AMAN dari error matchedTruk)
+        let realTanggal = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
         let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
         let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
         let realFinish = matchedTruk ? (matchedTruk.finish || matchedTruk.selesai || matchedTruk.timeEndLoading || '-') : '-';
@@ -4103,8 +4106,8 @@ function renderRdcMonitoringTable() {
         let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
         let noteText = plan.note || '-';
 
-        }); 
-    
+    }); 
+}   
         // Hitung SLA max 6 jam (berdasarkan lama stay atau selisih waktu datang s/d keluar)
         let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
         if (matchedTruk && matchedTruk.lamaStay) {

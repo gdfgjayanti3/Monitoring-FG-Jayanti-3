@@ -2076,7 +2076,10 @@ async function saveStatus() {
             
     const { updateDoc, doc, setDoc } = window.firebaseCollections;
     try {
-        await updateDoc(doc(window.db, 'antrian_truk', targetTruck.firestoreId), { status_antrian: newSt });
+        // Pastikan targetTruck.firestoreId ada isinya
+        if (targetTruck.firestoreId) {
+            await updateDoc(doc(window.db, 'antrian_truk', targetTruck.firestoreId), { status_antrian: newSt });
+        }
         await setDoc(doc(window.db, 'status_truk_log', targetTruck.noDoc), logRecord, { merge: true });
 
         targetTruck.status = newSt;
@@ -2088,7 +2091,6 @@ async function saveStatus() {
     } catch (err) {
         alert('Gagal memperbarui status: ' + err.message);
     }
-}
 
 async function deleteTruck(idx) {
     let t = truckQueue[idx];

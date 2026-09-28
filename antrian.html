@@ -1725,11 +1725,6 @@ function renderAll() {
                 ⏱️ RDC Timer${freezeNotice}: ${h}j ${m}m (${labelSla})
             </span>`;
         }
-            let freezeNotice = isFinished ? ' [Selesai]' : '';
-            rdcSlaHtml = `<span style="background:${bgCol}; color:${textCol}; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:10px;">
-                ⏱️ RDC Timer${freezeNotice}: ${h}j ${m}m (${labelSla})
-            </span>`;
-        }
 
         let isKeluar = (t.status === 'Keluar');
         let actionButtonsHtml = '';

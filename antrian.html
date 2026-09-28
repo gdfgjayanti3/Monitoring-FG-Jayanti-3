@@ -1675,23 +1675,25 @@ function renderAll() {
         }
 
         let stayDurationInfo = '';
-        if (t.rawTime && (t.status === 'Selesai Muat' || t.status === 'Keluar')) {
-            let endRefTime = t.rawTimeOut || t.rawEndLoading || new Date().getTime();
+        if (t.rawTime) {
+            let isKeluar = (t.status === 'Keluar');
+            let endRefTime = isKeluar ? (t.rawTimeOut || new Date().getTime()) : new Date().getTime();
             let durationMs = endRefTime - t.rawTime;
             let totalMins = Math.floor(durationMs / (1000 * 60));
             if(totalMins < 0) totalMins = 0;
             let hrs = Math.floor(totalMins / 60);
             let mins = totalMins % 60;
-            stayDurationInfo = ` | ⏳ Stay di Pabrik: <b>${hrs}j ${mins}m</b>`;
+            let labelStatusStay = isKeluar ? 'Stay di Pabrik' : 'Durasi Sementara';
+            stayDurationInfo = ` | ⏳ ${labelStatusStay}: <b>${hrs}j ${mins}m</b>`;
         }
 
         let rdcSlaHtml = '';
         if(t.jenis && t.jenis.includes('RDC')) {
             let diffMs = 0;
-            let isFinished = (t.status === 'Selesai Muat' || t.status === 'Keluar');
+            let isKeluar = (t.status === 'Keluar');
             
-            if (isFinished) {
-                let endTimeRef = t.rawTimeOut || t.rawEndLoading || t.rawTime;
+            if (isKeluar) {
+                let endTimeRef = t.rawTimeOut || t.rawTime;
                 diffMs = endTimeRef - t.rawTime;
             } else {
                 let startRaw = t.rawTime || new Date().getTime();
@@ -1718,6 +1720,11 @@ function renderAll() {
                 labelSla = '⚠️ Perhatian (2-4 Jam)';
             }
 
+            let freezeNotice = isKeluar ? ' [Selesai]' : '';
+            rdcSlaHtml = `<span style="background:${bgCol}; color:${textCol}; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:10px;">
+                ⏱️ RDC Timer${freezeNotice}: ${h}j ${m}m (${labelSla})
+            </span>`;
+        }
             let freezeNotice = isFinished ? ' [Selesai]' : '';
             rdcSlaHtml = `<span style="background:${bgCol}; color:${textCol}; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:10px;">
                 ⏱️ RDC Timer${freezeNotice}: ${h}j ${m}m (${labelSla})

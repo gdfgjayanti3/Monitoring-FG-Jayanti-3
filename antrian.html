@@ -133,7 +133,6 @@
     window.db = getFirestore(app);
     window.firebaseCollections = { collection, getDocs, addDoc, updateDoc, deleteDoc, doc, query, where, setDoc };
 
-    // Langsung panggil fungsi load data begitu Firebase siap
     if (typeof loadDataFromCloud === 'function') {
         loadDataFromCloud();
     }
@@ -175,7 +174,6 @@
     </div>
 </header>
 
-<!-- Bagian yang di-Freeze Bersama -->
 <div class="sticky-header-section">
     <div style="background: #eff6ff; color: #1e40af; padding: 8px 16px; margin: 0 16px 10px 16px; border-radius: 10px; overflow: hidden; border: 1px solid #bfdbfe; box-sizing: border-box;">
         <marquee behavior="scroll" direction="left" scrollamount="5" style="font-size: 11px; font-weight: 500;">
@@ -201,7 +199,6 @@
             </button>
         </div>
 
-        <!-- Tombol Filter Status (Rata Tengah) -->
         <div class="tabs">
             <button class="tab-btn active" onclick="switchMainTab('SemuaTab', this)">Semua (<span id="countSemuaTab">0</span>)</button>
             <button class="tab-btn" onclick="switchMainTab('AntrianTab', this)">Antrian (<span id="countAntrianTab">0</span>)</button>
@@ -405,7 +402,6 @@
             </div>
             
             <div id="wrapperCheckerList" style="display: flex; flex-direction: column; gap: 8px;">
-                <!-- Dinamis baris checker -->
                 <div class="checker-row" style="display:flex; gap:8px; align-items: center; flex-wrap: wrap; background: #fff; padding: 8px; border-radius: 8px; border: 1px solid #e2e8f0;">
                     <div style="flex:1; min-width: 120px;">
                         <label style="font-size:9px; color:#64748b;">Nama Checker *</label>
@@ -1041,7 +1037,6 @@ async function submitAntrian(e) {
     }
 }
 
-// Fungsi untuk mendeteksi dan membaca data planning berdasarkan No. DO / No. SPE yang diketik
 async function checkPlanningData(doOrSpeInput) {
     let queryVal = doOrSpeInput.trim().toUpperCase();
     if (!queryVal) return;
@@ -1068,7 +1063,6 @@ async function checkPlanningData(doOrSpeInput) {
             if (tujuanInput && !tujuanInput.value) {
                 tujuanInput.value = matchedPlan.tujuan || '';
             }
-            console.log("Planning ditemukan:", matchedPlan);
         }
     } catch (err) {
         console.error("Gagal membaca data planning:", err);
@@ -1397,20 +1391,10 @@ function printPickingList() {
     printBox.innerHTML = `
         <style>
             @media print {
-                @page {
-                    size: 210mm 148.5mm;
-                    margin: 4mm;
-                }
+                @page { size: 210mm 148.5mm; margin: 4mm; }
                 body * { visibility: hidden !important; }
                 #printArea, #printArea * { visibility: visible !important; }
-                #printArea {
-                    position: absolute !important;
-                    left: 0 !important;
-                    top: 0 !important;
-                    width: 202mm !important;
-                    background: white !important;
-                    display: block !important;
-                }
+                #printArea { position: absolute !important; left: 0 !important; top: 0 !important; width: 202mm !important; background: white !important; display: block !important; }
             }
         </style>
         <div style="border: 2px solid #000; padding: 6px; width: 100%; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 9.5px; color: black; background: white;">
@@ -1457,14 +1441,8 @@ function printPickingList() {
             </table>
 
             <div style="display:flex; justify-content:space-around; margin-top:10px; font-size:9px; text-align:center;">
-                <div style="width: 35%;">
-                    <span>Admin GDFC</span><br><br><br>
-                    <strong>(${adminName})</strong>
-                </div>
-                <div style="width: 35%;">
-                    <span>Checker</span><br><br><br>
-                    <strong>(____________________)</strong>
-                </div>
+                <div style="width: 35%;"><span>Admin GDFC</span><br><br><br><strong>(${adminName})</strong></div>
+                <div style="width: 35%;"><span>Checker</span><br><br><br><strong>(____________________)</strong></div>
             </div>
         </div>
     `;
@@ -1768,9 +1746,7 @@ function renderAll() {
         }
 
         html += `<div class="card">
-            <!-- Pita Menonjol di Sisi Kiri -->
             <div class="card-ribbon ${ribbonClass}">${ribbonText}</div>
-
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 6px;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -2064,19 +2040,16 @@ async function saveStatus() {
     }
 
     if (newSt === 'Keluar') {
-        // Jika sebelumnya belum sempat terekam jam selesainya, rekam juga
         if (!targetTruck.timeEndLoading || targetTruck.timeEndLoading === '-') {
             logRecord.time_end_loading = currentIsoTime;
             targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
         }
-        // Jam keluar HANYA terisi saat status benar-benar "Keluar"
         logRecord.time_out = currentIsoTime;
         targetTruck.timeOut = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
     }
             
     const { updateDoc, doc, setDoc } = window.firebaseCollections;
     try {
-        // Pastikan targetTruck.firestoreId ada isinya
         if (targetTruck.firestoreId) {
             await updateDoc(doc(window.db, 'antrian_truk', targetTruck.firestoreId), { status_antrian: newSt });
         }
@@ -2091,6 +2064,7 @@ async function saveStatus() {
     } catch (err) {
         alert('Gagal memperbarui status: ' + err.message);
     }
+}
 
 async function deleteTruck(idx) {
     let t = truckQueue[idx];
@@ -2164,12 +2138,11 @@ async function deleteTruck(idx) {
             await deleteDoc(doc(window.db, 'status_truk_log', t.noDoc));
         } catch(e) {}
 
-       await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
+        await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
         loadDataFromCloud();
     }
 }
 
-// Pengecekan otomatis agar data langsung tampil saat pertama buka halaman
 let checkDbInterval = setInterval(() => {
     if (window.db) {
         loadDataFromCloud();
@@ -2185,10 +2158,11 @@ async function resetData() {
             pickSnap.forEach(async (d) => {
                 if (d.data().no_doc === t.noDoc) await deleteDoc(doc(window.db, 'picking_list_truk', d.id));
             });
-           try {
-            await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
-            loadDataFromCloud();
-        } catch(e) {}
+            try { await deleteDoc(doc(window.db, 'status_truk_log', t.noDoc)); } catch(e){}
+            try { await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId)); } catch(e){}
+        }
+        truckQueue = [];
+        loadDataFromCloud();
     }
 }
 </script>

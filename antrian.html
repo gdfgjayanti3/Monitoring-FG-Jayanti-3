@@ -2188,9 +2188,7 @@ async function resetData() {
            try {
             await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
             loadDataFromCloud();
-        } catch (e) {
-            console.error(e);
-        }
+        } catch(e) {}
     }
 }
 </script>

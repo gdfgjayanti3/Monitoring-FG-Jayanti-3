@@ -4077,19 +4077,20 @@ function renderRdcMonitoringTable() {
     if (!tbody) return;
     tbody.innerHTML = '';
 
-    if (planningRdcData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="21" class="text-muted py-4">Belum ada data planning RDC. Silakan upload atau input terlebih dahulu.</td></tr>';
+  if (planningRdcData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="21" class="text-muted py-4">Belum ada data planning RDC. Silakan upload atau input terlebih dahulu.</td></tr>`;
         return;
     }
 
-    // Cari realisasi di antrianData menggunakan fungsi isDocMatched (bisa baca koma)
-    let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => {
-        let tDoc = t.noDoc || '';
-        let pDo = plan.do || '';
-        let pSpe = plan.spe || '';
-        return isDocMatched(pDo, tDoc) || isDocMatched(pSpe, tDoc);
-    });
-    
+        planningRdcData.forEach(plan => {
+        // Cari realisasi di antrianData menggunakan fungsi isDocMatched
+        let matchedTruk = (typeof antrianData !== 'undefined' ? antrianData : []).find(t => {
+            let tDoc = t.noDoc || '';
+            let pDo = plan.do || '';
+            let pSpe = plan.spe || '';
+            return isDocMatched(pDo, tDoc) || isDocMatched(pSpe, tDoc);
+        });
+
         let realTgl = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
         let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
         let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
@@ -4102,6 +4103,8 @@ function renderRdcMonitoringTable() {
         let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
         let noteText = plan.note || '-';
 
+        }); 
+    
         // Hitung SLA max 6 jam (berdasarkan lama stay atau selisih waktu datang s/d keluar)
         let slaBadge = '<span class="badge bg-secondary">Menunggu</span>';
         if (matchedTruk && matchedTruk.lamaStay) {

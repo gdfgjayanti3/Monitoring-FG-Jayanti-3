@@ -49,6 +49,8 @@
 
         .table-custom-responsive th { font-size: 10px !important; padding: 6px 4px !important; white-space: nowrap; }
         .table-custom-responsive td { padding: 6px 4px !important; vertical-align: middle; }
+        .plant-tab { padding: 6px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; background: white; color: #64748b; font-size: 11px; }
+        .plant-tab.active { background: #6366f1; color: white; border-color: #6366f1; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -124,7 +126,7 @@
                 </div>
             </div>
 
-            <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-5 gap-4">
                 <div onclick="switchSection('report')" class="bg-white hover:border-sky-300 border border-slate-200 rounded-2xl p-5 cursor-pointer transition shadow-2xs flex flex-col items-center text-center space-y-3 group">
                     <div class="bg-sky-50 text-sky-600 p-4 rounded-2xl border border-sky-100 group-hover:scale-105 transition"><i class="fa-solid fa-clipboard-list text-xl"></i></div>
                     <div>
@@ -155,6 +157,61 @@
                         <h3 class="font-bold text-purple-700 text-sm">Peta Kapasitas</h3>
                         <p class="text-[10px] text-slate-400 mt-0.5">Visualisasi Induk & Aging</p>
                     </div>
+                </div>
+
+                <div onclick="switchSection('handling')" class="bg-white hover:border-red-300 border border-slate-200 rounded-2xl p-5 cursor-pointer transition shadow-2xs flex flex-col items-center text-center space-y-3 group">
+                    <div class="bg-red-50 text-red-600 p-4 rounded-2xl border border-red-100 group-hover:scale-105 transition"><i class="fa-solid fa-triangle-exclamation text-xl"></i></div>
+                    <div>
+                        <h3 class="font-bold text-red-700 text-sm">Repack Handling</h3>
+                        <p class="text-[10px] text-slate-400 mt-0.5">Wafer 1115 & Biscuit 1116</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION REPACK HANDLING -->
+        <div id="section-handling" class="app-page space-y-6 max-w-7xl mx-auto">
+            <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex-wrap gap-3">
+                <div>
+                    <h3 class="font-bold text-red-700 text-base"><i class="fa-solid fa-boxes-stacked mr-2"></i> Rekapitulasi Data Produk Repack Handling & Kerusakan</h3>
+                    <p class="text-xs text-slate-400">Pencatatan berita acara kerusakan barang, verifikasi OC, dan status penanganan per plant.</p>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="openModalTambahHandling()" class="btn btn-sm btn-danger fw-bold text-xs"><i class="fa-solid fa-plus mr-1"></i> Tambah Data Kerusakan</button>
+                    <button onclick="exportHandlingExcel()" class="btn btn-sm btn-success fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Export Excel</button>
+                    <button onclick="switchSection('home')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+                <div class="flex gap-2 mb-2">
+                    <button class="plant-tab active" id="tabPlant1116" onclick="switchHandlingPlant('1116')">Plant Biskuit (1116)</button>
+                    <button class="plant-tab" id="tabPlant1115" onclick="switchHandlingPlant('1115')">Plant Wafer (1115)</button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 1000px;">
+                        <thead class="pastel-header-rose">
+                            <tr>
+                                <th>No</th>
+                                <th>Week</th>
+                                <th>Tanggal BA Masuk</th>
+                                <th>SKU</th>
+                                <th>Material / Nama Produk</th>
+                                <th>Batch Number</th>
+                                <th>No QT/EO</th>
+                                <th>Qty (Ctn)</th>
+                                <th>Keterangan</th>
+                                <th>Hasil Verif OC</th>
+                                <th>Status</th>
+                                <th>Bulan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="handlingTableBody">
+                            <tr><td colspan="13" class="text-muted py-4">Memuat data handling...</td></tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -553,6 +610,92 @@
 
     </main>
 
+    <!-- MODAL TAMBAH / EDIT REPACK HANDLING -->
+    <div id="modalHandlingForm" class="fixed inset-0 bg-slate-900/40 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs flex flex-col max-h-[90vh]">
+            <div class="pastel-header-rose px-6 py-4 flex justify-between items-center">
+                <h3 id="modalHandlingTitle" class="font-bold">Tambah Data Kerusakan & Repack Handling</h3>
+                <button onclick="closeModal('modalHandlingForm')" class="text-slate-600 hover:text-slate-900 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="submitHandlingRecord(event)" class="p-6 space-y-3 overflow-y-auto flex-1">
+                <input type="hidden" id="handlingRecordId">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Pilih Plant *</label>
+                        <select id="hPlant" class="form-select form-select-sm" required>
+                            <option value="1116">Plant Biskuit (1116)</option>
+                            <option value="1115">Plant Wafer (1115)</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Week Ke- *</label>
+                        <input type="number" id="hWeek" class="form-control form-control-sm" required min="1" max="52" placeholder="Cth: 3">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Tanggal BA Masuk *</label>
+                        <input type="date" id="hTanggalBa" class="form-control form-control-sm" required>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Bulan *</label>
+                        <select id="hBulan" class="form-select form-select-sm" required>
+                            <option value="JAN">JAN</option><option value="FEB">FEB</option><option value="MAR">MAR</option>
+                            <option value="APR">APR</option><option value="MEI">MEI</option><option value="JUN">JUN</option>
+                            <option value="JUL">JUL</option><option value="AGU">AGU</option><option value="SEP">SEP</option>
+                            <option value="OKT">OKT</option><option value="NOV">NOV</option><option value="DES">DES</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="relative">
+                    <label class="form-label fw-bold">SKU Produk *</label>
+                    <input type="text" id="hSkuInput" class="form-control form-control-sm" required placeholder="Ketik SKU atau material..." oninput="filterCustomSku('hSkuInput', 'hSkuDropdown')" autocomplete="off">
+                    <div id="hSkuDropdown" class="absolute left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-40 overflow-y-auto z-50 hidden text-start"></div>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Material / Nama Produk (Otomatis/Ketik) *</label>
+                    <input type="text" id="hMaterial" class="form-control form-control-sm bg-slate-50" required placeholder="Nama produk otomatis terisi...">
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label fw-bold">Batch Number *</label>
+                        <input type="text" id="hBatchNumber" class="form-control form-control-sm uppercase" required placeholder="Cth: TGR4301210746">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-bold">No QT / EO</label>
+                        <input type="text" id="hNoQt" class="form-control form-control-sm" placeholder="-">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-4">
+                        <label class="form-label fw-bold">Qty (Karton) *</label>
+                        <input type="number" id="hQty" class="form-control form-control-sm" required min="1" placeholder="2">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold">Keterangan *</label>
+                        <input type="text" id="hKeterangan" class="form-control form-control-sm" required value="RUSAK HANDLING">
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-bold">Hasil Verif OC *</label>
+                        <input type="text" id="hVerif" class="form-control form-control-sm" required value="REPACK">
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label fw-bold">Status Penanganan *</label>
+                    <select id="hStatus" class="form-select form-select-sm" required>
+                        <option value="CLOSE">CLOSE</option>
+                        <option value="OPEN">OPEN</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2 border-t border-slate-100">
+                    <button type="submit" class="btn btn-sm btn-danger w-100 fw-bold">Simpan Data Kerusakan</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3" onclick="closeModal('modalHandlingForm')">Batal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL LAINNYA -->
     <div id="modalReleaseCustom" class="fixed inset-0 bg-slate-900/30 backdrop-blur-2xs z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-200 animate-fadeIn text-xs">
             <div class="pastel-header-rose px-6 py-4 flex justify-between items-center">
@@ -727,7 +870,6 @@
             </div>
             <div class="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
                 
-                <!-- FITUR IMPORT CSV SUPABASE DI DALAM MODAL PLOTTING -->
                 <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 flex flex-col sm:flex-row items-center justify-between gap-3">
                     <div>
                         <label class="form-label fw-bold text-amber-900 text-xs mb-1"><i class="fa-solid fa-file-csv mr-1"></i> Import Data Plotting dari CSV Supabase:</label>
@@ -1200,11 +1342,13 @@
         let binData = [];
         let qcHistoryData = [];
         let relokasiLogData = [];
+        let handlingData = []; // Variabel untuk data repack handling
         let sapSessionsData = {}; 
         let sapNamaBarangMap = {};
         let masterStockData = {};
         let globalPlottingData = [];
         let activeOpnameDate = '';
+        let activeHandlingPlant = '1116'; // Plant default untuk handling
 
         function getLatestSapStock(skuCode) {
             let dates = Object.keys(sapSessionsData);
@@ -1246,8 +1390,13 @@
                     }
                 });
 
-                let stokLokalSnap = await getDocs(collection(db, 'stok_lokal'));
-                let stokEksporSnap = await getDocs(collection(db, 'stok_ekspor'));
+                let [stokLokalSnap, stokEksporSnap, qcSnap, relokSnap, handlingSnap] = await Promise.all([
+                    getDocs(collection(db, 'stok_lokal')),
+                    getDocs(collection(db, 'stok_ekspor')),
+                    getDocs(collection(db, 'karantina_qc')),
+                    getDocs(collection(db, 'relokasi__barang')),
+                    getDocs(collection(db, 'repack_handling'))
+                ]);
                 
                 binData = [];
                 stokLokalSnap.forEach(docSnap => binData.push({ id: docSnap.id, ...docSnap.data(), category: 'Lokal' }));
@@ -1270,7 +1419,6 @@
                     }
                 });
 
-                let qcSnap = await getDocs(collection(db, 'karantina_qc'));
                 qcHistoryData = [];
                 qcSnap.forEach(docSnap => {
                     let q = docSnap.data();
@@ -1290,7 +1438,6 @@
                     });
                 });
 
-                let relokSnap = await getDocs(collection(db, 'relokasi__barang'));
                 relokasiLogData = [];
                 relokSnap.forEach(docSnap => {
                     let r = docSnap.data();
@@ -1304,17 +1451,161 @@
                     });
                 });
 
+                handlingData = [];
+                handlingSnap.forEach(docSnap => {
+                    handlingData.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
                 await loadPlottingDataFromCloud();
                 renderBinMap();
                 renderActiveHoldTable();
                 renderReportTable();
                 renderSapSessionsList();
                 renderOpnameSessionsList();
+                renderHandlingTable();
             } catch (e) {
                 console.error('Gagal mengambil data dari Firebase:', e);
             }
         }
 
+        // --- FUNGSI REPACK HANDLING ---
+        function switchHandlingPlant(plantCode) {
+            activeHandlingPlant = plantCode;
+            document.getElementById('tabPlant1116').className = plantCode === '1116' ? 'plant-tab active' : 'plant-tab';
+            document.getElementById('tabPlant1115').className = plantCode === '1115' ? 'plant-tab active' : 'plant-tab';
+            renderHandlingTable();
+        }
+
+        function openModalTambahHandling() {
+            document.getElementById('modalHandlingTitle').innerText = 'Tambah Data Kerusakan & Repack Handling';
+            document.getElementById('handlingRecordId').value = '';
+            document.getElementById('hPlant').value = activeHandlingPlant;
+            document.getElementById('hWeek').value = '1';
+            document.getElementById('hTanggalBa').value = new Date().toISOString().split('T')[0];
+            document.getElementById('hBulan').value = 'JAN';
+            document.getElementById('hSkuInput').value = '';
+            document.getElementById('hMaterial').value = '';
+            document.getElementById('hBatchNumber').value = '';
+            document.getElementById('hNoQt').value = '';
+            document.getElementById('hQty').value = '';
+            document.getElementById('hKeterangan').value = 'RUSAK HANDLING';
+            document.getElementById('hVerif').value = 'REPACK';
+            document.getElementById('hStatus').value = 'CLOSE';
+            document.getElementById('modalHandlingForm').classList.remove('hidden');
+        }
+
+        async function submitHandlingRecord(e) {
+            e.preventDefault();
+            let recordId = document.getElementById('handlingRecordId').value;
+            let payload = {
+                plant: document.getElementById('hPlant').value,
+                week: parseInt(document.getElementById('hWeek').value) || 1,
+                tanggal_ba: document.getElementById('hTanggalBa').value,
+                bulan: document.getElementById('hBulan').value,
+                sku: document.getElementById('hSkuInput').value,
+                material: document.getElementById('hMaterial').value,
+                batch_number: document.getElementById('hBatchNumber').value.toUpperCase(),
+                no_qt: document.getElementById('hNoQt').value || '-',
+                qty: parseFloat(document.getElementById('hQty').value) || 0,
+                keterangan: document.getElementById('hKeterangan').value,
+                hasil_verif: document.getElementById('hVerif').value,
+                status: document.getElementById('hStatus').value
+            };
+
+            const db = window._db;
+            const { collection, addDoc, updateDoc, doc } = window._fsHelpers;
+            try {
+                if (recordId) {
+                    await updateDoc(doc(db, 'repack_handling', recordId), payload);
+                    alert('Data handling berhasil diperbarui!');
+                } else {
+                    await addDoc(collection(db, 'repack_handling'), payload);
+                    alert('Data handling berhasil disimpan!');
+                }
+                closeModal('modalHandlingForm');
+                loadDataFromCloud();
+            } catch (err) {
+                alert('Gagal menyimpan data handling: ' + err.message);
+            }
+        }
+
+        function renderHandlingTable() {
+            let tbody = document.getElementById('handlingTableBody');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let filtered = handlingData.filter(item => String(item.plant) === String(activeHandlingPlant));
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="13" class="text-muted py-4">Belum ada data handling untuk Plant ${activeHandlingPlant}.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((item, index) => {
+                let badgeColor = item.status === 'CLOSE' ? 'background: #d1fae5; color: #065f46;' : 'background: #fef3c7; color: #92400e;';
+                tbody.innerHTML += `<tr>
+                    <td>${index + 1}</td>
+                    <td><b>${item.week || '-'}</b></td>
+                    <td>${item.tanggal_ba || '-'}</td>
+                    <td><b>${item.sku || '-'}</b></td>
+                    <td class="text-start">${item.material || '-'}</td>
+                    <td>${item.batch_number || '-'}</td>
+                    <td>${item.no_qt || '-'}</td>
+                    <td><b>${item.qty || 0}</b></td>
+                    <td style="color: #991b1b; font-weight: bold;">${item.keterangan || '-'}</td>
+                    <td>${item.hasil_verif || '-'}</td>
+                    <td><span style="${badgeColor} padding: 2px 8px; border-radius: 6px; font-weight: bold;">${item.status || 'CLOSE'}</span></td>
+                    <td><b>${item.bulan || '-'}</b></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary py-0 px-2 text-[10px]" onclick="editHandling('${item.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-outline-danger py-0 px-2 text-[10px]" onclick="deleteHandling('${item.id}')"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function editHandling(id) {
+            let item = handlingData.find(i => i.id === id);
+            if(!item) return;
+            document.getElementById('modalHandlingTitle').innerText = 'Edit Data Kerusakan & Repack Handling';
+            document.getElementById('handlingRecordId').value = item.id;
+            document.getElementById('hPlant').value = item.plant || '1116';
+            document.getElementById('hWeek').value = item.week || 1;
+            document.getElementById('hTanggalBa').value = item.tanggal_ba || '';
+            document.getElementById('hBulan').value = item.bulan || 'JAN';
+            document.getElementById('hSkuInput').value = item.sku || '';
+            document.getElementById('hMaterial').value = item.material || '';
+            document.getElementById('hBatchNumber').value = item.batch_number || '';
+            document.getElementById('hNoQt').value = item.no_qt || '';
+            document.getElementById('hQty').value = item.qty || 0;
+            document.getElementById('hKeterangan').value = item.keterangan || '';
+            document.getElementById('hVerif').value = item.hasil_verif || '';
+            document.getElementById('hStatus').value = item.status || 'CLOSE';
+            document.getElementById('modalHandlingForm').classList.remove('hidden');
+        }
+
+        async function deleteHandling(id) {
+            if(confirm('Hapus data kerusakan ini?')) {
+                const db = window._db;
+                const { doc, deleteDoc } = window._fsHelpers;
+                try {
+                    await deleteDoc(doc(db, 'repack_handling', id));
+                    loadDataFromCloud();
+                } catch(e) {
+                    alert('Gagal menghapus data!');
+                }
+            }
+        }
+
+        function exportHandlingExcel() {
+            let filtered = handlingData.filter(item => String(item.plant) === String(activeHandlingPlant));
+            if(filtered.length === 0) { alert('Tidak ada data untuk diexport.'); return; }
+            let worksheet = XLSX.utils.json_to_sheet(filtered);
+            let workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, `Handling_Plant_${activeHandlingPlant}`);
+            XLSX.writeFile(workbook, `Rekap_Repack_Handling_Plant_${activeHandlingPlant}.xlsx`);
+        }
+
+        // --- LANJUTAN FUNGSI LAINNYA ---
         function switchQcMode(mode) {
             let btnLive = document.getElementById('btnModeLive');
             let btnManual = document.getElementById('btnModeManual');
@@ -1523,6 +1814,9 @@
                             if(item.kodefikasi) document.getElementById('pKodefikasi').value = item.kodefikasi;
                             hitungKonversi();
                         }
+                        if(inputId === 'hSkuInput') {
+                            document.getElementById('hMaterial').value = item.name;
+                        }
                         dropdown.classList.add('hidden');
                         if(inputId === 'qcSkuInput') hitungKonversiQc();
                         if(extraCallback) extraCallback();
@@ -1628,7 +1922,7 @@
             });
 
             tr.innerHTML = `
-                <td><select class="form-select form-select-sm" id="pBlock_${penerimaanRowIdx}" required onchange="checkBlockCapacity(${penerimaanRowIdx}); updateRowDiffer(${penerimaanRowIdx});">${blockOpts}</select>
+                <td><select class="form-select form-select-sm" id="pBlock_${penerimaanRowIdx}" required onchange="checkBlockCapacity(${penerimaanRowIdx}); updateRowDropdown(${penerimaanRowIdx});">${blockOpts}</select>
                     <div class="text-[10px] fw-bold mt-1" id="blockWarning_${penerimaanRowIdx}"></div>
                 </td>
                 <td><select class="form-select form-select-sm" id="pRowSelect_${penerimaanRowIdx}" required><option value="">-- Pilih Blok Dulu --</option></select></td>
@@ -2506,7 +2800,7 @@
         }
 
         function switchSection(sectionId) {
-            ['section-home', 'section-qc', 'section-aging', 'section-opname', 'section-opname-log', 'section-cari', 'section-peta', 'section-report'].forEach(id => {
+            ['section-home', 'section-qc', 'section-aging', 'section-opname', 'section-opname-log', 'section-cari', 'section-peta', 'section-report', 'section-handling'].forEach(id => {
                 const el = document.getElementById(id);
                 if(el) { el.classList.add('hidden'); el.classList.remove('active'); }
             });
@@ -2517,6 +2811,7 @@
             if(sectionId === 'qc') { autoFillQcByDate(); renderActiveHoldTable(); }
             if(sectionId === 'report') renderReportTable();
             if(sectionId === 'opname-log') renderOpnameSessionsList();
+            if(sectionId === 'handling') renderHandlingTable();
         }
 
         function openPenerimaanModal(category) {

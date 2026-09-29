@@ -3817,6 +3817,26 @@ function closeModal(modalId) {
         modal.classList.add('hidden');
     }
 }
+
+        function filterMonitoringTable() {
+    let filterValue = document.getElementById('monFilterTipe').value.toUpperCase();
+    let tbody = document.getElementById('realisasiTableBody');
+    if (!tbody) return;
+
+    let rows = tbody.getElementsByTagName('tr');
+    for (let i = 0; i < rows.length; i++) {
+        let typeCol = rows[i].getElementsByTagName('td')[6]; // Kolom Tipe Pengiriman
+        if (typeCol) {
+            let txtValue = typeCol.textContent || typeCol.innerText;
+            if (filterValue === "" || txtValue.toUpperCase().includes(filterValue)) {
+                rows[i].style.display = "";
+            } else {
+                rows[i].style.display = "none";
+            }
+        }
+    }
+}
+        
 function filterRdcTable() {
     let keyword = document.getElementById('rdcSearchInput').value.toLowerCase().trim();
     let filterDate = document.getElementById('rdcFilterDate').value; // Format: YYYY-MM-DD

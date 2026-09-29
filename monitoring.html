@@ -474,6 +474,45 @@
                     <button onclick="switchMenu('kapasitas')" class="btn btn-sm btn-outline-secondary text-xs rounded-xl">Kembali</button>
                 </div>
             </div>
+            
+    <!-- === KOTAK REKAP STATISTIK (SUMMARY CARDS) === -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+    <!-- Card 1: Total Masuk -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between">
+        <div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Truk Masuk</p>
+            <h3 id="statTotal" class="text-xl font-black text-slate-700 mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">🚚</div>
+    </div>
+
+    <!-- Card 2: Antrian -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between">
+        <div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Antrian</p>
+            <h3 id="statAntri" class="text-xl font-black text-amber-600 mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">⏳</div>
+    </div>
+
+    <!-- Card 3: Proses Muat -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between">
+        <div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Proses Muat</p>
+            <h3 id="statProses" class="text-xl font-black text-blue-600 mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">📦</div>
+    </div>
+
+    <!-- Card 4: Sudah Keluar -->
+    <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex items-center justify-between">
+        <div>
+            <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Sudah Keluar</p>
+            <h3 id="statKeluar" class="text-xl font-black text-emerald-600 mt-1">0</h3>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">✅</div>
+    </div>
+</div>        
 
          <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-2xs flex flex-col md:flex-row gap-3 items-center">
     <input type="text" id="realisasiSearchInput" class="form-control form-control-sm flex-1 rounded-xl border-slate-200" placeholder="Cari No. Polisi / Ekspedisi / No. Dokumen / Tujuan..." oninput="renderRealisasiTable()">
@@ -3772,7 +3811,42 @@ function updateDashboardFromAntrian() {
                     <td colspan="4"></td>
                 </tr>
             `;
+            updateStatistikTruk();
         }
+        
+        function updateStatistikTruk() {
+    let tbody = document.getElementById('realisasiTableBody');
+    if (!tbody) return;
+    
+    let rows = tbody.getElementsByTagName('tr');
+    let total = 0;
+    let antri = 0;
+    let proses = 0;
+    let keluar = 0;
+
+    for (let i = 0; i < rows.length; i++) {
+        // Cek jika baris tidak disembunyikan oleh pencarian/filter
+        if (rows[i].style.display !== 'none') {
+            total++;
+            let statusSelect = rows[i].querySelector('.form-select'); 
+            let statusVal = statusSelect ? statusSelect.value.toLowerCase() : '';
+
+            if (statusVal.includes('antri')) {
+                antri++;
+            } else if (statusVal.includes('proses')) {
+                proses++;
+            } else if (statusVal.includes('keluar')) {
+                keluar++;
+            }
+        }
+    }
+
+    // Masukkan hasil hitung ke kotak kartu di atas
+    document.getElementById('statTotal').innerText = total;
+    document.getElementById('statAntri').innerText = antri;
+    document.getElementById('statProses').innerText = proses;
+    document.getElementById('statKeluar').innerText = keluar;
+}
 
         function exportRealisasiExcel() {
             let filteredTrucks = getFilteredRealisasiData();

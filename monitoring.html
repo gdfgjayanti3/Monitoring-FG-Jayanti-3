@@ -3825,23 +3825,27 @@ function updateDashboardFromAntrian() {
     let keluar = 0;
 
     for (let i = 0; i < rows.length; i++) {
-        // Cek jika baris tidak disembunyikan oleh pencarian/filter
+        // Abaikan baris total di paling bawah tabel
+        if (rows[i].classList.contains('table-active')) continue;
+
+        // Cek jika baris tidak disembunyikan oleh filter/pencarian
         if (rows[i].style.display !== 'none') {
             total++;
-            let statusSelect = rows[i].querySelector('.form-select'); 
-            let statusVal = statusSelect ? statusSelect.value.toLowerCase() : '';
+            // Cari elemen select di dalam baris tersebut
+            let selectEl = rows[i].querySelector('select'); 
+            let statusVal = selectEl ? selectEl.value.toLowerCase() : '';
 
             if (statusVal.includes('antri')) {
                 antri++;
             } else if (statusVal.includes('proses')) {
                 proses++;
-            } else if (statusVal.includes('keluar')) {
+            } else if (statusVal.includes('keluar') || statusVal.includes('selesai')) {
                 keluar++;
             }
         }
     }
 
-    // Masukkan hasil hitung ke kotak kartu di atas
+    // Masukkan hasil hitung ke kartu rekap di atas
     document.getElementById('statTotal').innerText = total;
     document.getElementById('statAntri').innerText = antri;
     document.getElementById('statProses').innerText = proses;

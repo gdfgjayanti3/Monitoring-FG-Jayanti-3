@@ -485,13 +485,16 @@
                     <input type="date" id="realisasiFilterTglSelesai" class="form-control form-control-sm rounded-xl border-slate-200 w-36" onchange="renderRealisasiTable()" title="Sampai Tanggal">
                 </div>
 
-                <select id="realisasiFilterJenis" class="form-select form-select-sm md:w-48 rounded-xl border-slate-200" onchange="renderRealisasiTable()">
-                    <option value="">📁 Semua Jenis</option>
-                    <option value="LOKAL">Lokal</option>
-                    <option value="EKSPOR">Ekspor</option>
-                    <option value="RDC">RDC</option>
-                </select>
-            </div>
+                <div>
+    <label class="form-label text-[11px] fw-bold text-slate-600 mb-1">Filter Tipe Pengiriman</label>
+    <select id="monFilterTipe" class="form-select form-select-sm fw-bold text-indigo-700" onchange="filterMonitoringTable()">
+        <option value="">Semua Jenis</option>
+        <option value="RDC">RDC</option>
+        <option value="SUBDIST">SUBDIST</option>
+        <option value="MDC">MDC</option>
+        <option value="EKSPOR">EKSPOR</option>
+    </select>
+</div>
 
             <div class="card shadow-2xs border-0 bg-white p-4 rounded-2xl border border-slate-100">
                 <div class="card-body table-responsive">

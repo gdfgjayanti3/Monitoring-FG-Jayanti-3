@@ -675,9 +675,6 @@ async function loadDataFromCloud() {
         let statuses = [];
         statusSnapshot.forEach(d => statuses.push({ ...d.data(), firestoreId: d.id }));
 
-        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
-        const nowTimeMs = new Date().getTime();
-
         truckQueue = trucks.map(t => {
             let docNo = t.no_doc;
             let statRow = statuses.find(s => s.no_doc === docNo);
@@ -702,6 +699,7 @@ async function loadDataFromCloud() {
             }
 
             let tanggalKirimStr = t.tanggal || (t.created_at ? t.created_at.split('T')[0] : '2026-09-09');
+            let queueNumberDaily = t.nomor_antrian_harian || '001';
             
             let startLoadingStr = '-';
             let rawStartLoading = null;
@@ -743,6 +741,7 @@ async function loadDataFromCloud() {
             return {
                 id: 'TRK-' + (t.id || t.firestoreId.substring(0, 5)),
                 firestoreId: t.firestoreId,
+                queueNumberDaily: queueNumberDaily,
                 sopir: t.nama_sopir,
                 ekspedisi: t.nama_ekspedisi,
                 noPol: t.no_polisi_truk,
@@ -787,13 +786,7 @@ async function loadDataFromCloud() {
                 })
             };
         }).filter(t => {
-            if (t.status === 'Keluar') {
-                let truckDateMs = new Date(t.tanggalKirim || Date.now()).getTime();
-                if ((nowTimeMs - truckDateMs) > SEVEN_DAYS_MS) {
-                    return false; 
-                }
-            }
-            return true;
+            return true; // Auto-cleanup 7 hari dimatikan, semua data selamanya tampil
         });
 
         renderAll();
@@ -997,27 +990,35 @@ document.addEventListener('click', function(e) {
 
 async function submitAntrian(e) {
     e.preventDefault();
-    const { addDoc, collection, setDoc, doc } = window.firebaseCollections;
+    const { addDoc, collection, getDocs, setDoc, doc, query, where } = window.firebaseCollections;
 
+    let tanggalVal = document.getElementById('mTanggal').value;
     let noDocVal = document.getElementById('mNoDoc').value;
     let currentIsoTime = new Date().toISOString();
 
-    let newTruckRecord = {
-        tanggal: document.getElementById('mTanggal').value,
-        nama_sopir: document.getElementById('mSopir').value,
-        nama_ekspedisi: document.getElementById('mEkspedisi').value,
-        no_polisi_truk: document.getElementById('mNoPol').value.toUpperCase(),
-        no_doc: noDocVal,
-        jenis: document.getElementById('mJenis').value,
-        tipe_pengiriman: document.getElementById('mTipeLokal').value || '-',
-        no_container: document.getElementById('mContainer').value || '-',
-        tujuan_pengiriman: document.getElementById('mTujuan').value.toUpperCase(),
-        no_hp: document.getElementById('mNoHp').value || '-',
-        status_antrian: 'Antrian',
-        created_at: currentIsoTime
-    };
-
     try {
+        const q = query(collection(window.db, 'antrian_truk'), where("tanggal", "==", tanggalVal));
+        const querySnapshot = await getDocs(q);
+        
+        let nextNumber = querySnapshot.size + 1;
+        let formattedQueueNumber = String(nextNumber).padStart(3, '0');
+
+        let newTruckRecord = {
+            tanggal: tanggalVal,
+            nomor_antrian_harian: formattedQueueNumber,
+            nama_sopir: document.getElementById('mSopir').value,
+            nama_ekspedisi: document.getElementById('mEkspedisi').value,
+            no_polisi_truk: document.getElementById('mNoPol').value.toUpperCase(),
+            no_doc: noDocVal,
+            jenis: document.getElementById('mJenis').value,
+            tipe_pengiriman: document.getElementById('mTipeLokal').value || '-',
+            no_container: document.getElementById('mContainer').value || '-',
+            tujuan_pengiriman: document.getElementById('mTujuan').value.toUpperCase(),
+            no_hp: document.getElementById('mNoHp').value || '-',
+            status_antrian: 'Antrian',
+            created_at: currentIsoTime
+        };
+
         await addDoc(collection(window.db, 'antrian_truk'), newTruckRecord);
         await setDoc(doc(window.db, 'status_truk_log', noDocVal), {
             no_doc: noDocVal,
@@ -1026,7 +1027,7 @@ async function submitAntrian(e) {
             time_in: currentIsoTime
         });
 
-        alert('Truk berhasil didaftarkan dan tersimpan di Firebase!');
+        alert(`Truk berhasil didaftarkan dengan Nomor Antrian: ${formattedQueueNumber} !`);
         closeModal('modalManual');
         e.target.reset();
         document.getElementById('groupTipePengiriman').style.display = 'none';
@@ -1470,7 +1471,7 @@ function showDockDetail(dockName) {
         let cInfo = assignedTruck.checkerName ? `<br><strong>Checker Loading:</strong> ${assignedTruck.checkerName}` : '';
         let mInfo = assignedTruck.metodePemuatan ? `<br><strong>Metode Pemuatan:</strong> ${assignedTruck.metodePemuatan} ${assignedTruck.notePemuatan ? '('+assignedTruck.notePemuatan+')' : ''}` : '';
         bodyEl.innerHTML = `
-            <p><strong>ID Antrian:</strong> ${assignedTruck.id}</p>
+            <p><strong>Nomor Antrian:</strong> No. ${assignedTruck.queueNumberDaily} (${assignedTruck.id})</p>
             <p><strong>No. Polisi:</strong> ${assignedTruck.noPol}</p>
             <p><strong>Ekspedisi:</strong> ${assignedTruck.ekspedisi}</p>
             <p><strong>Sopir:</strong> ${assignedTruck.sopir}</p>
@@ -1547,7 +1548,7 @@ function renderAll() {
 
                 dockHtml += `<div class="card" onclick="showDockDetail('${dName}')" style="border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.15); margin-bottom:0; padding:12px; cursor:pointer; transition:0.2s;">
                     <strong style="color:#059669;">${dName} (Terisi)</strong> ${categoryBadge}<br>
-                    <span style="font-weight:bold; color:#1e293b;">${assignedTruck.noPol}</span> (${assignedTruck.ekspedisi})${truckInfoDisplay}<br>
+                    <span style="font-weight:bold; color:#1e293b;">No. ${assignedTruck.queueNumberDaily} - ${assignedTruck.noPol}</span> (${assignedTruck.ekspedisi})${truckInfoDisplay}<br>
                     <span style="font-size:10px; color:#64748b;">Sopir: ${assignedTruck.sopir}<br>Doc: ${assignedTruck.noDoc}</span>
                 </div>`;
             } else {
@@ -1606,6 +1607,7 @@ function renderAll() {
                          t.sopir.toLowerCase().includes(keyword) || 
                          t.ekspedisi.toLowerCase().includes(keyword) ||
                          t.tujuan.toLowerCase().includes(keyword) ||
+                         (t.queueNumberDaily && t.queueNumberDaily.toLowerCase().includes(keyword)) ||
                          (t.noDoc && t.noDoc.toLowerCase().includes(keyword)));
         return matchTab && textMatch;
     });
@@ -1618,7 +1620,7 @@ function renderAll() {
     filteredTrucks.sort((a, b) => {
         let dateCompare = new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0);
         if (dateCompare !== 0) return dateCompare;
-        return (b.dbId || 0) - (a.dbId || 0);
+        return (b.queueNumberDaily || 0) - (a.queueNumberDaily || 0);
     });
 
     let html = '';
@@ -1752,7 +1754,7 @@ function renderAll() {
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; width: 100%; flex-wrap: wrap;">
                 <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 6px;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:10px;">${t.id}</span>
+                        <span style="background:#e0e7ff; color:#4338ca; padding:2px 8px; border-radius:6px; font-weight:bold; font-size:10px;">No. ${t.queueNumberDaily}</span>
                         <strong style="font-size:12px; color:#1e293b;">${t.noPol}</strong>
                         <span style="color:#cbd5e1;">&bull;</span>
                         <span style="font-weight:600; color:#334155;">${t.ekspedisi}</span>

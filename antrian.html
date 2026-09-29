@@ -997,10 +997,18 @@ async function submitAntrian(e) {
     let currentIsoTime = new Date().toISOString();
 
     try {
+        // Ambil semua truk pada tanggal yang sama untuk menentukan nomor antrian urut berikutnya
         const q = query(collection(window.db, 'antrian_truk'), where("tanggal", "==", tanggalVal));
         const querySnapshot = await getDocs(q);
         
-        let nextNumber = querySnapshot.size + 1;
+        let maxSeq = 0;
+        querySnapshot.forEach(docSnap => {
+            let data = docSnap.data();
+            let seq = parseInt(data.nomor_antrian_harian) || 0;
+            if (seq > maxSeq) maxSeq = seq;
+        });
+
+        let nextNumber = maxSeq + 1; // Melanjutkan nomor sebelumnya (001, 002, 003, dst)
         let formattedQueueNumber = String(nextNumber).padStart(3, '0');
 
         let newTruckRecord = {
@@ -1038,7 +1046,7 @@ async function submitAntrian(e) {
     }
 }
 
-async function checkPlanningData(doOrSpeInput) {
+    async function checkPlanningData(doOrSpeInput) {
     let queryVal = doOrSpeInput.trim().toUpperCase();
     if (!queryVal) return;
 
@@ -1617,10 +1625,11 @@ function renderAll() {
         return;
     }
 
-    filteredTrucks.sort((a, b) => {
+   filteredTrucks.sort((a, b) => {
         let dateCompare = new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0);
         if (dateCompare !== 0) return dateCompare;
-        return (b.queueNumberDaily || 0) - (a.queueNumberDaily || 0);
+        // Urutkan dari nomor antrian terkecil ke terbesar (001, 002, 003...)
+        return (parseInt(a.queueNumberDaily) || 0) - (parseInt(b.queueNumberDaily) || 0);
     });
 
     let html = '';

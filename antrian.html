@@ -499,6 +499,33 @@
 </div>
 
 <script>
+// Variabel global untuk menyimpan cache Master SKU dari Google Spreadsheet
+let masterSkuCache = null;
+
+// Fungsi untuk mengambil data Master SKU dari Google Spreadsheet (dengan sistem Cache)
+async function loadMasterSkuFromSheet() {
+    if (masterSkuCache) {
+        return masterSkuCache;
+    }
+    let savedCache = sessionStorage.getItem('master_sku_sheet_cache');
+    if (savedCache) {
+        try {
+            masterSkuCache = JSON.parse(savedCache);
+            return masterSkuCache;
+        } catch(e) {}
+    }
+    try {
+        let response = await fetch('https://script.google.com/macros/s/AKfycbyzl4OJD6rgaNfswlMABFVaWCgXH3aWVklzlM66hLprfF74seRJ3bzB2f4JNGT68twj/exec');
+        let data = await response.json();
+        masterSkuCache = data;
+        sessionStorage.setItem('master_sku_sheet_cache', JSON.stringify(data));
+        return masterSkuCache;
+    } catch (error) {
+        console.error("Gagal mengambil Master SKU dari Spreadsheet:", error);
+        return [];
+    }
+}
+
 let sessionUser = localStorage.getItem('loggedUser');
 if (!sessionUser) {
     window.location.href = 'login.html'; 
@@ -618,15 +645,15 @@ async function loadDataFromCloud() {
     try {
         const { collection, getDocs } = window.firebaseCollections;
 
-        let skuSnapshot = await getDocs(collection(window.db, 'master_sku'));
+        // Load Master SKU dari Google Spreadsheet API
+        let sheetSkuList = await loadMasterSkuFromSheet();
         masterStock = {};
-        skuSnapshot.forEach(docSnap => {
-            let item = docSnap.data();
-            if (item.sku) {
-                masterStock[item.sku] = {
-                    sku: item.sku,
-                    name: item.nama_produk || '-',
-                    cartonPerPallet: parseFloat(item.carton_per_pallet) || 70
+        sheetSkuList.forEach(item => {
+            if (item.id) {
+                masterStock[item.id.toString()] = {
+                    sku: item.id.toString(),
+                    name: item.nama || '-',
+                    cartonPerPallet: parseFloat(item.standar_karton) || 70
                 };
             }
         });
@@ -997,7 +1024,6 @@ async function submitAntrian(e) {
     let currentIsoTime = new Date().toISOString();
 
     try {
-        // Ambil semua truk pada tanggal yang sama untuk menentukan nomor antrian urut berikutnya
         const q = query(collection(window.db, 'antrian_truk'), where("tanggal", "==", tanggalVal));
         const querySnapshot = await getDocs(q);
         
@@ -1008,7 +1034,7 @@ async function submitAntrian(e) {
             if (seq > maxSeq) maxSeq = seq;
         });
 
-        let nextNumber = maxSeq + 1; // Melanjutkan nomor sebelumnya (001, 002, 003, dst)
+        let nextNumber = maxSeq + 1;
         let formattedQueueNumber = String(nextNumber).padStart(3, '0');
 
         let newTruckRecord = {
@@ -1046,7 +1072,7 @@ async function submitAntrian(e) {
     }
 }
 
-    async function checkPlanningData(doOrSpeInput) {
+async function checkPlanningData(doOrSpeInput) {
     let queryVal = doOrSpeInput.trim().toUpperCase();
     if (!queryVal) return;
 
@@ -1628,7 +1654,6 @@ function renderAll() {
    filteredTrucks.sort((a, b) => {
         let dateCompare = new Date(b.tanggalKirim || 0) - new Date(a.tanggalKirim || 0);
         if (dateCompare !== 0) return dateCompare;
-        // Urutkan dari nomor antrian terkecil ke terbesar (001, 002, 003...)
         return (parseInt(a.queueNumberDaily) || 0) - (parseInt(b.queueNumberDaily) || 0);
     });
 

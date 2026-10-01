@@ -1933,7 +1933,39 @@ function updateDashboardFromAntrian() {
                 console.error("Gagal sinkronisasi data Firebase:", err);
             }
         }
+// Variabel global untuk menyimpan cache Master SKU di memori browser
+let masterSkuCache = null;
 
+// Fungsi untuk mengambil data Master SKU dari Google Spreadsheet (dengan sistem Cache)
+async function loadMasterSkuFromSheet() {
+    // Jika cache sudah ada di memori browser, gunakan langsung agar cepat
+    if (masterSkuCache) {
+        return masterSkuCache;
+    }
+
+    // Cek juga di sessionStorage supaya awet selama sesi browser aktif
+    let savedCache = sessionStorage.getItem('master_sku_sheet_cache');
+    if (savedCache) {
+        masterSkuCache = JSON.parse(savedCache);
+        return masterSkuCache;
+    }
+
+    try {
+        console.log("Mengambil Master SKU dari Google Spreadsheet...");
+        let response = await fetch('https://script.google.com/macros/s/AKfycbyzl4OJD6rgaNfswlMABFVaWCgXH3aWVklzlM66hLprfF74seRJ3bzB2f4JNGT68twj/exec');
+        let data = await response.json();
+        
+        // Simpan ke variabel global dan sessionStorage browser
+        masterSkuCache = data;
+        sessionStorage.setItem('master_sku_sheet_cache', JSON.stringify(data));
+        
+        console.log("Master SKU berhasil dimuat dari Spreadsheet:", masterSkuCache.length, "data.");
+        return masterSkuCache;
+    } catch (error) {
+        console.error("Gagal mengambil Master SKU dari Spreadsheet:", error);
+        return [];
+    }
+}
         async function processPasteData() {
             let textarea = document.getElementById('pasteArea');
             if (!textarea) return;
@@ -2992,19 +3024,31 @@ function updateDashboardFromAntrian() {
             }
         }
 
-        function checkMasterSku(inputElement) {
-            let row = inputElement.closest('tr');
-            let skuInput = row.querySelector('.sku-input');
-            let nameInput = row.querySelector('.name-input');
-            let enteredSku = skuInput.value.trim();
+        async function checkMasterSku(inputElement) {
+    let row = inputElement.closest('tr');
+    let skuInput = row.querySelector('.sku-input');
+    let nameInput = row.querySelector('.name-input');
+    let stdInput = row.querySelector('.standar-input'); // Kalau ada kolom standar karton
+    let enteredSku = skuInput.value.trim();
 
-            if (stockData[enteredSku]) {
-                nameInput.value = stockData[enteredSku].name;
-            } else {
-                nameInput.value = '';
-            }
+    // Ambil data Master SKU dari cache Google Spreadsheet
+    let skuList = await loadMasterSkuFromSheet();
+    
+    // Cari SKU yang cocok di dalam data spreadsheet
+    let matchedItem = skuList.find(item => item.id.toString() === enteredSku.toString());
+
+    if (matchedItem) {
+        nameInput.value = matchedItem.nama;
+        if (stdInput) {
+            stdInput.value = matchedItem.standar_karton;
         }
-
+    } else {
+        nameInput.value = "";
+        if (stdInput) {
+            stdInput.value = "";
+        }
+    }
+}
         function addManualRow() {
             let tbody = document.getElementById('manualTableBody');
             if(!tbody) return;

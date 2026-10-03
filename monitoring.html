@@ -132,7 +132,7 @@
             </a>
             <a href="#" onclick="switchMenu('planning')" class="menu-btn flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition" id="menu-planning">
     <div class="bg-slate-50 p-2 rounded-xl text-amber-500 border border-slate-100"><i class="fa-solid fa-chart-column w-4 text-center"></i></div>
-    <span>Planning & Realisasi</span>
+    <span>Planning & Realisasi Subdist</span>
 </a>
             <a href="#" onclick="switchMenu('rdc')" class="menu-btn flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition" id="menu-rdc">
                 <div class="bg-slate-50 p-2 rounded-xl text-sky-400 border border-slate-100"><i class="fa-solid fa-warehouse w-4 text-center"></i></div>
@@ -576,65 +576,172 @@
             <div class="flex gap-2">
                 <button onclick="openUploadMasterModal()" class="btn btn-sm btn-warning fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Upload Master Plan Excel</button>
                 <button onclick="openInputRealisasiModal()" class="btn btn-sm btn-primary fw-bold text-xs"><i class="fa-solid fa-plus mr-1"></i> Input SPE/DO Harian</button>
-                <button onclick="switchSection('home')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+                <button onclick="switchMenu('dashboard-utama')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
             </div>
         </div>
 
-        <!-- TABEL MATRIX PENCAPAIAN BULANAN & MINGGUAN -->
+        <!-- TABEL MATRIX PENCAPAIAN BERDASARKAN KALENDER OPERASIONAL MAYORA -->
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
             <div class="flex justify-between items-center mb-2">
                 <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0">
-                    <i class="fa-solid fa-table-cells text-amber-600 mr-1.5"></i> Pencapaian Direct (Bulanan & Mingguan - Satuan Karton)
+                    <i class="fa-solid fa-table-cells text-amber-600 mr-1.5"></i> Pencapaian Direct / Subdist (Berdasarkan Kalender Operasional - Satuan Karton)
                 </h5>
             </div>
             
-            <div class="table-responsive">
-                <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 1000px;">
+            <!-- CSS Khusus untuk Freeze/Sticky Kolom Kiri & Scroll Horizontal -->
+            <style>
+                .table-freeze-container {
+                    position: relative;
+                    max-width: 100%;
+                    overflow-x: auto;
+                }
+                .table-freeze-container table th, 
+                .table-freeze-container table td {
+                    white-space: nowrap;
+                }
+                .table-freeze-container th:first-child,
+                .table-freeze-container td:first-child {
+                    position: sticky;
+                    left: 0;
+                    z-index: 10;
+                    background-color: #f8fafc !important;
+                    border-right: 2px solid #cbd5e1 !important;
+                }
+                .table-freeze-container thead th:first-child {
+                    z-index: 20;
+                    background-color: #ffc107 !important;
+                }
+            </style>
+
+            <div class="table-freeze-container">
+                <table class="table table-bordered align-middle text-center text-xs" style="min-width: 2400px;">
                     <thead class="table-warning">
                         <tr>
-                            <th rowspan="2" class="align-middle bg-warning text-dark fw-bold">BULAN</th>
-                            <th colspan="4" class="bg-amber-300 text-dark">SEPTEMBER</th>
-                            <th colspan="4" class="bg-amber-200 text-dark">OKTOBER</th>
-                            <th colspan="4" class="bg-amber-300 text-dark">NOVEMBER</th>
-                            <th colspan="5" class="bg-amber-200 text-dark">DESEMBER</th>
+                            <th rowspan="2" class="align-middle bg-warning text-dark fw-bold" style="min-width: 200px;"></th>
+                            <th colspan="4" class="bg-amber-200 text-dark">JANUARI (4 W)[cite: 11]</th>
+                            <th colspan="4" class="bg-amber-300 text-dark">FEBRUARI (4 W)[cite: 11]</th>
+                            <th colspan="5" class="bg-amber-200 text-dark">MARET (5 W)[cite: 11]</th>
+                            <th colspan="4" class="bg-amber-300 text-dark">APRIL (4 W)[cite: 11]</th>
+                            <th colspan="4" class="bg-amber-200 text-dark">MEI (4 W)[cite: 11]</th>
+                            <th colspan="5" class="bg-amber-300 text-dark">JUNI (5 W)[cite: 11]</th>
+                            <th colspan="4" class="bg-amber-200 text-dark">JULI (4 W)[cite: 11]</th>
+                            <th colspan="4" class="bg-amber-300 text-dark">AGUSTUS (4 W)[cite: 11]</th>
+                            <th colspan="5" class="bg-amber-200 text-dark">SEPTEMBER (5 W)[cite: 11]</th>
+                            <th colspan="4" class="bg-amber-300 text-dark">OKTOBER (4 W)[cite: 11]</th>
+                            <th colspan="4" class="bg-amber-200 text-dark">NOVEMBER (4 W)[cite: 11]</th>
+                            <th colspan="5" class="bg-amber-300 text-dark">DESEMBER (5 W)[cite: 11]</th>
                         </tr>
                         <tr>
-                            <th>37</th><th>38</th><th>39</th><th>40</th>
-                            <th>41</th><th>42</th><th>43</th><th>44</th>
-                            <th>45</th><th>46</th><th>47</th><th>48</th>
-                            <th>49</th><th>50</th><th>51</th><th>52</th>
+                            <!-- Januari: 1-4[cite: 11] -->
+                            <th>1</th><th>2</th><th>3</th><th>4</th>
+                            <!-- Februari: 5-8[cite: 11] -->
+                            <th>5</th><th>6</th><th>7</th><th>8</th>
+                            <!-- Maret: 9-13[cite: 11] -->
+                            <th>9</th><th>10</th><th>11</th><th>12</th><th>13</th>
+                            <!-- April: 14-17[cite: 11] -->
+                            <th>14</th><th>15</th><th>16</th><th>17</th>
+                            <!-- Mei: 18-21[cite: 11] -->
+                            <th>18</th><th>19</th><th>20</th><th>21</th>
+                            <!-- Juni: 22-26[cite: 11] -->
+                            <th>22</th><th>23</th><th>24</th><th>25</th><th>26</th>
+                            <!-- Juli: 27-30[cite: 11] -->
+                            <th>27</th><th>28</th><th>29</th><th>30</th>
+                            <!-- Agustus: 31-34[cite: 11] -->
+                            <th>31</th><th>32</th><th>33</th><th>34</th>
+                            <!-- September: 35-39[cite: 11] -->
+                            <th>35</th><th>36</th><th>37</th><th>38</th><th>39</th>
+                            <!-- Oktober: 40-43[cite: 11] -->
+                            <th>40</th><th>41</th><th>42</th><th>43</th>
+                            <!-- November: 44-47[cite: 11] -->
+                            <th>44</th><th>45</th><th>46</th><th>47</th>
+                            <!-- Desember: 48-52[cite: 11] -->
+                            <th>48</th><th>49</th><th>50</th><th>51</th><th>52</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="matrixPlanningTableBody">
+                        <!-- Baris Planning -->
                         <tr>
-                            <td class="fw-bold bg-light text-start">Planning Direct</td>
-                            <td>79.875</td><td>60.992</td><td>82.368</td><td id="cellPlanW40">45.500</td>
-                            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                            <td class="fw-bold bg-light text-start">Planning Direct / Subdist</td>
+                            <!-- Jan - Agu (0) -->
+                            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                            <!-- September (Week 35-38 contoh planning) -->
+                            <td>79.875</td><td>60.992</td><td>82.368</td><td>45.500</td><td>0</td>
+                            <!-- Okt - Des (0) -->
+                            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
                         </tr>
+                        <!-- Baris Realisasi (Otomatis dari Antrian/Subdist) -->
                         <tr>
-                            <td class="fw-bold bg-light text-start">Realisasi Direct</td>
-                            <td>85.852</td><td>68.103</td><td>135.471</td><td id="cellRealW40">23.100</td>
-                            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                            <td class="fw-bold bg-light text-start">Realisasi Direct / Subdist</td>
+                            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                            <!-- Realisasi masuk ke Week 35 s.d 38 sesuai kalender -->
+                            <td id="realW35">85.852</td><td id="realW36">68.103</td><td id="realW37">135.471</td><td id="realW38">23.100</td><td>0</td>
+                            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
                         </tr>
+                        <!-- Baris Outstanding Weekly -->
                         <tr class="fw-bold">
                             <td class="bg-light text-start">Outstanding Direct (Weekly)</td>
-                            <td>107%</td><td>112%</td><td>164%</td><td id="cellOutW40">50%</td>
-                            <td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td>
-                            <td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td>
-                            <td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td>
+                            <td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td>
+                            <td>107%</td><td>112%</td><td>164%</td><td>50%</td><td>0%</td>
+                            <td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td><td>0%</td>
                         </tr>
+                        <!-- Baris Outstanding Monthly -->
                         <tr class="fw-bold table-warning">
                             <td class="text-start">Outstanding Direct (Monthly)</td>
-                            <td colspan="4">133.38%</td>
-                            <td colspan="4" class="text-muted">#DIV/0!</td>
-                            <td colspan="4" class="text-muted">#DIV/0!</td>
-                            <td colspan="5" class="text-muted">#DIV/0!</td>
+                            <td colspan="4">0%</td>
+                            <td colspan="4">0%</td>
+                            <td colspan="5">0%</td>
+                            <td colspan="4">0%</td>
+                            <td colspan="4">0%</td>
+                            <td colspan="5">0%</td>
+                            <td colspan="4">0%</td>
+                            <td colspan="4">0%</td>
+                            <td colspan="5">133.38%</td>
+                            <td colspan="4">0%</td>
+                            <td colspan="4">0%</td>
+                            <td colspan="5">0%</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
+        <!-- TABEL EKSEKUSI HARIAN -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+            <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
+                <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0">
+                    <i class="fa-solid fa-truck-fast text-indigo-600 mr-1.5"></i> Daftar Eksekusi Harian (Terhubung ke Portal Antrian & Plant)
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 900px;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No. SPE / DO</th>
+                            <th>No. Mobil & Ekspedisi</th>
+                            <th>Tujuan / Agen</th>
+                            <th>Plant Asal</th>
+                            <th>Plan (Ctn)</th>
+                            <th>Real (Ctn)</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eksekusiHarianTableBody">
+                        <tr>
+                            <td>34739511</td>
+                            <td class="fw-bold">TAKU6099200</td>
+                            <td class="text-start">P. KERINCI</td>
+                            <td><span class="badge bg-violet-100 text-violet-800">Plant 1116 (Biscuit)</span></td>
+                            <td>500</td>
+                            <td class="fw-bold text-emerald-600">500</td>
+                            <td><span class="badge bg-success">✅ Selesai</span></td>
+                            <td><button class="btn btn-sm btn-outline-primary py-0 px-2 text-[10px]" onclick="syncAntrian('34739511')">Sinkron Antrian</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
         <!-- TABEL EKSEKUSI HARIAN -->
         <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
             <div class="flex justify-between items-center flex-wrap gap-3 mb-2">

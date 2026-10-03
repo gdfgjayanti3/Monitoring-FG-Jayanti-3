@@ -560,34 +560,34 @@
             </div>
         </div>
 
-        <div id="section-cari" class="app-page space-y-6 max-w-4xl mx-auto">
-            <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
-                <h3 class="font-bold text-slate-700 text-base">Cari Posisi Barang (Bin Loc)</h3>
-                <button onclick="switchSection('home')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
-            </div>
-            <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
-                <div>
-                    <label class="form-label text-xs fw-bold text-slate-600">Kata Kunci (SKU / Nama Produk / No. Pallet)</label>
-                    <input type="text" id="searchKeyword" class="form-control text-xs bg-white border-slate-200" placeholder="Ketik kata kunci pencarian..." oninput="executeSearch()">
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 500px;">
-                        <thead class="table-light">
-                            <tr>
-                                <th>SKU & Nama Produk</th>
-                                <th>Lokasi Rak</th>
-                                <th>No. Pallet</th>
-                                <th>Info Detail</th>
-                            </tr>
-                        </thead>
-                        <tbody id="searchResultTableBody">
-                            <tr><td colspan="4" class="text-muted">Masukkan kata kunci untuk mencari posisi barang di rak.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+       <div id="section-cari" class="app-page space-y-6 max-w-5xl mx-auto">
+    <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+        <h3 class="font-bold text-slate-700 text-base">Cari Posisi Barang & Status Sistem</h3>
+        <button onclick="switchSection('home')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+    </div>
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+        <div>
+            <label class="form-label text-xs fw-bold text-slate-600">Kata Kunci (SKU / Nama Produk / No. Pallet)</label>
+            <input type="text" id="searchKeyword" class="form-control text-xs bg-white border-slate-200" placeholder="Ketik kata kunci pencarian..." oninput="executeSearch()">
         </div>
-
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 650px;">
+                <thead class="table-light">
+                    <tr>
+                        <th>SKU & Nama Produk</th>
+                        <th>Lokasi Rak (Bin Loc) / Status</th>
+                        <th>No. Pallet</th>
+                        <th>Jumlah Fisik</th>
+                        <th>Status Sistem</th>
+                    </tr>
+                </thead>
+                <tbody id="searchResultTableBody">
+                    <tr><td colspan="5" class="text-muted">Masukkan kata kunci untuk mencari posisi barang di rak.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
         <div id="section-peta" class="app-page space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
                 <div>
@@ -3249,32 +3249,49 @@
             }
         }
 
-        function executeSearch() {
-            let keyword = document.getElementById('searchKeyword').value.toLowerCase().trim();
-            let tbody = document.getElementById('searchResultTableBody');
-            tbody.innerHTML = '';
-            if(!keyword) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Masukkan kata kunci pencarian.</td></tr>';
-                return;
-            }
-            let filtered = binData.filter(i => (i.sku && i.sku.toLowerCase().includes(keyword)) || (i.lokasi && i.lokasi.toLowerCase().includes(keyword)) || (i.pallet && i.pallet.toLowerCase().includes(keyword)));
-            if(filtered.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-muted">Tidak ditemukan.</td></tr>';
-                return;
-            }
-            filtered.forEach(item => {
-                let kartonVal = parseFloat(item.karton) || 0;
-                let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
-                let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
-                tbody.innerHTML += `<tr>
-                    <td class="text-start fw-semibold">${item.sku}</td>
-                    <td><span class="badge bg-indigo-50 text-indigo-600">${item.lokasi}</span></td>
-                    <td class="fw-bold">${item.pallet}</td>
-                    <td class="text-slate-600 text-[11px]">${(kartonVal / stdKrt).toFixed(2)} Plt (${kartonVal} krt)</td>
-                </tr>`;
-            });
+       function executeSearch() {
+    let keyword = document.getElementById('searchKeyword').value.toLowerCase().trim();
+    let tbody = document.getElementById('searchResultTableBody');
+    tbody.innerHTML = '';
+    
+    if(!keyword) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Masukkan kata kunci pencarian.</td></tr>';
+        return;
+    }
+
+    let filtered = binData.filter(i => (i.sku && i.sku.toLowerCase().includes(keyword)) || (i.lokasi && i.lokasi.toLowerCase().includes(keyword)) || (i.pallet && i.pallet.toLowerCase().includes(keyword)));
+    
+    if(filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-muted">Tidak ditemukan data yang sesuai.</td></tr>';
+        return;
+    }
+
+    filtered.forEach(item => {
+        let kartonVal = parseFloat(item.karton) || 0;
+        let skuKey = item.sku ? item.sku.split('|')[0].trim() : '';
+        let stdKrt = masterStockData[skuKey] ? masterStockData[skuKey].cartonPerPallet : 70;
+        let pltVal = (kartonVal / stdKrt).toFixed(2);
+        
+        // Menentukan status sistem & label lokasi
+        let lokasiDisplay = item.lokasi || '-';
+        let statusBadge = '<span class="badge bg-success-subtle text-success border px-2 py-1">🟢 Available (Rak Reguler)</span>';
+
+        if(lokasiDisplay.toLowerCase().includes('karantina') || lokasiDisplay.toLowerCase().includes('qc')) {
+            statusBadge = '<span class="badge bg-danger-subtle text-danger border px-2 py-1">🔴 Hold QC</span>';
+        } else if(lokasiDisplay.toLowerCase().includes('transit') || lokasiDisplay.toLowerCase().includes('loading') || lokasiDisplay.toLowerCase().includes('antri')) {
+            lokasiDisplay = 'Reserved DO';
+            statusBadge = '<span class="badge bg-warning-subtle text-warning border px-2 py-1">🚚 Reserved DO</span>';
         }
 
+        tbody.innerHTML += `<tr>
+            <td class="text-start fw-semibold">${item.sku}</td>
+            <td><span class="badge bg-indigo-50 text-indigo-600">${lokasiDisplay}</span></td>
+            <td class="fw-bold">${item.pallet}</td>
+            <td class="text-slate-600 text-[11px]">${pltVal} Plt (${kartonVal} krt)</td>
+            <td>${statusBadge}</td>
+        </tr>`;
+    });
+}
         let currentWarehouse = 'INDUK';
         function switchWarehouse(wh) {
             currentWarehouse = wh;

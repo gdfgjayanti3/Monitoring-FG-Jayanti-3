@@ -562,7 +562,119 @@
                 </div>
             </div>
         </div>
+<!-- SECTION PLANNING & REALISASI DIRECT/SUBDIST -->
+    <div id="section-planning" class="app-page space-y-6 max-w-7xl mx-auto">
+        <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex-wrap gap-3">
+            <div>
+                <h3 class="font-bold text-amber-800 text-base"><i class="fa-solid fa-chart-column mr-2"></i> Planning & Realisasi Direct/Subdist</h3>
+                <p class="text-xs text-slate-400">Pencatatan Master Plan Mingguan, SPE/DO Harian, serta Rekapitulasi Plant 1115 & 1116.</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openUploadMasterModal()" class="btn btn-sm btn-warning fw-bold text-xs"><i class="fa-solid fa-file-excel mr-1"></i> Upload Master Plan Excel</button>
+                <button onclick="openInputRealisasiModal()" class="btn btn-sm btn-primary fw-bold text-xs"><i class="fa-solid fa-plus mr-1"></i> Input SPE/DO Harian</button>
+                <button onclick="switchSection('home')" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-arrow-left"></i> Kembali</button>
+            </div>
+        </div>
 
+        <!-- TABEL MATRIX PENCAPAIAN BULANAN & MINGGUAN -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+            <div class="flex justify-between items-center mb-2">
+                <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0">
+                    <i class="fa-solid fa-table-cells text-amber-600 mr-1.5"></i> Pencapaian Direct (Bulanan & Mingguan - Satuan Karton)
+                </h5>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 1000px;">
+                    <thead class="table-warning">
+                        <tr>
+                            <th rowspan="2" class="align-middle bg-warning text-dark fw-bold">BULAN</th>
+                            <th colspan="4" class="bg-amber-300 text-dark">SEPTEMBER</th>
+                            <th colspan="4" class="bg-amber-200 text-dark">OKTOBER</th>
+                            <th colspan="4" class="bg-amber-300 text-dark">NOVEMBER</th>
+                            <th colspan="5" class="bg-amber-200 text-dark">DESEMBER</th>
+                        </tr>
+                        <tr>
+                            <th>37</th><th>38</th><th>39</th><th>40</th>
+                            <th>41</th><th>42</th><th>43</th><th>44</th>
+                            <th>45</th><th>46</th><th>47</th><th>48</th>
+                            <th>49</th><th>50</th><th>51</th><th>52</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold bg-light text-start">Planning Direct</td>
+                            <td>79.875</td><td>60.992</td><td>82.368</td><td id="cellPlanW40">45.500</td>
+                            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold bg-light text-start">Realisasi Direct</td>
+                            <td>85.852</td><td>68.103</td><td>135.471</td><td id="cellRealW40">23.100</td>
+                            <td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td>
+                        </tr>
+                        <tr class="fw-bold">
+                            <td class="bg-light text-start">Outstanding Direct (Weekly)</td>
+                            <td>107%</td><td>112%</td><td>164%</td><td id="cellOutW40">50%</td>
+                            <td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td>
+                            <td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td>
+                            <td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td><td class="text-muted">#DIV/0!</td>
+                        </tr>
+                        <tr class="fw-bold table-warning">
+                            <td class="text-start">Outstanding Direct (Monthly)</td>
+                            <td colspan="4">133.38%</td>
+                            <td colspan="4" class="text-muted">#DIV/0!</td>
+                            <td colspan="4" class="text-muted">#DIV/0!</td>
+                            <td colspan="5" class="text-muted">#DIV/0!</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- TABEL EKSEKUSI HARIAN -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-4">
+            <div class="flex justify-between items-center flex-wrap gap-3 mb-2">
+                <h5 class="fw-bold text-slate-700 text-xs uppercase mb-0">
+                    <i class="fa-solid fa-truck-fast text-indigo-600 mr-1.5"></i> Daftar Eksekusi Harian (Terhubung ke Portal Antrian & Plant)
+                </h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered align-middle text-center text-xs table-custom-responsive" style="min-width: 900px;">
+                    <thead class="table-light">
+                        <tr>
+                            <th>No. SPE / DO</th>
+                            <th>No. Mobil & Ekspedisi</th>
+                            <th>Tujuan / Agen</th>
+                            <th>Plant Asal</th>
+                            <th>Plan (Ctn)</th>
+                            <th>Real (Ctn)</th>
+                            <th>Status</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eksekusiHarianTableBody">
+                        <tr>
+                            <td>34739511</td>
+                            <td class="fw-bold">TAKU6099200</td>
+                            <td class="text-start">P. KERINCI</td>
+                            <td><span class="badge bg-violet-100 text-violet-800">Plant 1116 (Biscuit)</span></td>
+                            <td>500</td>
+                            <td class="fw-bold text-emerald-600">500</td>
+                            <td><span class="badge bg-success">✅ Selesai</span></td>
+                            <td><button class="btn btn-sm btn-outline-primary py-0 px-2 text-[10px]" onclick="syncAntrian('34739511')">Sinkron Antrian</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+        <div onclick="switchSection('planning')" class="bg-white hover:border-amber-300 border border-slate-200 rounded-2xl p-4 cursor-pointer transition shadow-2xs flex flex-col items-center text-center space-y-2 group">
+    <div class="bg-amber-50 text-amber-600 p-3 rounded-2xl border border-amber-100 group-hover:scale-105 transition"><i class="fa-solid fa-chart-column text-lg"></i></div>
+    <div>
+        <h3 class="font-bold text-amber-700 text-xs">Planning & Realisasi</h3>
+        <p class="text-[10px] text-slate-400">Direct & Subdist Matrix</p>
+    </div>
+</div>
         <!-- SECTION OPNAME -->
         <div id="section-opname" class="app-page space-y-6">
             <h4 class="font-bold mb-3 text-slate-700 text-xs">Stock Opname & Laporan Riwayat (Audit Fisik)</h4>

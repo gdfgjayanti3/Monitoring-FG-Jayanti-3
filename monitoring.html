@@ -130,6 +130,10 @@
                 <div class="bg-slate-50 p-2 rounded-xl text-purple-400 border border-slate-100"><i class="fa-solid fa-file-invoice w-4 text-center"></i></div>
                 <span>Stock Opname & Laporan</span>
             </a>
+            <a href="#" onclick="switchMenu('planning')" class="menu-btn flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition" id="menu-planning">
+    <div class="bg-slate-50 p-2 rounded-xl text-amber-500 border border-slate-100"><i class="fa-solid fa-chart-column w-4 text-center"></i></div>
+    <span>Planning & Realisasi</span>
+</a>
             <a href="#" onclick="switchMenu('rdc')" class="menu-btn flex items-center gap-3.5 px-3.5 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 font-medium transition" id="menu-rdc">
                 <div class="bg-slate-50 p-2 rounded-xl text-sky-400 border border-slate-100"><i class="fa-solid fa-warehouse w-4 text-center"></i></div>
                 <span>Monitoring RDC (SLA 6 Jam)</span>
@@ -668,13 +672,7 @@
             </div>
         </div>
     </div>
-        <div onclick="switchSection('planning')" class="bg-white hover:border-amber-300 border border-slate-200 rounded-2xl p-4 cursor-pointer transition shadow-2xs flex flex-col items-center text-center space-y-2 group">
-    <div class="bg-amber-50 text-amber-600 p-3 rounded-2xl border border-amber-100 group-hover:scale-105 transition"><i class="fa-solid fa-chart-column text-lg"></i></div>
-    <div>
-        <h3 class="font-bold text-amber-700 text-xs">Planning & Realisasi</h3>
-        <p class="text-[10px] text-slate-400">Direct & Subdist Matrix</p>
-    </div>
-</div>
+      
         <!-- SECTION OPNAME -->
         <div id="section-opname" class="app-page space-y-6">
             <h4 class="font-bold mb-3 text-slate-700 text-xs">Stock Opname & Laporan Riwayat (Audit Fisik)</h4>

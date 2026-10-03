@@ -3738,15 +3738,15 @@ async function loadMasterSkuFromSheet() {
         }
 
         function switchMenu(menuName) {
-            ['section-dashboard-utama', 'section-kapasitas', 'section-master', 'section-realisasi', 'section-opname', 'section-rdc', 'section-ekspor', 'section-jalur', 'section-binloc', 'section-kpi', 'section-report'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) { el.classList.add('hidden'); el.classList.remove('active'); }
-            });
-            let targetSec = document.getElementById('section-' + menuName);
-            if(targetSec) {
-                targetSec.classList.add('active');
-                targetSec.classList.remove('hidden');
-            }
+    ['section-dashboard-utama', 'section-kapasitas', 'section-master', 'section-realisasi', 'section-opname', 'section-rdc', 'section-ekspor', 'section-jalur', 'section-binloc', 'section-kpi', 'section-report', 'section-planning'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) { el.classList.add('hidden'); el.classList.remove('active'); }
+    });
+    let targetSec = document.getElementById('section-' + menuName);
+    if(targetSec) {
+        targetSec.classList.add('active');
+        targetSec.classList.remove('hidden');
+    }
             if(menuName === 'dashboard-utama') { updateDashboardByFilter(); }
             if(menuName === 'binloc') { renderBinMap(); renderCurrentStockTable(); renderMovementHistoryTable(); }
             if(menuName === 'opname') { renderReconciliationSummary(); renderQcDateSummaryTable(); renderOpnameDateSummary(); }

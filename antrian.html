@@ -704,7 +704,8 @@ async function loadDataFromCloud() {
 
         truckQueue = trucks.map(t => {
             let docNo = t.no_doc;
-            let statRow = statuses.find(s => s.no_doc === docNo);
+            // Pencarian status log dicocokkan berdasarkan truk_id (firestoreId) atau no_doc
+            let statRow = statuses.find(s => s.truk_id === t.firestoreId || s.no_doc === docNo);
             let plRows = pickLists.filter(p => p.no_doc === docNo);
             let firstPl = plRows.length > 0 ? plRows[0] : null;
 
@@ -813,7 +814,7 @@ async function loadDataFromCloud() {
                 })
             };
         }).filter(t => {
-            return true; // Auto-cleanup 7 hari dimatikan, semua data selamanya tampil
+            return true; 
         });
 
         renderAll();
@@ -1053,8 +1054,12 @@ async function submitAntrian(e) {
             created_at: currentIsoTime
         };
 
-        await addDoc(collection(window.db, 'antrian_truk'), newTruckRecord);
-        await setDoc(doc(window.db, 'status_truk_log', noDocVal), {
+        // Simpan dokumen truk baru ke Firestore dan dapatkan ID-nya secara otomatis
+        let docRefAdded = await addDoc(collection(window.db, 'antrian_truk'), newTruckRecord);
+        
+        // Simpan log status awal menggunakan firestoreId sebagai kunci unik agar 1 no_doc dengan banyak container tidak saling timpa
+        await setDoc(doc(window.db, 'status_truk_log', docRefAdded.id), {
+            truk_id: docRefAdded.id,
             no_doc: noDocVal,
             status_truk: 'Antrian',
             loading_dock: '-',
@@ -2054,6 +2059,7 @@ async function saveStatus() {
     let currentIsoTime = new Date().toISOString();
 
     let logRecord = {
+        truk_id: targetTruck.firestoreId,
         no_doc: targetTruck.noDoc,
         status_truk: newSt,
         loading_dock: (newSt === 'Proses Muat') ? (selectedDock || 'Dock 01') : '-',
@@ -2090,8 +2096,9 @@ async function saveStatus() {
     try {
         if (targetTruck.firestoreId) {
             await updateDoc(doc(window.db, 'antrian_truk', targetTruck.firestoreId), { status_antrian: newSt });
+            // Simpan status log menggunakan firestoreId truk agar unik per baris kontainer
+            await setDoc(doc(window.db, 'status_truk_log', targetTruck.firestoreId), logRecord, { merge: true });
         }
-        await setDoc(doc(window.db, 'status_truk_log', targetTruck.noDoc), logRecord, { merge: true });
 
         targetTruck.status = newSt;
         targetTruck.dock = logRecord.loading_dock;
@@ -2173,7 +2180,7 @@ async function deleteTruck(idx) {
         });
 
         try {
-            await deleteDoc(doc(window.db, 'status_truk_log', t.noDoc));
+            await deleteDoc(doc(window.db, 'status_truk_log', t.firestoreId));
         } catch(e) {}
 
         await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId));
@@ -2196,7 +2203,7 @@ async function resetData() {
             pickSnap.forEach(async (d) => {
                 if (d.data().no_doc === t.noDoc) await deleteDoc(doc(window.db, 'picking_list_truk', d.id));
             });
-            try { await deleteDoc(doc(window.db, 'status_truk_log', t.noDoc)); } catch(e){}
+            try { await deleteDoc(doc(window.db, 'status_truk_log', t.firestoreId)); } catch(e){}
             try { await deleteDoc(doc(window.db, 'antrian_truk', t.firestoreId)); } catch(e){}
         }
         truckQueue = [];

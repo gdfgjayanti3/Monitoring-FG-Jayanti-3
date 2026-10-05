@@ -499,10 +499,8 @@
 </div>
 
 <script>
-// Variabel global untuk menyimpan cache Master SKU dari Google Spreadsheet
 let masterSkuCache = null;
 
-// Fungsi untuk mengambil data Master SKU dari Google Spreadsheet (dengan sistem Cache)
 async function loadMasterSkuFromSheet() {
     if (masterSkuCache) {
         return masterSkuCache;
@@ -645,7 +643,6 @@ async function loadDataFromCloud() {
     try {
         const { collection, getDocs } = window.firebaseCollections;
 
-        // Load Master SKU dari Google Spreadsheet API
         let sheetSkuList = await loadMasterSkuFromSheet();
         masterStock = {};
         sheetSkuList.forEach(item => {
@@ -704,8 +701,8 @@ async function loadDataFromCloud() {
 
         truckQueue = trucks.map(t => {
             let docNo = t.no_doc;
-            // Pencarian status log dicocokkan berdasarkan truk_id (firestoreId) atau no_doc
-            let statRow = statuses.find(s => s.truk_id === t.firestoreId || s.no_doc === docNo);
+            // Pencarian status log dicocokkan berdasarkan ID unik truk (firestoreId)
+            let statRow = statuses.find(s => s.truk_id === t.firestoreId || s.id === t.firestoreId);
             let plRows = pickLists.filter(p => p.no_doc === docNo);
             let firstPl = plRows.length > 0 ? plRows[0] : null;
 
@@ -813,8 +810,6 @@ async function loadDataFromCloud() {
                     };
                 })
             };
-        }).filter(t => {
-            return true; 
         });
 
         renderAll();
@@ -1054,10 +1049,10 @@ async function submitAntrian(e) {
             created_at: currentIsoTime
         };
 
-        // Simpan dokumen truk baru ke Firestore dan dapatkan ID-nya secara otomatis
+        // Simpan dokumen truk baru ke Firestore dan dapatkan ID-nya
         let docRefAdded = await addDoc(collection(window.db, 'antrian_truk'), newTruckRecord);
         
-        // Simpan log status awal menggunakan firestoreId sebagai kunci unik agar 1 no_doc dengan banyak container tidak saling timpa
+        // Simpan log status menggunakan docRefAdded.id (firestoreId) murni sebagai key unik
         await setDoc(doc(window.db, 'status_truk_log', docRefAdded.id), {
             truk_id: docRefAdded.id,
             no_doc: noDocVal,
@@ -1758,7 +1753,7 @@ function renderAll() {
             } else if(diffHrs > 2) {
                 bgCol = '#fef3c7';
                 textCol = '#b45309';
-                labelSla = '⚠️ Perhatian (2-4 Jam)';
+                labelSla = '⚠️️ Perhatian (2-4 Jam)';
             }
 
             let freezeNotice = isKeluar ? ' [Selesai]' : '';
@@ -2096,7 +2091,7 @@ async function saveStatus() {
     try {
         if (targetTruck.firestoreId) {
             await updateDoc(doc(window.db, 'antrian_truk', targetTruck.firestoreId), { status_antrian: newSt });
-            // Simpan status log menggunakan firestoreId truk agar unik per baris kontainer
+            // DISIMPAN MURNI BERDASARKAN targetTruck.firestoreId SUPAYA TIDAK MENIMPA DOKUMEN LAIN
             await setDoc(doc(window.db, 'status_truk_log', targetTruck.firestoreId), logRecord, { merge: true });
         }
 

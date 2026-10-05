@@ -4455,19 +4455,20 @@ function renderRdcMonitoringTable() {
             return isDocMatched(pDo, tDoc) || isDocMatched(pSpe, tDoc);
         });
 
-        // 3. Deklarasi variabel realisasi di dalam lingkup perulangan ini (AMAN dari error matchedTruk)
-        let realTanggal = matchedTruk ? (matchedTruk.tanggal || '-') : '-';
-        let realDatang = matchedTruk ? (matchedTruk.datang || '-') : '-';
-        let realStart = matchedTruk ? (matchedTruk.start || '-') : '-';
-        let realFinish = matchedTruk ? (matchedTruk.finish || matchedTruk.selesai || matchedTruk.timeEndLoading || '-') : '-';
-        let realKeluar = matchedTruk ? (matchedTruk.keluar || matchedTruk.timeOut || '-') : '-';
-        let realLoading = matchedTruk ? (matchedTruk.lamaLoading || '-') : '-';
-        let realStay = matchedTruk ? (matchedTruk.lamaStay || '-') : '-';
-        let realEkspedisi = matchedTruk ? (matchedTruk.ekspedisi || '-') : '-';
-        let realStatus = matchedTruk ? (matchedTruk.status || 'Antrian') : 'Belum Datang';
-        let realJenis = matchedTruk ? (matchedTruk.jenis || '-') : '-';
-        let noteText = plan.note || '-';
+        let currentDoc = plan.do || plan.spe || '';
+let matchedTruck = truckList.find(t => t.noDoc === currentDoc || t.noPol === plan.no_mobil);
 
+let realTanggal = matchedTruck ? (matchedTruck.tanggal || '-') : '-';
+let realDatang = matchedTruck ? (matchedTruck.tanggal_datang || '-') : '-';
+let realStart = matchedTruck ? (matchedTruck.start || '-') : '-';
+let realFinish = matchedTruck ? (matchedTruck.finish || matchedTruck.selesai || matchedTruck.timeEndLoading || '-') : '-';
+let realKeluar = matchedTruck ? (matchedTruck.keluar || matchedTruck.timeout || '-') : '-';
+let realLoading = matchedTruck ? (matchedTruck.lamaLoading || '-') : '-';
+let realStay = matchedTruck ? (matchedTruck.lamaStay || '-') : '-';
+let realEkspedisi = matchedTruck ? (matchedTruck.ekspedisi || '-') : '-';
+let realStatus = matchedTruck ? (matchedTruck.status || 'Antrian') : 'Belum Datang';
+let realJenis = matchedTruck ? (matchedTruck.jenis || '-') : '-';
+let noteText = plan.note || '-';
     }); 
 }   
         // Hitung SLA max 6 jam (berdasarkan lama stay atau selisih waktu datang s/d keluar)

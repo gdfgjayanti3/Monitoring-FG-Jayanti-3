@@ -499,6 +499,31 @@
 </div>
 
 <script>
+// ==========================================
+// FUNGSI SUARA OTOMATIS (TEXT-TO-SPEECH)
+// ==========================================
+function panggilSuaraMasukDock(noPol, ekspedisi, dock) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        let teks = `Perhatian, truk nomor polisi ${noPol}, ekspedisi ${ekspedisi}, silakan mundur memuat ke ${dock}.`;
+        let utterance = new SpeechSynthesisUtterance(teks);
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+function panggilSuaraSelesaiMuat(noPol, ekspedisi) {
+    if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        let teks = `Perhatian untuk sopir dengan nomor polisi ${noPol}, ekspedisi ${ekspedisi}, harap menuju loket GDFG untuk tanda tangan surat jalan. Sekali lagi perhatian untuk sopir dengan nomor polisi ${noPol}, ekspedisi ${ekspedisi}, harap menuju loket GDFG untuk tanda tangan surat jalan. Terima kasih.`;
+        let utterance = new SpeechSynthesisUtterance(teks);
+        utterance.lang = 'id-ID';
+        utterance.rate = 0.93;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
 let masterSkuCache = null;
 
 async function loadMasterSkuFromSheet() {
@@ -701,7 +726,6 @@ async function loadDataFromCloud() {
 
         truckQueue = trucks.map(t => {
             let docNo = t.no_doc;
-            // Pencarian status log dicocokkan berdasarkan ID unik truk (firestoreId)
             let statRow = statuses.find(s => s.truk_id === t.firestoreId || s.id === t.firestoreId);
             let plRows = pickLists.filter(p => p.no_doc === docNo);
             let firstPl = plRows.length > 0 ? plRows[0] : null;
@@ -1049,10 +1073,8 @@ async function submitAntrian(e) {
             created_at: currentIsoTime
         };
 
-        // Simpan dokumen truk baru ke Firestore dan dapatkan ID-nya
         let docRefAdded = await addDoc(collection(window.db, 'antrian_truk'), newTruckRecord);
         
-        // Simpan log status menggunakan docRefAdded.id (firestoreId) murni sebagai key unik
         await setDoc(doc(window.db, 'status_truk_log', docRefAdded.id), {
             truk_id: docRefAdded.id,
             no_doc: noDocVal,
@@ -1753,7 +1775,7 @@ function renderAll() {
             } else if(diffHrs > 2) {
                 bgCol = '#fef3c7';
                 textCol = '#b45309';
-                labelSla = '⚠️️ Perhatian (2-4 Jam)';
+                labelSla = '⚠ Perhatian (2-4 Jam)';
             }
 
             let freezeNotice = isKeluar ? ' [Selesai]' : '';
@@ -2071,11 +2093,17 @@ async function saveStatus() {
     if (newSt === 'Proses Muat' && targetTruck.timeStartLoading === '-') {
         logRecord.time_start_loading = currentIsoTime;
         targetTruck.timeStartLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        
+        // Panggil suara otomatis truk masuk dock
+        panggilSuaraMasukDock(targetTruck.noPol, targetTruck.ekspedisi, selectedDock || 'Dock 01');
     }
 
     if (newSt === 'Selesai Muat') {
         logRecord.time_end_loading = currentIsoTime;
         targetTruck.timeEndLoading = new Date(currentIsoTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+        
+        // Panggil suara otomatis sopir ambil surat jalan (diulang 2x)
+        panggilSuaraSelesaiMuat(targetTruck.noPol, targetTruck.ekspedisi);
     }
 
     if (newSt === 'Keluar') {
@@ -2091,7 +2119,6 @@ async function saveStatus() {
     try {
         if (targetTruck.firestoreId) {
             await updateDoc(doc(window.db, 'antrian_truk', targetTruck.firestoreId), { status_antrian: newSt });
-            // DISIMPAN MURNI BERDASARKAN targetTruck.firestoreId SUPAYA TIDAK MENIMPA DOKUMEN LAIN
             await setDoc(doc(window.db, 'status_truk_log', targetTruck.firestoreId), logRecord, { merge: true });
         }
 

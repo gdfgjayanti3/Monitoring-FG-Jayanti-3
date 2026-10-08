@@ -51,6 +51,38 @@
         .table-custom-responsive td { padding: 6px 4px !important; vertical-align: middle; }
         .plant-tab { padding: 6px 16px; border-radius: 8px; font-weight: bold; cursor: pointer; border: 1px solid #e2e8f0; background: white; color: #64748b; font-size: 11px; }
         .plant-tab.active { background: #6366f1; color: white; border-color: #6366f1; }
+        /* CSS TAMBAHAN UNTUK PETA INTERAKTIF LAYOUT FISIK GUDANG */
+        .layout-grid-induk {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .layout-grid-aging {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+        @media (max-width: 768px) {
+            .layout-grid-induk, .layout-grid-aging { grid-template-columns: repeat(1, 1fr); }
+        }
+        .map-block-card {
+            border-radius: 14px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            border: 1px solid rgba(0,0,0,0.06);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+        }
+        .map-block-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.08);
+        }
+        /* Variasi Warna Pastel Interaktif Ala Diagram Monitoring */
+        .pastel-map-empty { background-color: #f8fafc; color: #64748b; border-color: #e2e8f0; }
+        .pastel-map-low   { background-color: #d1fae5; color: #065f46; border-color: #a7f3d0; } /* Hijau Pastel */
+        .pastel-map-med   { background-color: #fef3c7; color: #92400e; border-color: #fde68a; } /* Kuning Pastel */
+        .pastel-map-high  { background-color: #ffe4e6; color: #9f1239; border-color: #fecdd3; } /* Merah Muda Pastel */
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -591,8 +623,8 @@
         <div id="section-peta" class="app-page space-y-6">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
                 <div>
-                    <h3 class="font-bold text-slate-700 text-base">Peta Kapasitas Gudang & Relokasi (Jayanti 3)</h3>
-                    <p class="text-xs text-slate-400">Klik blok rak untuk melihat isi barang per lorong & memindahkan lokasi (Relokasi).</p>
+                    <h3 class="font-bold text-slate-700 text-base">Peta Kapasitas & Layout Gudang Interaktif (Jayanti 3)</h3>
+                    <p class="text-xs text-slate-400">Visualisasi menyerupai denah fisik asli gudang lengkap dengan variasi warna pastel interaktif.</p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2">
                     <button onclick="switchWarehouse('INDUK')" id="btnWhInduk" class="btn btn-sm btn-primary">Gudang Induk (A-X)</button>
@@ -601,15 +633,23 @@
                 </div>
             </div>
 
-            <div class="flex justify-end">
-                <button onclick="toggleRelokasiLogModal()" class="btn btn-sm btn-outline-indigo fw-bold bg-white shadow-2xs"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Lihat Log Riwayat Relokasi Barang</button>
+            <!-- Legenda Warna Pastel Interaktif -->
+            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs flex items-center justify-between flex-wrap gap-2 text-xs px-4">
+                <span class="fw-bold text-slate-600"><i class="fa-solid fa-palette text-indigo-600 mr-1"></i> Status Kapasitas:</span>
+                <div class="flex items-center gap-4 flex-wrap">
+                    <span class="d-flex align-items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-emerald-100 border border-emerald-300"></span> Longgar (< 50%)</span>
+                    <span class="d-flex align-items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-amber-100 border border-amber-300"></span> Sedang (50% - 80%)</span>
+                    <span class="d-flex align-items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-rose-100 border border-rose-300"></span> Padat (> 80%)</span>
+                    <span class="d-flex align-items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-slate-100 border border-slate-300"></span> Kosong (0%)</span>
+                </div>
+                <button onclick="toggleRelokasiLogModal()" class="btn btn-xs btn-outline-indigo fw-bold bg-white"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Log Relokasi</button>
             </div>
 
+            <!-- Wadah Utama Tampilan Peta Layout Interaktif -->
             <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs overflow-x-auto">
-                <div id="binMapContainer" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 min-w-[700px]"></div>
+                <div id="binMapContainer" class="min-w-[800px]"></div>
             </div>
         </div>
-
     </main>
 
     <!-- MODAL TAMBAH / EDIT REPACK HANDLING -->
@@ -3431,26 +3471,85 @@
             }
         }
 
-        function renderBinMap() {
+      function renderBinMap() {
             const container = document.getElementById('binMapContainer');
             if(!container) return;
             container.innerHTML = '';
-            let blocks = currentWarehouse === 'INDUK' ? indukBlocks : agingBlocks;
             let targetGudang = currentWarehouse === 'INDUK' ? 'Gudang Induk' : 'Gudang Aging';
 
-            blocks.forEach(b => {
-                let blockNameCode = `Blok ${b}`;
-                let totalPltInBlock = getBlockTotalPallets(targetGudang, blockNameCode);
-                let config = getBlockConfig(targetGudang, blockNameCode, 1);
-                let maxBlockCapacity = config.totalRows * config.maxPltPerRow;
-                let ratio = totalPltInBlock / maxBlockCapacity;
-                let colorClass = totalPltInBlock > 0 ? (ratio >= 0.75 ? 'bin-high' : 'bin-low') : 'bin-empty';
+            if (currentWarehouse === 'INDUK') {
+                // Tampilan Layout Gudang Induk (Menyesuaikan Blueprint Blok A s/d X)
+                container.innerHTML = `
+                    <div class="text-center fw-bold text-slate-700 bg-amber-100/60 py-2 rounded-xl border border-amber-200 mb-4 text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-industry mr-1 text-amber-700"></i> Layout Denah Gudang Induk (Jayanti 3)
+                    </div>
+                    <div class="layout-grid-induk" id="indukGridMap"></div>
+                `;
+                let gridMap = document.getElementById('indukGridMap');
+                const indukList = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X'];
 
-                container.innerHTML += `<div class="p-3 rounded-xl border text-center shadow-2xs bin-item ${colorClass}" onclick="openBlockDetailModal('Blok ${b}')">
-                    <div class="font-bold text-sm">Blok ${b} FG</div>
-                    <div class="text-[10px] mt-1 font-semibold">${totalPltInBlock.toFixed(1)} / ${maxBlockCapacity} Plt</div>
-                </div>`;
-            });
+                indukList.forEach(b => {
+                    let blockNameCode = `Blok ${b}`;
+                    let totalPltInBlock = getBlockTotalPallets(targetGudang, blockNameCode);
+                    let config = getBlockConfig(targetGudang, blockNameCode, 1);
+                    let maxBlockCapacity = config.totalRows * config.maxPltPerRow;
+                    let ratio = maxBlockCapacity > 0 ? (totalPltInBlock / maxBlockCapacity) : 0;
+                    
+                    let colorClass = 'pastel-map-empty';
+                    if (totalPltInBlock > 0) {
+                        if (ratio >= 0.8) colorClass = 'pastel-map-high'; // Merah Muda Pastel
+                        else if (ratio >= 0.5) colorClass = 'pastel-map-med';  // Kuning Pastel
+                        else colorClass = 'pastel-map-low';  // Hijau Pastel
+                    }
+
+                    gridMap.innerHTML += `
+                        <div class="map-block-card ${colorClass}" onclick="openBlockDetailModal('Blok ${b}')" title="Klik untuk lihat rincian isi Blok ${b}">
+                            <div class="d-flex justify-content-between items-center mb-1">
+                                <span class="fw-bold text-xs">Blok ${b} FG</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/60 fw-bold">${(ratio * 100).toFixed(0)}%</span>
+                            </div>
+                            <div class="text-[10px] opacity-75">Kapasitas:</div>
+                            <div class="fw-bold text-[11px]">${totalPltInBlock.toFixed(1)} / ${maxBlockCapacity} Plt</div>
+                        </div>
+                    `;
+                });
+            } else {
+                // Tampilan Layout Gudang Aging (Menyesuaikan Blueprint Blok A s/d O)
+                container.innerHTML = `
+                    <div class="text-center fw-bold text-amber-900 bg-amber-50 py-2 rounded-xl border border-amber-200 mb-4 text-xs uppercase tracking-wider">
+                        <i class="fa-solid fa-clock-rotate-left mr-1 text-amber-600"></i> Layout Denah Gudang Aging (GDFG)
+                    </div>
+                    <div class="layout-grid-aging" id="agingGridMap"></div>
+                `;
+                let gridMap = document.getElementById('agingGridMap');
+                const agingList = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O'];
+
+                agingList.forEach(b => {
+                    let blockNameCode = `Blok ${b}`;
+                    let totalPltInBlock = getBlockTotalPallets(targetGudang, blockNameCode);
+                    let config = getBlockConfig(targetGudang, blockNameCode, 1);
+                    let maxBlockCapacity = config.totalRows * config.maxPltPerRow;
+                    let ratio = maxBlockCapacity > 0 ? (totalPltInBlock / maxBlockCapacity) : 0;
+
+                    let colorClass = 'pastel-map-empty';
+                    if (totalPltInBlock > 0) {
+                        if (ratio >= 0.8) colorClass = 'pastel-map-high';
+                        else if (ratio >= 0.5) colorClass = 'pastel-map-med';
+                        else colorClass = 'pastel-map-low';
+                    }
+
+                    gridMap.innerHTML += `
+                        <div class="map-block-card ${colorClass}" onclick="openBlockDetailModal('Blok ${b}')" title="Klik untuk lihat rincian isi Blok ${b}">
+                            <div class="d-flex justify-content-between items-center mb-1">
+                                <span class="fw-bold text-xs">Blok ${b} FG</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/60 fw-bold">${(ratio * 100).toFixed(0)}%</span>
+                            </div>
+                            <div class="text-[10px] opacity-75">Kapasitas:</div>
+                            <div class="fw-bold text-[11px]">${totalPltInBlock.toFixed(1)} / ${maxBlockCapacity} Plt</div>
+                        </div>
+                    `;
+                });
+            }
         }
     </script>
 </body>

@@ -2448,50 +2448,57 @@
                 if (!fullLine) return;
 
                 let upperLine = fullLine.toUpperCase();
-                // Abaikan baris header laporan, total, plant, atau tanda tangan
-                if (upperLine.includes('PLANT') || upperLine.includes('S.LOCATION') || upperLine.includes('MAT.TYPE') || upperLine.includes('PERIOD') || upperLine.includes('TOTAL') || upperLine.includes('MATERIAL') || upperLine.includes('USER')) {
+                // Abaikan baris header, total, plant, atau tanda tangan
+                if (upperLine.includes('PLANT') || upperLine.includes('S.LOCATION') || upperLine.includes('MAT.TYPE') || upperLine.includes('PERIOD') || upperLine.includes('TOTAL') || upperLine.includes('MATERIAL') || upperLine.includes('USER') || upperLine.includes('BALANCE')) {
                     return;
                 }
 
-                // Pisahkan kolom berdasarkan tab (hasil copy paste Excel)
-                let cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
+                // Pisahkan kolom berdasarkan tab atau spasi
+                let cols = line.split(/\t+/).map(c => c.trim()).filter(c => c !== '');
                 if (cols.length < 2) return;
 
                 let skuVal = "";
                 let namaBarang = "";
                 let qtyVal = 0;
 
-                // Cari kolom yang berisi kode SKU (angka 5-7 digit)
+                // Cari kode SKU (angka 5-7 digit di baris tersebut)
                 for (let i = 0; i < cols.length; i++) {
                     let cleanCol = cols[i].replace(/['"]/g, '');
                     if (/^\d{5,7}$/.test(cleanCol)) {
                         skuVal = cleanCol;
                         namaBarang = cols[i + 1] || masterStockData[skuVal]?.name || '-';
                         
-                        // Ambil nilai Ending Balance (biasanya angka valid terakhir di baris tersebut)
+                        // Cari angka qty (Ending Balance) valid di kolom sebelah kanan
                         for (let j = cols.length - 1; j > i; j--) {
-                            let cleanNum = cols[j].replace(/\./g, '').replace(',', '.');
-                            if (!isNaN(cleanNum) && cleanNum !== '' && cols[j] !== 'CAR' && cols[j] !== 'PCN' && parseFloat(cleanNum) < 9999999) {
-                                qtyVal = parseFloat(cleanNum) || 0;
-                                break;
+                            let cleanNum = cols[j].replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
+                            if (cleanNum !== '' && !isNaN(cleanNum)) {
+                                let parsed = parseFloat(cleanNum);
+                                if (parsed >= 0 && parsed < 999999) {
+                                    qtyVal = parsed;
+                                    break;
+                                }
                             }
                         }
                         break;
                     }
                 }
 
-                // Jika SKU ditemukan (meskipun qty 0 atau ada stoknya, tetap dimasukkan ke sesi)
+                // Jika SKU ditemukan, gabungkan/jumlahkan qty jika SKU sudah ada sebelumnya
                 if (skuVal) {
-                    sessionItems[skuVal] = {
-                        plant: '-',
-                        nama: namaBarang,
-                        karton: qtyVal
-                    };
+                    if (sessionItems[skuVal]) {
+                        sessionItems[skuVal].karton += qtyVal; // Digabung/ditotal jika SKU kembar
+                    } else {
+                        sessionItems[skuVal] = {
+                            plant: '-',
+                            nama: namaBarang,
+                            karton: qtyVal
+                        };
+                    }
                 }
             });
 
             if(Object.keys(sessionItems).length === 0) {
-                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan Anda meng-copy area tabel datanya dengan benar!');
+                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan tabel data SAP tercopy dengan benar!');
                 return;
             }
 
@@ -2505,7 +2512,7 @@
                     tanggal_sesi: sessionDate,
                     data_sap: { tanggal_sesi: sessionDate, items: sessionItems } 
                 });
-                alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
+                alert(`Berhasil menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU unik digabung & terkumpul)!`);
                 renderSapSessionsList();
             } catch (error) {
                 alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);

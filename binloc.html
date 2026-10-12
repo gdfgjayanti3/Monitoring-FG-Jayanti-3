@@ -2447,6 +2447,12 @@
                 let fullLine = line.trim();
                 if (!fullLine) return;
 
+                let upperLine = fullLine.toUpperCase();
+                // Abaikan baris header laporan, total, plant, atau tanda tangan
+                if (upperLine.includes('PLANT') || upperLine.includes('S.LOCATION') || upperLine.includes('MAT.TYPE') || upperLine.includes('PERIOD') || upperLine.includes('TOTAL') || upperLine.includes('MATERIAL') || upperLine.includes('USER')) {
+                    return;
+                }
+
                 // Pisahkan kolom berdasarkan tab (hasil copy paste Excel)
                 let cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
                 if (cols.length < 2) return;
@@ -2455,14 +2461,14 @@
                 let namaBarang = "";
                 let qtyVal = 0;
 
-                // Cari kolom yang berisi kode SKU (biasanya angka 5-7 digit di awal baris)
+                // Cari kolom yang berisi kode SKU (angka 5-7 digit)
                 for (let i = 0; i < cols.length; i++) {
                     let cleanCol = cols[i].replace(/['"]/g, '');
                     if (/^\d{5,7}$/.test(cleanCol)) {
                         skuVal = cleanCol;
                         namaBarang = cols[i + 1] || masterStockData[skuVal]?.name || '-';
                         
-                        // Cari angka Ending Balance di kolom sebelah kanan (biasanya di kolom H atau kolom angka terakhir sebelum Min. Stock)
+                        // Ambil nilai Ending Balance (biasanya angka valid terakhir di baris tersebut)
                         for (let j = cols.length - 1; j > i; j--) {
                             let cleanNum = cols[j].replace(/\./g, '').replace(',', '.');
                             if (!isNaN(cleanNum) && cleanNum !== '' && cols[j] !== 'CAR' && cols[j] !== 'PCN' && parseFloat(cleanNum) < 9999999) {
@@ -2474,8 +2480,8 @@
                     }
                 }
 
-                // Jika SKU dan Qty valid ditemukan
-                if (skuVal && qtyVal > 0) {
+                // Jika SKU ditemukan (meskipun qty 0 atau ada stoknya, tetap dimasukkan ke sesi)
+                if (skuVal) {
                     sessionItems[skuVal] = {
                         plant: '-',
                         nama: namaBarang,
@@ -2485,7 +2491,7 @@
             });
 
             if(Object.keys(sessionItems).length === 0) {
-                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan Anda meng-copy langsung seluruh tabel laporan SAP (termasuk kolom Material dan Ending Balance)!');
+                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan Anda meng-copy area tabel datanya dengan benar!');
                 return;
             }
 
@@ -2499,7 +2505,7 @@
                     tanggal_sesi: sessionDate,
                     data_sap: { tanggal_sesi: sessionDate, items: sessionItems } 
                 });
-                alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul dengan qty akurat)!`);
+                alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
                 renderSapSessionsList();
             } catch (error) {
                 alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);

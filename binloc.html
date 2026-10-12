@@ -2440,16 +2440,14 @@
             const text = document.getElementById('sapPasteArea').value.trim();
             if(!text) { alert('Data SAP masih kosong!'); return; }
             
-            let sapMapAccumulator = {}; 
-            let sessionNamaBarang = {};
-            
+            let sessionItems = {};
             let lines = text.split('\n');
+
             lines.forEach((line) => {
                 let fullLine = line.trim();
-                if (!fullLine || fullLine.toUpperCase().includes("TOTAL") || fullLine.toUpperCase().includes("PLANT") || fullLine.toUpperCase().includes("MATERIAL")) {
-                    return;
-                }
+                if (!fullLine) return;
 
+                // Pisahkan kolom berdasarkan tab (hasil copy paste Excel)
                 let cols = line.split('\t').map(c => c.trim()).filter(c => c !== '');
                 if (cols.length < 2) return;
 
@@ -2457,45 +2455,37 @@
                 let namaBarang = "";
                 let qtyVal = 0;
 
-                let skuColIndex = -1;
+                // Cari kolom yang berisi kode SKU (biasanya angka 5-7 digit di awal baris)
                 for (let i = 0; i < cols.length; i++) {
                     let cleanCol = cols[i].replace(/['"]/g, '');
                     if (/^\d{5,7}$/.test(cleanCol)) {
-                        skuColIndex = i;
+                        skuVal = cleanCol;
+                        namaBarang = cols[i + 1] || masterStockData[skuVal]?.name || '-';
+                        
+                        // Cari angka Ending Balance di kolom sebelah kanan (biasanya di kolom H atau kolom angka terakhir sebelum Min. Stock)
+                        for (let j = cols.length - 1; j > i; j--) {
+                            let cleanNum = cols[j].replace(/\./g, '').replace(',', '.');
+                            if (!isNaN(cleanNum) && cleanNum !== '' && cols[j] !== 'CAR' && cols[j] !== 'PCN' && parseFloat(cleanNum) < 9999999) {
+                                qtyVal = parseFloat(cleanNum) || 0;
+                                break;
+                            }
+                        }
                         break;
                     }
                 }
 
-                if (skuColIndex !== -1) {
-                    skuVal = cols[skuColIndex].replace(/['"]/g, '');
-                    namaBarang = cols[skuColIndex + 1] || '-';
-                    
-                    for (let j = cols.length - 1; j > skuColIndex; j--) {
-                        let cleanVal = cols[j].replace(/\./g, '').replace(',', '.');
-                        if (!isNaN(cleanVal) && cleanVal !== '' && cols[j] !== 'CAR' && cols[j] !== 'PCN') {
-                            qtyVal = parseFloat(cleanVal) || 0;
-                            break;
-                        }
-                    }
-
-                    if (skuVal && !isNaN(qtyVal)) {
-                        sapMapAccumulator[skuVal] = (sapMapAccumulator[skuVal] || 0) + qtyVal;
-                        sessionNamaBarang[skuVal] = namaBarang;
-                    }
+                // Jika SKU dan Qty valid ditemukan
+                if (skuVal && qtyVal > 0) {
+                    sessionItems[skuVal] = {
+                        plant: '-',
+                        nama: namaBarang,
+                        karton: qtyVal
+                    };
                 }
             });
 
-            let sessionItems = {};
-            for (let sku in sapMapAccumulator) {
-                sessionItems[sku] = {
-                    plant: '-',
-                    nama: sessionNamaBarang[sku] || masterStockData[sku]?.name || '-',
-                    karton: sapMapAccumulator[sku]
-                };
-            }
-
             if(Object.keys(sessionItems).length === 0) {
-                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan Anda meng-copy langsung dari tabel Excel SAP!');
+                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan Anda meng-copy langsung seluruh tabel laporan SAP (termasuk kolom Material dan Ending Balance)!');
                 return;
             }
 
@@ -2509,13 +2499,13 @@
                     tanggal_sesi: sessionDate,
                     data_sap: { tanggal_sesi: sessionDate, items: sessionItems } 
                 });
-                alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul)!`);
+                alert(`Berhasil membaca dan menyimpan sesi SAP tanggal ${sessionDate} (${Object.keys(sessionItems).length} SKU terkumpul dengan qty akurat)!`);
                 renderSapSessionsList();
             } catch (error) {
                 alert('Gagal menyimpan sesi SAP ke database! Error: ' + error.message);
             }
         }
-
+        
         async function deleteSapSession(dateStr) {
             if(confirm(`Yakin ingin menghapus sesi SAP tanggal ${dateStr}?`)) {
                 delete sapSessionsData[dateStr];

@@ -2479,7 +2479,7 @@
                         }
                         namaBarang = nameParts.join(' ').trim() || masterStockData[skuVal]?.name || '-';
 
-                        // Ambil nilai Ending Balance dari kolom angka di sebelah kanan
+                        // Ambil nilai Ending Balance dari kolom angka di sebelah kanan (Loop mundur dengan j--)
                         for (let j = cols.length - 1; j > i; j--) {
                             let cellVal = cols[j] ? cols[j] : '';
                             let cleanNum = cellVal.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');

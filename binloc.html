@@ -2448,12 +2448,10 @@
                 if (!fullLine) return;
 
                 let upperLine = fullLine.toUpperCase();
-                // Abaikan baris header, judul, total, atau info plant/periode
                 if (upperLine.includes('MATERIAL') || upperLine.includes('TOTAL') || upperLine.includes('PLANT') || upperLine.includes('S.LOCATION') || upperLine.includes('MAT.TYPE') || upperLine.includes('PERIOD') || upperLine.includes('USER') || upperLine.includes('BALANCE')) {
                     return;
                 }
 
-                // Pisahkan berdasarkan tab
                 let cols = line.split('\t').map(c => (c ? c.trim() : ''));
                 if (cols.length < 2) return;
 
@@ -2461,7 +2459,7 @@
                 let namaBarang = "";
                 let qtyVal = 0;
 
-                // Cari kolom yang berisi kode SKU (angka 5-7 digit)
+                // 1. Cari kode SKU (angka 5-7 digit)
                 for (let i = 0; i < cols.length; i++) {
                     let cleanCol = cols[i] ? cols[i].replace(/['"]/g, '') : '';
                     if (/^\d{5,7}$/.test(cleanCol)) {
@@ -2471,42 +2469,51 @@
                         let nameParts = [];
                         for (let k = i + 1; k < cols.length; k++) {
                             let val = cols[k] ? cols[k].trim() : '';
-                            if (val && !/^\d+(\.\d+)?$/.test(val)) {
+                            if (val && val !== 'CAR' && val !== 'PCN' && !/^\d+(\.\d+)?$/.test(val)) {
                                 nameParts.push(val);
                             } else {
                                 break;
                             }
                         }
                         namaBarang = nameParts.join(' ').trim() || masterStockData[skuVal]?.name || '-';
+                        break;
+                    }
+                }
 
-                        // Ambil nilai Ending Balance dari kolom angka di sebelah kanan (Loop mundur dengan j--)
-                        for (let j = cols.length - 1; j > i; j--) {
-                            let cellVal = cols[j] ? cols[j] : '';
+                // 2. Ambil angka qty yang posisinya tepat di sebelah kanan 'CAR' / 'PCN'
+                for (let j = 0; j < cols.length; j++) {
+                    if (cols[j] === 'CAR' || cols[j] === 'PCN') {
+                        for (let r = j + 1; r < cols.length; r++) {
+                            let cellVal = cols[r] ? cols[r] : '';
                             let cleanNum = cellVal.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '');
                             if (cleanNum !== '' && !isNaN(cleanNum)) {
                                 let parsed = parseFloat(cleanNum);
-                                if (parsed >= 0 && parsed < 999999) {
+                                if (parsed > 0) {
                                     qtyVal = parsed;
                                     break;
                                 }
                             }
                         }
-                        break;
+                        if (qtyVal > 0) break;
                     }
                 }
 
                 // Jika SKU valid ditemukan, masukkan ke data sesi
                 if (skuVal) {
-                    sessionItems[skuVal] = {
-                        plant: '-',
-                        nama: namaBarang,
-                        karton: qtyVal
-                    };
+                    if (sessionItems[skuVal]) {
+                        sessionItems[skuVal].karton += qtyVal;
+                    } else {
+                        sessionItems[skuVal] = {
+                            plant: '-',
+                            nama: namaBarang,
+                            karton: qtyVal
+                        };
+                    }
                 }
             });
 
             if(Object.keys(sessionItems).length === 0) {
-                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan Anda meng-copy langsung tabel Excel dengan benar!');
+                alert('Tidak ada data SKU yang berhasil dibaca. Pastikan tabel data SAP tercopy dengan benar!');
                 return;
             }
 

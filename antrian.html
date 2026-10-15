@@ -502,14 +502,23 @@
 // ==========================================
 // FUNGSI SUARA OTOMATIS (TEXT-TO-SPEECH)
 // ==========================================
+// Simpan di variabel global agar tidak terhapus oleh garbage collection browser
+window._lastUtterance = null;
+
 function panggilSuaraMasukDock(noPol, ekspedisi, dock) {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         let teks = `Perhatian, truk nomor polisi ${noPol}, ekspedisi ${ekspedisi}, silakan mundur memuat ke ${dock}.`;
+        
         let utterance = new SpeechSynthesisUtterance(teks);
         utterance.lang = 'id-ID';
         utterance.rate = 0.95;
+        
+        // Simpan referensi global
+        window._lastUtterance = utterance;
         window.speechSynthesis.speak(utterance);
+    } else {
+        console.warn('Browser tidak mendukung SpeechSynthesis.');
     }
 }
 
@@ -517,13 +526,18 @@ function panggilSuaraSelesaiMuat(noPol, ekspedisi) {
     if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         let teks = `Perhatian untuk sopir dengan nomor polisi ${noPol}, ekspedisi ${ekspedisi}, harap menuju loket GDFG untuk tanda tangan surat jalan. Sekali lagi perhatian untuk sopir dengan nomor polisi ${noPol}, ekspedisi ${ekspedisi}, harap menuju loket GDFG untuk tanda tangan surat jalan. Terima kasih.`;
+        
         let utterance = new SpeechSynthesisUtterance(teks);
         utterance.lang = 'id-ID';
         utterance.rate = 0.93;
+        
+        // Simpan referensi global
+        window._lastUtterance = utterance;
         window.speechSynthesis.speak(utterance);
+    } else {
+        console.warn('Browser tidak mendukung SpeechSynthesis.');
     }
 }
-
 let masterSkuCache = null;
 
 async function loadMasterSkuFromSheet() {
